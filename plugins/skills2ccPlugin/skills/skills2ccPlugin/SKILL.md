@@ -70,6 +70,13 @@ plugins/<name>/
 }
 ```
 
+**严重警告**：严禁使用 PowerShell 5.1 的 `ConvertTo-Json` 生成 plugin.json。它会：
+- 将撇号过度转义为 `'`（如 `skill's` → `skill's`），导致 Claude Code 的 JSON 解析器报 `Unrecognized token ''`
+- 默认 `-Depth 2`，嵌套超过 2 层的对象被截断为 `"System.Collections.Hashtable"` 字符串
+- 缩进使用 4 空格而非标准 2 空格
+
+**必须用 `Write` 工具或 `[System.IO.File]::WriteAllText` 直接写入手工构造的 JSON 字符串。** 验证时用 `Get-Content | ConvertFrom-Json` 做一次解析测试，确认无异常再继续。
+
 ### 3. 组织文件
 
 **第一步：确定 marketplace 路径并创建目标目录**
