@@ -1,0 +1,52 @@
+函数简介:
+
+根据指定的多点查找所有颜色坐标
+
+函数原型:  
+  
+string FindMultiColorEx(x1,
+y1, x2, y2,first\_color,offset\_color,sim, dir)
+
+参数定义:  
+  
+x1 整形数:区域的左上X坐标  
+y1 整形数:区域的左上Y坐标  
+x2 整形数:区域的右下X坐标  
+y2 整形数:区域的右下Y坐标  
+first\_color 字符串:颜色 格式为"RRGGBB-DRDGDB|RRGGBB-DRDGDB|…………",比如"123456-000000"
+
+这里的含义和按键自带Color插件的意义相同，只不过我的可以支持偏色和多种颜色组合
+
+所有的偏移色坐标都相对于此颜色.注意，这里只支持RGB颜色.  
+offset\_color 字符串: 偏移颜色 可以支持任意多个点 格式和按键自带的Color插件意义相同, 只不过我的可以支持偏色和多种颜色组合
+
+ 格式为"x1|y1|RRGGBB-DRDGDB|RRGGBB-DRDGDB……,……xn|yn|RRGGBB-DRDGDB|RRGGBB-DRDGDB……"
+
+比如"1|3|aabbcc|aaffaa-101010,-5|-3|123456-000000|454545-303030|565656"等任意组合都可以，支持偏色
+
+还可以支持反色模式，比如"1|3|-aabbcc|-334455-101010,-5|-3|-123456-000000|-353535|454545-101010","-"表示除了指定颜色之外的颜色.
+
+sim 双精度浮点数:相似度,取值范围0.1-1.0  
+dir 整形数:查找方向 0: 从左到右,从上到下 1: 从左到右,从下到上 2: 从右到左,从上到下 3: 从右到左, 从下到上
+
+返回值:
+
+字符串:  
+返回所有颜色信息的坐标值,然后通过GetResultCount等接口来解析(由于内存限制,返回的坐标数量最多为1800个左右)
+
+坐标是first\_color所在的坐标
+
+示例:
+
+dm\_ret = dm.FindMultiColorEx(0,0,2000,2000,
+"cc805b-020202|606060-010101","9|2|-00ff00|-ff0000,15|2|2dff1c-010101,6|11|a0d962|aabbcc,11|14|-ffffff",1.0,1)  
+count = dm.GetResultCount(dm\_ret)  
+index = 0  
+Do While index < count   
+   aa
+= dm.GetResultPos(dm\_ret,index,intX,intY)  
+   dm.MoveTo
+intX,intY  
+   index = index + 1  
+   Delay  1000  
+Loop

@@ -33,6 +33,19 @@
       "repository": "https://github.com/shuiyu486/terr-marketplace",
       "license": "MIT",
       "keywords": ["marketplace", "publish", "skill-creator", "git-subdir", "plugin", "convert"]
+    },
+    {
+      "name": "dm-api",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/shuiyu486/terr-marketplace.git",
+        "path": "plugins/dm-api"
+      },
+      "description": "大漠插件(DaMao Plugin) API 文档查询。支持 465 个函数的参数说明、返回值和使用示例，涵盖键鼠模拟、找图找色、文字识别、背景绑定、内存读写、窗口操作等功能。",
+      "version": "1.0.0",
+      "author": { "name": "terrapin" },
+      "license": "MIT",
+      "keywords": ["大漠插件", "dm", "按键精灵", "automation", "找图", "找色", "OCR", "后台绑定", "内存读写"]
     }
   ]
 }
