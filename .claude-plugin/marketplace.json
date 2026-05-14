@@ -21,18 +21,18 @@
       "keywords": ["terminal", "configuration", "sync", "wezterm", "nushell"]
     },
     {
-      "name": "plugin-publisher",
+      "name": "skills2ccPlugin",
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/shuiyu486/terr-marketplace.git",
-        "path": "plugins/plugin-publisher"
+        "path": "plugins/skills2ccPlugin"
       },
-      "description": "将 skill-creator 生成的 skill 转换为 terr-marketplace 可安装的插件格式",
+      "description": "将 skill 转换为 terr-marketplace 可安装插件并发布。自动生成 plugin.json、组织目录、注册 marketplace.json",
       "version": "1.0.0",
       "author": { "name": "terrapin" },
       "repository": "https://github.com/shuiyu486/terr-marketplace",
       "license": "MIT",
-      "keywords": ["marketplace", "publish", "skill-creator", "git-subdir", "plugin"]
+      "keywords": ["marketplace", "publish", "skill-creator", "git-subdir", "plugin", "convert"]
     }
   ]
 }

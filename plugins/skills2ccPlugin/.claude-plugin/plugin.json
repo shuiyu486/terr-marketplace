@@ -1,0 +1,9 @@
+{
+  "name": "skills2ccPlugin",
+  "version": "1.0.0",
+  "description": "将 skill 转换为 terr-marketplace 插件并发布。读取 SKILL.md 自动生成 plugin.json，组织目录结构，注册到 marketplace.json（git-subdir 格式），验证并推送。",
+  "author": { "name": "terrapin" },
+  "repository": "https://github.com/shuiyu486/terr-marketplace",
+  "license": "MIT",
+  "keywords": ["marketplace", "publish", "skill-creator", "git-subdir", "plugin", "convert"]
+}

@@ -30,7 +30,7 @@ claude plugin marketplace add shuiyu486/terr-marketplace
 
 ```shell
 /plugin install config-sync@terr-marketplace
-/plugin install plugin-publisher@terr-marketplace
+/plugin install skills2ccPlugin@terr-marketplace
 ```
 
 ### 更新 marketplace
@@ -44,7 +44,7 @@ claude plugin marketplace add shuiyu486/terr-marketplace
 | 插件 | 版本 | 说明 |
 |------|------|------|
 | `config-sync` | 1.0.0 | 双向同步终端配置文件（WezTerm, Nushell, Starship 等） |
-| `plugin-publisher` | 1.0.0 | 将 skill-creator 生成的 skill 发布到 terr-marketplace |
+| `skills2ccPlugin` | 1.0.0 | 将 skill-creator 生成的 skill 发布到 terr-marketplace |
 
 ## 目录结构
 
@@ -63,26 +63,26 @@ terr-marketplace/
     │           ├── SKILL.md
     │           ├── references/
     │           └── scripts/
-    └── plugin-publisher/
+    └── skills2ccPlugin/
         ├── .claude-plugin/
         │   └── plugin.json
         └── skills/
-            └── plugin-publisher/
+            └── skills2ccPlugin/
                 ├── SKILL.md
                 └── references/
 ```
 
 ## 添加新插件
 
-### 方式一：使用 plugin-publisher skill（推荐）
+### 方式一：使用 skills2ccPlugin skill（推荐）
 
 在 Claude Code 中对话式操作：
 
 ```
-使用 plugin-publisher 发布 <skill 路径>
+使用 skills2ccPlugin 发布 <skill 路径>
 ```
 
-plugin-publisher 会自动完成：创建 plugin.json → 组织目录 → 注册 marketplace.json → 验证 → 提示提交。
+skills2ccPlugin 会自动完成：创建 plugin.json → 组织目录 → 注册 marketplace.json → 验证 → 提示提交。
 
 ### 方式二：手动操作
 
