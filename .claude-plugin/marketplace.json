@@ -8,7 +8,11 @@
   "plugins": [
     {
       "name": "config-sync",
-      "source": "./plugins/config-sync",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/shuiyu486/terr-marketplace.git",
+        "path": "plugins/config-sync"
+      },
       "description": "双向同步终端配置文件（WezTerm, Nushell, Starship 等）",
       "version": "1.0.0",
       "author": { "name": "ccNovaTerm" },
