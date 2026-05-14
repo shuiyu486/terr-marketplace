@@ -1,59 +1,34 @@
-函数简介:
+# WriteString
 
-对指定地址写入字符串，可以是Ascii字符串或者是Unicode字符串
+**分类:** 内存
 
-函数原型:  
-  
-long WriteString(hwnd,addr,type,v)
+**签名:** `long WriteString(hwnd,addr,type,v)`
 
-参数定义:  
-  
-hwnd 整形数: 窗口句柄或者进程ID.  默认是窗口句柄. 如果要指定为进程ID,需要调用[SetMemoryHwndAsProcessId](SetMemoryHwndAsProcessId.htm).
+**描述:** 对指定地址写入字符串，可以是Ascii字符串或者是Unicode字符串
 
-addr 字符串: 用字符串来描述地址，类似于CE的地址描述，数值必须是16进制,里面可以用[ ] + -这些符号来描述一个地址。+表示地址加，-表示地址减  
-       模块名必须用<>符号来圈起来
+## 参数
 
-      例如:
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 窗口句柄或者进程ID.  默认是窗口句柄. 如果要指定为进程ID,需要调用[SetMemoryHwndAsProcessId](SetMemoryHwndAsProcessId.htm). |
+| addr | str | 用字符串来描述地址，类似于CE的地址描述，数值必须是16进制,里面可以用[ ] + -这些符号来描述一个地址。+表示地址加，-表示地址减 模块名必须用<>符号来圈起来 例如: |
+| type | int | 字符串类型,取值如下 |
+| Ascii | str |  |
+| Unicode | str |  |
+| UTF8 | str |  |
+| v | str | 字符串 |
 
-1.        
-"4DA678"
-最简单的方式，用绝对数值来表示地址
+## 返回值
 
-2.        
-"<360SE.exe>+DA678"
-相对简单的方式，只是这里用模块名来决定模块基址，后面的是偏移
+- 0: 失败
+- 1: 成功
 
-3.        
-"[4DA678]+3A" 用绝对数值加偏移，相当于一级指针
+## 示例
 
-4.        
-"[<360SE.exe>+DA678]+3A" 用模块定基址的方式，也是一级指针
+```vbs
+dm_ret = dm.WriteString(hwnd,"4DA678",0,"我是来测试的")
+```
 
-5.        
-"[[[<360SE.exe>+DA678]+3A]+5B]+8" 这个是一个三级指针
+## 注意
 
-总之熟悉CE的人 应该对这个地址描述都很熟悉,我就不多举例了
-
-type 整形数: 字符串类型,取值如下
-
-      0 : Ascii字符串
-
-      1 : Unicode字符串
-
-      2 : UTF8字符串
-
-v 字符串: 字符串
-
-返回值:
-
-整形数:  
-0: 失败
-
-1: 成功
-
-示例:
-
-dm\_ret =
-dm.WriteString(hwnd,"4DA678",0,"我是来测试的")
-
-注: DmGuard中的memory护盾也可以突破部分窗口内存保护，可以尝试使用。
+- DmGuard中的memory护盾也可以突破部分窗口内存保护，可以尝试使用。

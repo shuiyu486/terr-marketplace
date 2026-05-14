@@ -1,18 +1,21 @@
-函数简介:
+# GetScreenHeight
 
-获取屏幕的高度.
+**分类:** 系统
 
-函数原型:  
-  
-long GetScreenHeight()
+**签名:** `long GetScreenHeight()`
 
-参数定义:
+**描述:** 获取屏幕的高度.
 
-返回值:
+## 参数
 
-整形数:  
-返回屏幕的高度
+*此函数无参数。*
 
-示例:
+## 返回值
 
+- 返回屏幕的高度
+
+## 示例
+
+```vbs
 ScreenH = dm.GetScreenHeight()
+```

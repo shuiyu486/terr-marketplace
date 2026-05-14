@@ -1,26 +1,30 @@
-函数简介:
+# GetModuleBaseAddr
 
-根据指定的窗口句柄，来获取对应窗口句柄进程下的指定模块的基址
+**分类:** 内存
 
-函数原型:  
-  
-LONGLONG GetModuleBaseAddr(hwnd,module)
+**签名:** `LONGLONG GetModuleBaseAddr(hwnd,module)`
 
-参数定义:  
-  
-hwnd 整形数: 窗口句柄或者进程ID.  默认是窗口句柄. 如果要指定为进程ID,需要调用[SetMemoryHwndAsProcessId](SetMemoryHwndAsProcessId.htm).
+**描述:** 根据指定的窗口句柄，来获取对应窗口句柄进程下的指定模块的基址
 
-module 字符串: 模块名
+## 参数
 
-返回值:
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 窗口句柄或者进程ID.  默认是窗口句柄. 如果要指定为进程ID,需要调用[SetMemoryHwndAsProcessId](SetMemoryHwndAsProcessId.htm). |
+| module | str | 模块名 |
 
-长整形数:  
-模块的基址
+## 返回值
 
-示例:
+- 模块的基址
 
-base\_addr =
-dm.GetModuleBaseAddr(hwnd,"gdi32.dll")  
-MessageBox  base\_addr
+## 示例
 
-注: DmGuard中的memory护盾也可以突破部分窗口内存保护，可以尝试使用。
+```vbs
+base_addr =
+dm.GetModuleBaseAddr(hwnd,"gdi32.dll")
+MessageBox  base_addr
+```
+
+## 注意
+
+- DmGuard中的memory护盾也可以突破部分窗口内存保护，可以尝试使用。

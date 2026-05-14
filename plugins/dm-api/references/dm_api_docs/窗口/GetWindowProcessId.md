@@ -1,21 +1,24 @@
-函数简介:
+# GetWindowProcessId
 
-获取指定窗口所在的进程ID.
+**分类:** 窗口
 
-函数原型:  
-  
-long GetWindowProcessId(hwnd)
+**签名:** `long GetWindowProcessId(hwnd)`
 
-参数定义:
+**描述:** 获取指定窗口所在的进程ID.
 
-hwnd 整形数: 窗口句柄
+## 参数
 
-返回值:
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 窗口句柄 |
 
-整形数:  
-返回整型表示的是进程ID
+## 返回值
 
-示例:
+- 返回整型表示的是进程ID
 
-process\_id =
+## 示例
+
+```vbs
+process_id =
 dm.GetWindowProcessId(hwnd)
+```

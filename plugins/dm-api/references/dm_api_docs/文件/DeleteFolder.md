@@ -1,21 +1,24 @@
-函数简介:
+# DeleteFolder
 
-删除指定目录.
+**分类:** 文件
 
-函数原型:  
-  
-long DeleteFolder(folder)
+**签名:** `long DeleteFolder(folder)`
 
-参数定义:
+**描述:** 删除指定目录.
 
-folder 字符串: 目录名
+## 参数
 
-返回值:  
-  
-整形数:  
-0 : 失败  
-1 : 成功
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| folder | str | 目录名 |
 
-示例:  
-  
+## 返回值
+
+- 0 : 失败
+- 1 : 成功
+
+## 示例
+
+```vbs
 dm.DeleteFolder "c:\123"
+```

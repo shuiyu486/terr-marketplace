@@ -1,32 +1,33 @@
-函数简介:
+# DeleteIni
 
-删除指定的ini小节. 
+**分类:** 文件
 
-函数原型:  
-  
-long DeleteIni(section,key,file)
+**签名:** `long DeleteIni(section,key,file)`
 
-参数定义:
+**描述:** 删除指定的ini小节.
 
-section 字符串: 小节名
+## 参数
 
-key 字符串: 变量名. 如果这个变量为空串，则删除整个section小节.
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| section | str | 小节名 |
+| key | str | 变量名. 如果这个变量为空串，则删除整个section小节. |
+| file | str | ini文件名. |
 
-file 字符串: ini文件名.
+## 返回值
 
-返回值:  
-  
-整形数:  
-0 : 失败  
-1 : 成功
+- 0 : 失败
+- 1 : 成功
 
-示例:  
-  
-// 绝对路径  
-dm.DeleteIni "Global","var1" ,"c:\test\_game\cfg.ini"  
-  
-// 相对路径  
-dm.SetPath "c:\test\_game"  
+## 示例
+
+```vbs
+// 绝对路径
+dm.DeleteIni "Global","var1" ,"c:\test_game\cfg.ini"
+
+// 相对路径
+dm.SetPath "c:\test_game"
 dm.DeleteIni "Global","" ,"cfg.ini"
 
 注 : 此函数是多线程安全的. 多线程同时读写同个文件不会造成文件错乱.
+```

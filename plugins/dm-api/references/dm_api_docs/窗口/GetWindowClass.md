@@ -1,21 +1,24 @@
-函数简介:
+# GetWindowClass
 
-获取窗口的类名
+**分类:** 窗口
 
-函数原型:  
-  
-string GetWindowClass(hwnd)
+**签名:** `string GetWindowClass(hwnd)`
 
-参数定义:  
-  
-hwnd 整形数: 指定的窗口句柄
+**描述:** 获取窗口的类名
 
-返回值:
+## 参数
 
-字符串:  
-窗口的类名
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 指定的窗口句柄 |
 
-示例:
+## 返回值
 
-class\_name =
+- 窗口的类名
+
+## 示例
+
+```vbs
+class_name =
 dm.GetWindowClass(hwnd)
+```

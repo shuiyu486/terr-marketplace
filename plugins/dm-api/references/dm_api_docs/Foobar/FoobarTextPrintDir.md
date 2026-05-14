@@ -1,26 +1,25 @@
-函数简介:
+# FoobarTextPrintDir
 
-设置滚动文本区的文字输出方向,默认是0
+**分类:** Foobar
 
-函数原型:  
-  
-long FoobarTextPrintDir(hwnd,dir)
+**签名:** `long FoobarTextPrintDir(hwnd,dir)`
 
-参数定义:  
-  
-hwnd 整形数: 指定的Foobar窗口句柄,此句柄必须是通过CreateFoobarxxx创建而来
+**描述:** 设置滚动文本区的文字输出方向,默认是0
 
-dir 整形数: 0 表示向下输出
+## 参数
 
-          : 1 表示向上输出
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 指定的Foobar窗口句柄,此句柄必须是通过CreateFoobarxxx创建而来 |
+| dir | int | 0 表示向下输出 : 1 表示向上输出 |
 
-返回值:
+## 返回值
 
-整形数:  
-0 : 失败
+- 0 : 失败
+- 1 : 成功
 
-1 : 成功
+## 示例
 
-示例:
-
-dm\_ret = dm.FoobarTextPrintDir(foobar,1)
+```vbs
+dm_ret = dm.FoobarTextPrintDir(foobar,1)
+```

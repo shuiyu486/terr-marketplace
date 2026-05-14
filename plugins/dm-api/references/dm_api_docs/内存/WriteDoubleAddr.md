@@ -1,29 +1,30 @@
-函数简介:
+# WriteDoubleAddr
 
-对指定地址写入双精度浮点数
+**分类:** 内存
 
-函数原型:  
-  
-long WriteDoubleAddr(hwnd,addr,v)
+**签名:** `long WriteDoubleAddr(hwnd,addr,v)`
 
-参数定义:  
-  
-hwnd 整形数: 窗口句柄或者进程ID.  默认是窗口句柄. 如果要指定为进程ID,需要调用[SetMemoryHwndAsProcessId](SetMemoryHwndAsProcessId.htm).
+**描述:** 对指定地址写入双精度浮点数
 
-addr长整形数: 地址
+## 参数
 
-v 双精度浮点数: 双精度浮点数
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 窗口句柄或者进程ID.  默认是窗口句柄. 如果要指定为进程ID,需要调用[SetMemoryHwndAsProcessId](SetMemoryHwndAsProcessId.htm). |
+| addr长 | int | 地址 |
+| v | double | 双精度浮点数 |
 
-返回值:
+## 返回值
 
-整形数:  
-0 : 失败
+- 0 : 失败
+- 1 : 成功
 
-1 : 成功
+## 示例
 
-示例:
+```vbs
+dm_ret = dm.WriteDoubleAddr(hwnd,123456 ,2.34)
+```
 
-dm\_ret =
-dm.WriteDoubleAddr(hwnd,123456 ,2.34)
+## 注意
 
-注: DmGuard中的memory护盾也可以突破部分窗口内存保护，可以尝试使用。
+- DmGuard中的memory护盾也可以突破部分窗口内存保护，可以尝试使用。

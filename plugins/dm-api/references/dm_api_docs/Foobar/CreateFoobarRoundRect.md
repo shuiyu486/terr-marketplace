@@ -1,33 +1,33 @@
-函数简介:
+# CreateFoobarRoundRect
 
-创建一个圆角矩形窗口
+**分类:** Foobar
 
-函数原型:  
-  
-long CreateFoobarRoundRect(hwnd,x,y,w,h,rw,rh)
+**签名:** `long CreateFoobarRoundRect(hwnd,x,y,w,h,rw,rh)`
 
-参数定义:  
-  
-hwnd整形数: 指定的窗口句柄,如果此值为0,那么就在桌面创建此窗口  
-  
-x整形数: 左上角X坐标(相对于hwnd客户区坐标)
+**描述:** 创建一个圆角矩形窗口
 
-y整形数: 左上角Y坐标(相对于hwnd客户区坐标)
+## 参数
 
-w整形数: 矩形区域的宽度
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 指定的窗口句柄,如果此值为0,那么就在桌面创建此窗口 |
+| x | int | 左上角X坐标(相对于hwnd客户区坐标) |
+| y | int | 左上角Y坐标(相对于hwnd客户区坐标) |
+| w | int | 矩形区域的宽度 |
+| h | int | 矩形区域的高度 |
+| rw | int | 圆角的宽度 |
+| rh | int | 圆角的高度 |
 
-h整形数: 矩形区域的高度
+## 返回值
 
-rw整形数: 圆角的宽度
+- 整形数 : 创建成功的窗口句柄
 
-rh整形数: 圆角的高度
+## 示例
 
-返回值:  
-  
-整形数 : 创建成功的窗口句柄
-
-示例:
-
+```vbs
 foobar = dm.CreateFoobarRoundRect(hwnd,10,10,200,200,30,30)
+```
 
-注: foobar不能在本进程窗口内创建.
+## 注意
+
+- foobar不能在本进程窗口内创建.

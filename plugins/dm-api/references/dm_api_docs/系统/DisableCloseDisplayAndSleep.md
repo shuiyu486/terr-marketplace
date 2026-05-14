@@ -1,20 +1,22 @@
-函数简介:
+# DisableCloseDisplayAndSleep
 
-设置当前的电源设置，禁止关闭显示器，禁止关闭硬盘，禁止睡眠，禁止待机. 不支持XP.
+**分类:** 系统
 
-函数原型:  
-  
-long DisableCloseDisplayAndSleep()
+**签名:** `long DisableCloseDisplayAndSleep()`
 
-参数定义:
+**描述:** 设置当前的电源设置，禁止关闭显示器，禁止关闭硬盘，禁止睡眠，禁止待机. 不支持XP.
 
-返回值:
+## 参数
 
-整形数:  
-0 : 失败
+*此函数无参数。*
 
-1 : 成功
+## 返回值
 
-示例:
+- 0 : 失败
+- 1 : 成功
 
+## 示例
+
+```vbs
 dm.DisableCloseDisplayAndSleep
+```

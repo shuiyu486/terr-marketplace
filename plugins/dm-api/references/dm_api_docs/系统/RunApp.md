@@ -1,30 +1,27 @@
-函数简介:
+# RunApp
 
-运行指定的应用程序.
+**分类:** 系统
 
-函数原型:  
-  
-long RunApp(app\_path,mode)
+**签名:** `long RunApp(app_path,mode)`
 
-参数定义:
+**描述:** 运行指定的应用程序.
 
-app\_path 字符串: 指定的可执行程序全路径.
+## 参数
 
-mode 整形数: 取值如下
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| app_path | str | 指定的可执行程序全路径. |
+| mode | int | 取值如下 |
 
-      0 : 普通模式
+## 返回值
 
-      1 : 加强模式
+- 0 : 失败
+- 1 : 成功
 
-返回值:
+## 示例
 
-整形数:  
-0 : 失败
-
-1 : 成功
-
-示例:
-
+```vbs
 dm.RunApp "c:\windows\notepad.exe",0
 
 dm.RunApp "notepad",1
+```

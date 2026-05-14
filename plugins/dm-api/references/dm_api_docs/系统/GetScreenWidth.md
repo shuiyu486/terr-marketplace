@@ -1,18 +1,21 @@
-函数简介:
+# GetScreenWidth
 
-获取屏幕的宽度.
+**分类:** 系统
 
-函数原型:  
-  
-long GetScreenWidth()
+**签名:** `long GetScreenWidth()`
 
-参数定义:
+**描述:** 获取屏幕的宽度.
 
-返回值:
+## 参数
 
-整形数:  
-返回屏幕的宽度
+*此函数无参数。*
 
-示例:
+## 返回值
 
+- 返回屏幕的宽度
+
+## 示例
+
+```vbs
 ScreenW = dm.GetScreenWidth()
+```

@@ -1,22 +1,25 @@
-函数简介:
+# FoobarClearText
 
-清除指定的Foobar滚动文本区
+**分类:** Foobar
 
-函数原型:  
-  
-long FoobarClearText(hwnd)
+**签名:** `long FoobarClearText(hwnd)`
 
-参数定义:  
-  
-hwnd整形数: 指定的Foobar窗口句柄,此句柄必须是通过CreateFoobarxxx创建而来
+**描述:** 清除指定的Foobar滚动文本区
 
-返回值:
+## 参数
 
-整形数 :  
-0 : 失败
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 指定的Foobar窗口句柄,此句柄必须是通过CreateFoobarxxx创建而来 |
 
-1 : 成功
+## 返回值
 
-示例:
+- 整形数 :
+- 0 : 失败
+- 1 : 成功
 
-dm\_ret = dm.FoobarClearText(foobar)
+## 示例
+
+```vbs
+dm_ret = dm.FoobarClearText(foobar)
+```

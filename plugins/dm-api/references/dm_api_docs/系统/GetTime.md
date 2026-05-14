@@ -1,22 +1,24 @@
-函数简介:
+# GetTime
 
-获取当前系统从开机到现在所经历过的时间，单位是毫秒
+**分类:** 系统
 
-函数原型:  
-  
-long GetTime()
+**签名:** `long GetTime()`
 
-参数定义:
+**描述:** 获取当前系统从开机到现在所经历过的时间，单位是毫秒
 
-返回值:
+## 参数
 
-整形数:  
-时间(单位毫秒)
+*此函数无参数。*
 
-示例:
+## 返回值
 
-t1 = dm.GetTime()  
-dm\_ret =
-dm.FindPic(0,0,2000,2000,"test.bmp","000000",1.0,0,x,y)  
-t2 = dm.GetTime()  
+- 时间(单位毫秒)
+
+## 示例
+
+```vbs
+t1 = dm.GetTime()
+dm_ret = dm.FindPic(0,0,2000,2000,"test.bmp","000000",1.0,0,x,y)
+t2 = dm.GetTime()
 MessageBox (t2-t1)
+```

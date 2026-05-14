@@ -1,25 +1,27 @@
-函数简介:
+# ImageToBmp
 
-转换图片格式为24位BMP格式.
+**分类:** 图色
 
-函数原型:  
-  
-long ImageToBmp(pic\_name,bmp\_name)
+**签名:** `long ImageToBmp(pic_name,bmp_name)`
 
-参数定义:
+**描述:** 转换图片格式为24位BMP格式.
 
-pic\_name 字符串: 要转换的图片名  
-bmp\_name 字符串: 要保存的BMP图片名
+## 参数
 
-返回值:
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| pic_name | str | 要转换的图片名 |
+| bmp_name | str | 要保存的BMP图片名 |
 
-整形数:  
-0 : 失败
+## 返回值
 
-1 : 成功
+- 0 : 失败
+- 1 : 成功
 
-示例:
+## 示例
 
-dm.ImageToBmp "1.png","1.bmp"  
-dm.ImageToBmp "2.jpg","2.bmp"  
+```vbs
+dm.ImageToBmp "1.png","1.bmp"
+dm.ImageToBmp "2.jpg","2.bmp"
 dm.ImageToBmp "3.gif","3.bmp"
+```

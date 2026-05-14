@@ -1,33 +1,29 @@
-函数简介:
+# FoobarFillRect
 
-在指定的Foobar窗口内部填充矩形
+**分类:** Foobar
 
-函数原型:  
-  
-long FoobarFillRect(hwnd,x1,y1,x2,y2,color)
+**签名:** `long FoobarFillRect(hwnd,x1,y1,x2,y2,color)`
 
-参数定义:  
-  
-hwnd 整形数: 指定的Foobar窗口,注意,此句柄必须是通过CreateFoobarxxxx系列函数创建出来的  
-  
-x1 整形数: 左上角X坐标(相对于hwnd客户区坐标)
+**描述:** 在指定的Foobar窗口内部填充矩形
 
-y1 整形数: 左上角Y坐标(相对于hwnd客户区坐标)
+## 参数
 
-x2 整形数: 右下角X坐标(相对于hwnd客户区坐标)
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 指定的Foobar窗口,注意,此句柄必须是通过CreateFoobarxxxx系列函数创建出来的 |
+| x1 | int | 左上角X坐标(相对于hwnd客户区坐标) |
+| y1 | int | 左上角Y坐标(相对于hwnd客户区坐标) |
+| x2 | int | 右下角X坐标(相对于hwnd客户区坐标) |
+| y2 | int | 右下角Y坐标(相对于hwnd客户区坐标) |
+| color | str | 填充的颜色值 |
 
-y2 整形数: 右下角Y坐标(相对于hwnd客户区坐标)
+## 返回值
 
-color字符串: 填充的颜色值
+- 0 : 失败
+- 1 : 成功
 
-返回值:
+## 示例
 
-整形数:  
-0 : 失败
-
-1 : 成功
-
-示例:
-
-dm\_ret =
-dm.FoobarFillRect(foobar,0,0,200,200,"FF0000")
+```vbs
+dm_ret = dm.FoobarFillRect(foobar,0,0,200,200,"FF0000")
+```

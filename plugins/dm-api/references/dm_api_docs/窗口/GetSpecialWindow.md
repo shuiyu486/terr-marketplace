@@ -1,24 +1,23 @@
-函数简介:
+# GetSpecialWindow
 
-获取特殊窗口
+**分类:** 窗口
 
-函数原型:  
-  
-long GetSpecialWindow(flag)
+**签名:** `long GetSpecialWindow(flag)`
 
-参数定义:
+**描述:** 获取特殊窗口
 
-Flag 整形数: 取值定义如下
+## 参数
 
-0 : 获取桌面窗口
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| Flag | int | 取值定义如下 |
 
-1 : 获取任务栏窗口
+## 返回值
 
-返回值:
+- 以整型数表示的窗口句柄
 
-整形数:  
-以整型数表示的窗口句柄
+## 示例
 
-示例:
-
-desk\_win = dm.GetSpecialWindow(0)
+```vbs
+desk_win = dm.GetSpecialWindow(0)
+```

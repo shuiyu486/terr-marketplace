@@ -1,24 +1,28 @@
-函数简介:
+# CheckUAC
 
-检测当前系统是否有开启UAC(用户账户控制).
+**分类:** 系统
 
-函数原型:  
-  
-long CheckUAC()
+**签名:** `long CheckUAC()`
 
-参数定义:
+**描述:** 检测当前系统是否有开启UAC(用户账户控制).
 
-返回值:
+## 参数
 
-整形数:  
-0 : 没开启UAC
+*此函数无参数。*
 
-1 : 开启了UAC
+## 返回值
 
-示例:
+- 0 : 没开启UAC
+- 1 : 开启了UAC
 
-if dm.CheckUAC() = 1 then  
-    TracePrint "当前系统开启了用户账户控制"  
+## 示例
+
+```vbs
+if dm.CheckUAC() = 1 then
+TracePrint "当前系统开启了用户账户控制"
 end if
+```
 
-注: 只有WIN7 WIN8 VISTA WIN2008以及以上系统才有UAC设置
+## 注意
+
+- 只有WIN7 WIN8 VISTA WIN2008以及以上系统才有UAC设置

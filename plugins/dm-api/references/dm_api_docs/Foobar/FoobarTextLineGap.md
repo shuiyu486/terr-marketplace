@@ -1,25 +1,25 @@
-函数简介:
+# FoobarTextLineGap
 
-设置滚动文本区的文字行间距,默认是3
+**分类:** Foobar
 
-函数原型:  
-  
-long FoobarTextLineGap(hwnd,line\_gap)
+**签名:** `long FoobarTextLineGap(hwnd,line_gap)`
 
-参数定义:  
-  
-hwnd 整形数: 指定的Foobar窗口句柄,此句柄必须是通过CreateFoobarxxx创建而来
+**描述:** 设置滚动文本区的文字行间距,默认是3
 
-line\_gap 整形数: 文本行间距
+## 参数
 
-返回值:
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 指定的Foobar窗口句柄,此句柄必须是通过CreateFoobarxxx创建而来 |
+| line_gap | int | 文本行间距 |
 
-整形数:  
-0 : 失败
+## 返回值
 
-1 : 成功
+- 0 : 失败
+- 1 : 成功
 
-示例:
+## 示例
 
-dm\_ret =
-dm.FoobarTextLineGap(foobar,5)
+```vbs
+dm_ret = dm.FoobarTextLineGap(foobar,5)
+```

@@ -1,20 +1,24 @@
-函数简介:
+# RGB2BGR
 
-把RGB的颜色格式转换为BGR(按键格式)
+**分类:** 图色
 
-函数原型:  
-  
-string RGB2BGR(rgb\_color)
+**签名:** `string RGB2BGR(rgb_color)`
 
-参数定义:  
-  
-rgb\_color 字符串:rgb格式的颜色字符串
+**描述:** 把RGB的颜色格式转换为BGR(按键格式)
 
-返回值:
+## 参数
 
-字符串:  
-BGR格式的字符串
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| rgb_color | str |  |
+| rgb格式的颜色 | str |  |
 
-示例:
+## 返回值
 
-bgr\_color = dm.RGB2BGR(rgb\_color)
+- BGR格式的字符串
+
+## 示例
+
+```vbs
+bgr_color = dm.RGB2BGR(rgb_color)
+```

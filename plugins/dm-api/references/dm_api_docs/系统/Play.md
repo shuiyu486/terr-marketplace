@@ -1,28 +1,30 @@
-函数简介:
+# Play
 
-播放指定的MP3或者wav文件.
+**分类:** 系统
 
-函数原型:  
-  
-long Play(media\_file)
+**签名:** `long Play(media_file)`
 
-参数定义:
+**描述:** 播放指定的MP3或者wav文件.
 
-media\_file 字符串: 指定的音乐文件，可以采用文件名或者绝对路径的形式.
+## 参数
 
-返回值:
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| media_file | str | 指定的音乐文件，可以采用文件名或者绝对路径的形式. |
 
-整形数:  
-0 : 失败  
-非0表示当前播放的ID。可以用Stop来控制播放结束.
+## 返回值
 
-示例:
+- 0 : 失败 非0表示当前播放的ID。可以用Stop来控制播放结束.
 
-// test.mp3放于d:\test目录下  
-dm.SetPath "d:\test"  
+## 示例
+
+```vbs
+// test.mp3放于d:\test目录下
+dm.SetPath "d:\test"
 id = dm.Play("test.mp3")
 
-// 绝对路径  
-id = dm.Play("d:\test\test.mp3")  
-Delay 1000  
+// 绝对路径
+id = dm.Play("d:\test\test.mp3")
+Delay 1000
 dm.Stop id
+```

@@ -1,22 +1,25 @@
-函数简介:
+# SetAsmHwndAsProcessId
 
-使用AsmCall时的hwnd参数当作进程pid. 注:仅对AsmCall的模式1起作用,因为其它模式都需要窗口.
+**分类:** 汇编
 
-函数原型:  
-  
-long SetAsmHwndAsProcessId(enable)
+**签名:** `long SetAsmHwndAsProcessId(enable)`
 
-参数定义:
+**描述:** 使用AsmCall时的hwnd参数当作进程pid. 注:仅对AsmCall的模式1起作用,因为其它模式都需要窗口.
 
-enable 整形数: 0关闭,1打开
+## 参数
 
-返回值:
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| enable | int | 0关闭,1打开 |
 
-整形数:  
-0:失败  
-1:成功
+## 返回值
 
-示例:
+- 0:失败
+- 1:成功
 
-dm.SetAsmHwndAsProcessId 1  
+## 示例
+
+```vbs
+dm.SetAsmHwndAsProcessId 1
 dm.AsmCall pid,1
+```

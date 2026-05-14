@@ -1,20 +1,23 @@
-函数简介:
+# GetWindowTitle
 
-获取窗口的标题
+**分类:** 窗口
 
-函数原型:  
-  
-string GetWindowTitle(hwnd)
+**签名:** `string GetWindowTitle(hwnd)`
 
-参数定义:  
-  
-hwnd 整形数: 指定的窗口句柄
+**描述:** 获取窗口的标题
 
-返回值:
+## 参数
 
-字符串:  
-窗口的标题
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 指定的窗口句柄 |
 
-示例:
+## 返回值
 
+- 窗口的标题
+
+## 示例
+
+```vbs
 title = dm.GetWindowTitle(hwnd)
+```

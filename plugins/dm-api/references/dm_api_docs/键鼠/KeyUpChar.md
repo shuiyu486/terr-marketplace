@@ -1,25 +1,28 @@
-函数简介:
+# KeyUpChar
 
-弹起来虚拟键key\_str
+**分类:** 键鼠
 
-函数原型:  
-  
-long KeyUpChar(key\_str)
+**签名:** `long KeyUpChar(key_str)`
 
-参数定义:  
-  
-key\_str字符串**:** 字符串描述的键码. 大小写无所谓**. [点这里查看具体对应关系](键码对应表.htm).**
+**描述:** 弹起来虚拟键key_str
 
-返回值:
+## 参数
 
-整形数:  
-0:失败  
-1:成功
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| key_str | str | **:** 字符串描述的键码. 大小写无所谓**. [点这里查看具体对应关系](键码对应表.htm).** |
 
-示例:
+## 返回值
 
-dm.KeyUpChar "enter"  
-dm.KeyUpChar "1"  
-dm.KeyUpChar "F1"  
-dm.KeyUpChar "a"  
+- 0:失败
+- 1:成功
+
+## 示例
+
+```vbs
+dm.KeyUpChar "enter"
+dm.KeyUpChar "1"
+dm.KeyUpChar "F1"
+dm.KeyUpChar "a"
 dm.KeyUpChar "B"
+```

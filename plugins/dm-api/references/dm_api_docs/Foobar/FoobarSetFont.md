@@ -1,39 +1,27 @@
-函数简介:
+# FoobarSetFont
 
-设置指定Foobar窗口的字体
+**分类:** Foobar
 
-函数原型:  
-  
-long FoobarSetFont(hwnd,font\_name,size,flag)
+**签名:** `long FoobarSetFont(hwnd,font_name,size,flag)`
 
-参数定义:  
-  
-hwnd整形数: 指定的Foobar窗口句柄,此句柄必须是通过CreateFoobarxxx创建而来
+**描述:** 设置指定Foobar窗口的字体
 
-font\_name字符串: 系统字体名,注意,必须保证系统中有此字体
+## 参数
 
-size整形数: 字体大小
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 指定的Foobar窗口句柄,此句柄必须是通过CreateFoobarxxx创建而来 |
+| font_name | str | 系统字体名,注意,必须保证系统中有此字体 |
+| size | int | 字体大小 |
+| flag | int | 取值定义如下 |
 
-flag整形数: 取值定义如下
+## 返回值
 
-0 : 正常字体
+- 0 : 失败
+- 1 : 成功
 
-1 : 粗体
+## 示例
 
-2 : 斜体
-
-4 : 下划线
-
-文字可以是以上的组合 比如粗斜体就是1+2,斜体带下划线就是:2+4等.
-
-返回值:
-
-整形数:  
-0 : 失败
-
-1 : 成功
-
-示例:
-
-dm\_ret =
-dm.FoobarSetFont(foobar,"宋体",25,2+4)
+```vbs
+dm_ret = dm.FoobarSetFont(foobar,"宋体",25,2+4)
+```

@@ -1,25 +1,28 @@
-函数简介:
+# KeyDownChar
 
-按住指定的虚拟键码
+**分类:** 键鼠
 
-函数原型:  
-  
-long KeyDownChar(key\_str)
+**签名:** `long KeyDownChar(key_str)`
 
-参数定义:  
-  
-key\_str 字符串: 字符串描述的键码. 大小写无所谓. [点这里查看具体对应关系](键码对应表.htm).
+**描述:** 按住指定的虚拟键码
 
-返回值:
+## 参数
 
-整形数:  
-0:失败  
-1:成功
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| key_str | str | 字符串描述的键码. 大小写无所谓. [点这里查看具体对应关系](键码对应表.htm). |
 
-示例:
+## 返回值
 
-dm.KeyDownChar "enter"  
-dm.KeyDownChar "1"  
-dm.KeyDownChar "F1"  
-dm.KeyDownChar "a"  
+- 0:失败
+- 1:成功
+
+## 示例
+
+```vbs
+dm.KeyDownChar "enter"
+dm.KeyDownChar "1"
+dm.KeyDownChar "F1"
+dm.KeyDownChar "a"
 dm.KeyDownChar "B"
+```

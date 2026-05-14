@@ -1,29 +1,31 @@
-函数简介:
+# GetPicSize
 
-获取指定图片的尺寸，如果指定的图片已经被加入缓存，则从缓存中获取信息.  
-此接口也会把此图片加入缓存. （当图色缓存机制打开时,具体参考[EnablePicCache](../基本设置/EnablePicCache.htm)）
+**分类:** 图色
 
-函数原型:  
-  
-string GetPicSize(pic\_name)
+**签名:** `string GetPicSize(pic_name)`
 
-参数定义:  
-  
-pic\_name 字符串: 文件名 比如"1.bmp"
+**描述:** 获取指定图片的尺寸，如果指定的图片已经被加入缓存，则从缓存中获取信息.
 
-返回值:
+## 参数
 
-字符串:  
-形式如 "w,h" 比如"30,20"
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| pic_name | str | 文件名 比如"1.bmp" |
 
-示例:
+## 返回值
 
-PutAttachment "c:\test","\*.bmp"  
-dm\_ret = dm.SetPath("c:\test")
+- 形式如 "w,h" 比如"30,20"
 
-pic\_size = dm.GetPicSize("1.bmp")  
-pic\_size = split(pic\_size,",")  
-w = int(pic\_size(0))  
-h = int(pic\_size(1))  
-Trace "宽度:"&w  
+## 示例
+
+```vbs
+PutAttachment "c:\test","\*.bmp"
+dm_ret = dm.SetPath("c:\test")
+
+pic_size = dm.GetPicSize("1.bmp")
+pic_size = split(pic_size,",")
+w = int(pic_size(0))
+h = int(pic_size(1))
+Trace "宽度:"&w
 Trace "高度:"&h
+```

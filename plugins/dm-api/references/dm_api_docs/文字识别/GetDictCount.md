@@ -1,21 +1,24 @@
-函数简介:
+# GetDictCount
 
-获取指定的字库中的字符数量.
+**分类:** 文字识别
 
-函数原型:  
-  
-long GetDictCount(index)
+**签名:** `long GetDictCount(index)`
 
-参数定义:
+**描述:** 获取指定的字库中的字符数量.
 
-index 整形数: 字库序号(0-99)
+## 参数
 
-返回值:
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| index | int | 字库序号(0-99) |
 
-整形数:  
-字库数量
+## 返回值
 
-示例:
+- 字库数量
 
-count = dm.GetDictCount(0)  
+## 示例
+
+```vbs
+count = dm.GetDictCount(0)
 TracePrint "0号字库使用的字库数量是:"&count
+```

@@ -1,21 +1,24 @@
-函数简介:
+# SetRowGapNoDict
 
-高级用户使用,在不使用字库进行词组识别前,可设定文字的行距,默认行距是1
+**分类:** 文字识别
 
-函数原型:  
-  
-long SetRowGapNoDict(row\_gap)
+**签名:** `long SetRowGapNoDict(row_gap)`
 
-参数定义:  
-  
-row\_gap 整形数:文字行距
+**描述:** 高级用户使用,在不使用字库进行词组识别前,可设定文字的行距,默认行距是1
 
-返回值:
+## 参数
 
-整形数:  
-0:失败  
-1:成功
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| row_gap | int | 文字行距 |
 
-示例:
+## 返回值
 
-dm\_ret = dm.SetRowGapNoDict(3)
+- 0:失败
+- 1:成功
+
+## 示例
+
+```vbs
+dm_ret = dm.SetRowGapNoDict(3)
+```

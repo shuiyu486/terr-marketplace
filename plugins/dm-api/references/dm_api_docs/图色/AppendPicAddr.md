@@ -1,28 +1,28 @@
-函数简介:
+# AppendPicAddr
 
-对指定的数据地址和长度，组合成新的参数.
-FindPicMem FindPicMemE 以及FindPicMemEx专用
+**分类:** 图色
 
-函数原型:  
-  
-string AppendPicAddr(pic\_info,addr,size)
+**签名:** `string AppendPicAddr(pic_info,addr,size)`
 
-参数定义:
+**描述:** 对指定的数据地址和长度，组合成新的参数.
 
-pic\_info 字符串: 老的地址描述串
+## 参数
 
-addr 整形数: 数据地址
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| pic_info | str | 老的地址描述串 |
+| addr | int | 数据地址 |
+| size | int | 数据长度 |
 
-size 整形数: 数据长度
+## 返回值
 
-返回值:  
-  
-字符串:  
-新的地址描述串
+- 新的地址描述串
 
-示例:
+## 示例
 
-pic\_info = ""  
-pic\_info = dm.AppendPicAddr(pic\_info,12034,643)  
-pic\_info = dm.AppendPicAddr(pic\_info,328435,8935)  
-pic\_info = dm.AppendPicAddr(pic\_info,809234,789)
+```vbs
+pic_info = ""
+pic_info = dm.AppendPicAddr(pic_info,12034,643)
+pic_info = dm.AppendPicAddr(pic_info,328435,8935)
+pic_info = dm.AppendPicAddr(pic_info,809234,789)
+```

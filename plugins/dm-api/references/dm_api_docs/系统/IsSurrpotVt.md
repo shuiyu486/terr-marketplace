@@ -1,23 +1,26 @@
-函数简介:
+# IsSurrpotVt
 
-判断当前CPU是否支持vt,并且是否在bios中开启了vt. 仅支持intel的CPU.
+**分类:** 系统
 
-函数原型:  
-  
-long IsSurrpotVt()
+**签名:** `long IsSurrpotVt()`
 
-参数定义:
+**描述:** 判断当前CPU是否支持vt,并且是否在bios中开启了vt. 仅支持intel的CPU.
 
-返回值:
+## 参数
 
-整形数:  
-0 : 当前cpu不是intel的cpu,或者当前cpu不支持vt,或者bios中没打开vt.  
-1 : 支持
+*此函数无参数。*
 
-示例:
+## 返回值
 
-if dm.IsSurrpotVt() = 1 then  
-    MessageBox "当前系统可以开启vt功能"  
-else  
-    MessageBox "不支持vt"  
+- 0 : 当前cpu不是intel的cpu,或者当前cpu不支持vt,或者bios中没打开vt.
+- 1 : 支持
+
+## 示例
+
+```vbs
+if dm.IsSurrpotVt() = 1 then
+MessageBox "当前系统可以开启vt功能"
+else
+MessageBox "不支持vt"
 end if
+```

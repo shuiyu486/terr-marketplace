@@ -1,19 +1,21 @@
-函数简介:
+# GetFps
 
-获取绑定窗口的fps. (即时fps,不是平均fps).
+**分类:** 后台设置
 
-要想获取fps,那么图色模式必须是dx模式的其中一种.  比如dx.graphic.3d  dx.graphic.opengl等.
+**签名:** `long GetFps()`
 
-函数原型:  
-  
-long GetFps()
+**描述:** 获取绑定窗口的fps. (即时fps,不是平均fps).
 
-参数定义:
+## 参数
 
-返回值:
+*此函数无参数。*
 
-整形数: fps
+## 返回值
 
-示例:
+- 整形数: fps
 
+## 示例
+
+```vbs
 fps = dm.GetFps()
+```

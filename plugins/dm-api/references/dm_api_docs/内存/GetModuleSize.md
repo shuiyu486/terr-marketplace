@@ -1,25 +1,29 @@
-函数简介:
+# GetModuleSize
 
-根据指定的窗口句柄，来获取对应窗口句柄进程下的指定模块的大小
+**分类:** 内存
 
-函数原型:  
-  
-long GetModuleSize(hwnd,module)
+**签名:** `long GetModuleSize(hwnd,module)`
 
-参数定义:  
-  
-hwnd 整形数: 窗口句柄或者进程ID.  默认是窗口句柄. 如果要指定为进程ID,需要调用[SetMemoryHwndAsProcessId](SetMemoryHwndAsProcessId.htm).
+**描述:** 根据指定的窗口句柄，来获取对应窗口句柄进程下的指定模块的大小
 
-module 字符串: 模块名
+## 参数
 
-返回值:
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 窗口句柄或者进程ID.  默认是窗口句柄. 如果要指定为进程ID,需要调用[SetMemoryHwndAsProcessId](SetMemoryHwndAsProcessId.htm). |
+| module | str | 模块名 |
 
-整形数:  
-模块的大小
+## 返回值
 
-示例:
+- 模块的大小
 
-module\_size = dm.GetModuleSize(hwnd,"gdi32.dll")  
-MessageBox  module\_size
+## 示例
 
-注: DmGuard中的memory护盾也可以突破部分窗口内存保护，可以尝试使用。
+```vbs
+module_size = dm.GetModuleSize(hwnd,"gdi32.dll")
+MessageBox  module_size
+```
+
+## 注意
+
+- DmGuard中的memory护盾也可以突破部分窗口内存保护，可以尝试使用。

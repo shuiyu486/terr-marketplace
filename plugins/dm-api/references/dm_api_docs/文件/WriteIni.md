@@ -1,36 +1,36 @@
-函数简介:
+# WriteIni
 
-向指定的Ini写入信息. 
+**分类:** 文件
 
-函数原型:  
-  
-long WriteIni(section,key,value,file)
+**签名:** `long WriteIni(section,key,value,file)`
 
-参数定义:
+**描述:** 向指定的Ini写入信息.
 
-section 字符串: 小节名
+## 参数
 
-key 字符串: 变量名.
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| section | str | 小节名 |
+| key | str | 变量名. |
+| value | str | 变量内容 |
+| file | str | ini文件名. |
 
-value 字符串: 变量内容
+## 返回值
 
-file 字符串: ini文件名.
+- 0 : 失败
+- 1 : 成功
 
-返回值:  
-  
-整形数:  
-0 : 失败  
-1 : 成功
+## 示例
 
-示例:  
-  
-// 绝对路径  
+```vbs
+// 绝对路径
 dm.WriteIni
-"Global","var1","123","c:\test\_game\cfg.ini"  
-  
-// 相对路径  
-dm.SetPath "c:\test\_game"  
+"Global","var1","123","c:\test_game\cfg.ini"
+
+// 相对路径
+dm.SetPath "c:\test_game"
 dm.WriteIni
 "Global","var1","123","cfg.ini"
 
 注 : 此函数是多线程安全的. 多线程同时读写同个文件不会造成文件错乱.
+```

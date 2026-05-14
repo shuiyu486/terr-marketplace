@@ -1,25 +1,28 @@
-函数简介:
+# GetColorHSV
 
-获取(x,y)的HSV颜色,颜色返回格式"H.S.V"
+**分类:** 图色
 
-函数原型:  
-  
-string GetColorHSV(x,y)
+**签名:** `string GetColorHSV(x,y)`
 
-参数定义:  
-  
-x 整形数:X坐标  
-y 整形数:Y坐标
+**描述:** 获取(x,y)的HSV颜色,颜色返回格式"H.S.V"
 
-返回值:
+## 参数
 
-字符串:  
-颜色字符串
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| x | int | X坐标 |
+| y | int | Y坐标 |
 
-示例:
+## 返回值
 
-color = dm.GetColorHSV(30,30)  
-If color = "100.20.20" Then  
-      MessageBox
-"ok"  
+- 颜色字符串
+
+## 示例
+
+```vbs
+color = dm.GetColorHSV(30,30)
+If color = "100.20.20" Then
+MessageBox
+"ok"
 End If
+```

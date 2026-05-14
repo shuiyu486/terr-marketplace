@@ -1,22 +1,24 @@
-函数简介:
+# FoobarLock
 
-锁定指定的Foobar窗口,不能通过鼠标来移动
+**分类:** Foobar
 
-函数原型:  
-  
-long FoobarLock(hwnd)
+**签名:** `long FoobarLock(hwnd)`
 
-参数定义:  
-  
-hwnd整形数: 指定的Foobar窗口句柄,此句柄必须是通过CreateFoobarxxx创建而来
+**描述:** 锁定指定的Foobar窗口,不能通过鼠标来移动
 
-返回值:
+## 参数
 
-整形数:  
-0 : 失败
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 指定的Foobar窗口句柄,此句柄必须是通过CreateFoobarxxx创建而来 |
 
-1 : 成功
+## 返回值
 
-示例:
+- 0 : 失败
+- 1 : 成功
 
-dm\_ret = dm.FoobarLock(foobar)
+## 示例
+
+```vbs
+dm_ret = dm.FoobarLock(foobar)
+```

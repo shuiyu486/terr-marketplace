@@ -1,26 +1,29 @@
-函数简介:
+# IsFileExist
 
-判断指定文件是否存在.
+**分类:** 文件
 
-函数原型:  
-  
-long IsFileExist(file)
+**签名:** `long IsFileExist(file)`
 
-参数定义:
+**描述:** 判断指定文件是否存在.
 
-file 字符串: 文件名
+## 参数
 
-返回值:  
-  
-整形数:  
-0 : 不存在  
-1 : 存在
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| file | str | 文件名 |
 
-示例:  
-  
-// 绝对路径  
-TracePrint dm.IsFileExist("c:\123.txt")  
-  
-// 相对路径  
-dm.SetPath "c:\test\_game"  
+## 返回值
+
+- 0 : 不存在
+- 1 : 存在
+
+## 示例
+
+```vbs
+// 绝对路径
+TracePrint dm.IsFileExist("c:\123.txt")
+
+// 相对路径
+dm.SetPath "c:\test_game"
 TracePrint dm.IsFileExist("123.txt")
+```

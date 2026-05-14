@@ -1,21 +1,24 @@
-函数简介:
+# AiYoloUseModel
 
-需要先加载Ai模块. 切换当前使用的模型序号.用于AiYoloDetectXX等系列接口.
+**分类:** Ai
 
-函数原型:  
-  
-long AiYoloUseModel(index)
+**签名:** `long AiYoloUseModel(index)`
 
-参数定义:
+**描述:** 需要先加载Ai模块. 切换当前使用的模型序号.用于AiYoloDetectXX等系列接口.
 
-index 整形数**:** 模型的序号. 最多支持20个. 从0开始
+## 参数
 
-返回值:
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| index | int | **:** 模型的序号. 最多支持20个. 从0开始 |
 
-整形数:  
-1  表示成功  
-0  失败
+## 返回值
 
-示例:
+- 1  表示成功
+- 0  失败
 
+## 示例
+
+```vbs
 dm.AiYoloUseModel 0
+```

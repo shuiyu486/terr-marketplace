@@ -1,26 +1,29 @@
-函数简介:
+# SetEnumWindowDelay
 
-设置EnumWindow  EnumWindowByProcess  EnumWindowSuper
-FindWindow以及FindWindowEx的最长延时. 内部默认超时是10秒.
+**分类:** 基本设置
 
-函数原型:  
-  
-long SetEnumWindowDelay(delay)
+**签名:** `long SetEnumWindowDelay(delay)`
 
-参数定义:  
-  
-delay 整形数: 单位毫秒
+**描述:** 设置EnumWindow  EnumWindowByProcess  EnumWindowSuper
 
-返回值:
+## 参数
 
-整形数:  
-0: 失败
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| delay | int | 单位毫秒 |
 
-1: 成功
+## 返回值
 
-示例:
+- 0: 失败
+- 1: 成功
 
-dm.SetEnumWindowDelay 
+## 示例
+
+```vbs
+dm.SetEnumWindowDelay
 300000
+```
 
-注: 有些时候，窗口过多，并且窗口结构过于复杂，可能枚举的时间过长. 那么需要调用这个函数来延长时间。避免漏掉窗口.
+## 注意
+
+- 有些时候，窗口过多，并且窗口结构过于复杂，可能枚举的时间过长. 那么需要调用这个函数来延长时间。避免漏掉窗口.

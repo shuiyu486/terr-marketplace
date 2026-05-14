@@ -1,18 +1,21 @@
-函数简介:
+# GetClipboard
 
-获取剪贴板的内容
+**分类:** 系统
 
-函数原型:  
-  
-string GetClipboard()
+**签名:** `string GetClipboard()`
 
-参数定义:
+**描述:** 获取剪贴板的内容
 
-返回值:
+## 参数
 
-字符串:  
-以字符串表示的剪贴板内容
+*此函数无参数。*
 
-示例:
+## 返回值
 
+- 以字符串表示的剪贴板内容
+
+## 示例
+
+```vbs
 TracePrint dm.GetClipboard()
+```

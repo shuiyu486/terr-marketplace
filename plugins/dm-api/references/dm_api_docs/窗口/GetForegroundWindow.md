@@ -1,18 +1,21 @@
-函数简介:
+# GetForegroundWindow
 
-获取顶层活动窗口,可以获取到按键自带插件无法获取到的句柄
+**分类:** 窗口
 
-函数原型:  
-  
-long GetForegroundWindow()
+**签名:** `long GetForegroundWindow()`
 
-参数定义:
+**描述:** 获取顶层活动窗口,可以获取到按键自带插件无法获取到的句柄
 
-返回值:
+## 参数
 
-整形数:  
-返回整型表示的窗口句柄
+*此函数无参数。*
 
-示例:
+## 返回值
 
+- 返回整型表示的窗口句柄
+
+## 示例
+
+```vbs
 hwnd = dm.GetForegroundWindow()
+```

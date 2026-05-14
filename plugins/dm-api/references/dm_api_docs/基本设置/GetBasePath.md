@@ -1,19 +1,22 @@
-函数简介:
+# GetBasePath
 
-获取注册在系统中的dm.dll的路径.
+**分类:** 基本设置
 
-函数原型:  
-  
-string GetBasePath()
+**签名:** `string GetBasePath()`
 
-参数定义:
+**描述:** 获取注册在系统中的dm.dll的路径.
 
-返回值:
+## 参数
 
-字符串:  
-返回dm.dll所在路径
+*此函数无参数。*
 
-示例:  
-  
-base\_path = dm.GetBasePath()  
-MessageBox base\_path
+## 返回值
+
+- 返回dm.dll所在路径
+
+## 示例
+
+```vbs
+base_path = dm.GetBasePath()
+MessageBox base_path
+```

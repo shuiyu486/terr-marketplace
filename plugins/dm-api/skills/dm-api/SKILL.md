@@ -1,73 +1,116 @@
 ---
 name: dm-api
-description: 查询大漠插件(DaMao Plugin) API 文档。当用户询问大漠插件函数用法、按键精灵脚本编写、找图找色、后台绑定、内存读写、文字识别、窗口操作等相关问题时使用此 skill。即使用户没有明确提到"大漠"，只要涉及 dm.FindPic、dm.BindWindow、dm.Ocr 等以 dm. 开头的函数调用，或者询问如何在按键精灵中实现自动化操作（找图、找色、找字、后台、内存），都应触发此 skill。
-version: 1.0.0
+description: 查询大漠插件(DaMao Plugin) API 文档。当用户询问大漠插件函数用法、按键精灵/TC/易语言脚本编写、找图找色、后台绑定、内存读写、文字识别(OCR)、窗口操作、键鼠模拟、AI找图(YOLO)、Foobar透明窗口绘制、防护盾、汇编执行、答题系统等相关问题时使用此 skill。即使用户没有明确提到"大漠"，只要涉及 dm.FindPic、dm.BindWindow、dm.Ocr、dm.ReadInt、dm.AiFindPic 等以 dm. 开头的 COM 函数调用，或者询问如何在按键精灵/TC/易语言中实现自动化操作（找图、找色、找字、后台、内存、脚本），都应触发此 skill。也适用于用户询问多函数协作方案（如"后台找图点击"需要 BindWindow → FindPic → MoveTo → LeftClick 完整流程）。
+version: 1.1.0
 ---
 
 # 大漠插件 API 文档查询
 
-大漠插件是按键精灵等自动化工具的核心 COM 组件，提供键鼠模拟、图色查找、文字识别、窗口管理、内存读写等功能。
+大漠插件是按键精灵/TC/易语言等自动化工具的核心 COM 组件，提供键鼠模拟、图色查找、文字识别、窗口管理、内存读写等功能。
 
-## 文档位置
+## 快速定位函数
 
-所有 API 文档在本 skill 的 `references/dm_api_docs/` 目录下，按功能分类存放为 Markdown 文件。共 465 个函数文档，覆盖 17 个分类。
+**首选方案：查阅函数索引**
 
-**不要一次性读取所有文档**，按需查找即可。
+`references/functions_index.json` 包含全部 465 个函数的索引，每个条目有函数名、分类、签名、描述和参数列表。当你需要：
+- 快速确认某个函数是否存在
+- 了解有哪些相关函数（如"所有找图相关的函数"）
+- 按分类浏览函数列表
+
+用 Grep 搜索索引文件是最快的方式：
+```
+Grep pattern="FindPic" path="references/functions_index.json" output_mode="content"
+```
+
+**备选方案：直接搜索文档**
+
+当索引中没有你需要的信息时，再深入到具体分类目录的 .md 文件中搜索。
+
+## 文档格式说明
+
+每个函数的 .md 文档使用统一的结构化格式：
+
+```
+# 函数名
+**分类:** 分类名
+**签名:** `返回类型 函数名(参数列表)`
+**描述:** 一句话功能说明
+
+## 参数
+| 参数 | 类型 | 说明 |    ← 表格形式，可直接获取参数名/类型/含义
+
+## 返回值                              ← 枚举格式，列出所有可能的返回值及含义
+
+## 示例                                ← VBS 代码块
+## 注意                                ← （可选）使用注意事项
+```
+
+**阅读策略：** 大多数查询只需看"签名 + 描述 + 参数表"三部分即可回答。仅在用户需要代码示例或遇到错误时才读"示例"和"注意"。
 
 ## 查询流程
 
 ### 1. 查询特定函数
 
-用户提到具体函数名时（如 FindPic、BindWindow、Ocr）：
+用户提到具体函数名时（如 FindPic、BindWindow、Ocr、ReadInt）：
 
-1. 用 Grep 在 `references/dm_api_docs/` 中搜索函数名，定位到对应的 .md 文件
-2. Read 该文件获取完整文档
-3. 用中文向用户解释函数的用途、参数、返回值和示例
+1. **首选**：用 Grep 在 `references/functions_index.json` 中搜索函数名，获取分类和签名
+2. Read 对应分类目录下的 .md 文件（如 `references/dm_api_docs/图色/FindPic.md`）
+3. 解析结构化格式：签名行 → 参数表 → 返回值列表
+4. 用中文向用户解释函数用途、参数含义、返回值和典型示例
 
-注意：函数名可能出现在多个分类中（如 FindPic 在 图色/ 和 Ai/ 都有），优先读取与用户上下文最相关的分类。如果用户没有明确上下文，优先选择主要分类（图色/ > Ai/，键鼠/ > 后台设置/ 等）。
+### 2. 按功能类别浏览
 
-### 2. 按分类浏览
+用户询问某个功能领域时（如"有哪些找图函数"、"后台绑定相关函数"）：
 
-用户询问某个功能类别时（如"有哪些找图函数"）：
+1. 用 Grep 在 `references/functions_index.json` 的 `"categories"` 字段中查看该分类的函数列表
+2. 汇总函数名列表，按功能相似度排序推荐
+3. 如用户对某个具体函数感兴趣，再 Read 该函数的 .md 文档
 
-1. 根据下方分类表确定目录
-2. 用 Glob 列出 `references/dm_api_docs/<分类>/` 下的 .md 文件
-3. 汇总函数列表返回给用户
+### 3. 任务导向查询（多函数协作）
 
-### 3. 任务导向查询
+用户描述要实现的功能（如"后台找图点击"、"内存读取血量"）：
 
-用户描述要实现的功能（如"怎么在屏幕上找图"、"如何后台操作窗口"）：
+1. 分析任务涉及的功能域（窗口→绑定→图色→键鼠 / 窗口→绑定→内存）
+2. 在索引中确认相关函数的完整列表
+3. 按执行顺序逐个读取关键函数的文档
+4. 给出完整实现方案：推荐函数 → 参数配置要点 → 代码示例 → 常见陷阱
 
-1. 根据功能描述判断涉及哪些分类
-2. 读取相关函数的文档
-3. 给出完整的实现方案，包括推荐函数、参数配置和代码示例
+**典型协作模式：**
+- 后台找图点击：BindWindow/BindWindowEx → FindPic/FindPicEx → MoveTo → LeftClick
+- 后台找字点击：BindWindow → FindStr/FindStrFast → MoveTo → LeftClick
+- 后台截图识别：BindWindow → Capture → Ocr
+- 内存读取数值：BindWindow → SetMemoryHwndAsProcessId → ReadInt/ReadFloat
+- AI 找图：LoadAi/LoadAiMemory → AiFindPic/AiFindPicEx
 
 ## 分类速查表
 
-| 目录 | 功能 | 典型场景 |
-|------|------|----------|
-| `键鼠/` | 键盘鼠标模拟 | 点击、移动、按键、滚轮 |
-| `图色/` | 找图找色截图 | FindPic、FindColor、Capture |
-| `文字识别/` | OCR 文字识别 | FindStr、Ocr、字库管理 |
-| `窗口/` | 窗口查找与操作 | FindWindow、EnumWindow、SendString |
-| `后台设置/` | 后台绑定与配置 | BindWindow、UnBindWindow、模式设置 |
-| `内存/` | 进程内存读写 | ReadInt、WriteString、内存搜索 |
-| `文件/` | 文件与 INI 操作 | ReadFile、WriteIni |
-| `系统/` | 系统信息与控制 | GetTime、GetMachineCode、SetScreen |
-| `算法/` | 坐标与加密 | FindNearestPos、ExcludePos |
-| `Ai/` | AI 找图与 YOLO | AiFindPic、AiYoloDetectObjects |
-| `基本设置/` | 插件注册与路径 | Reg、SetPath、Ver |
-| `杂项/` | 输入法与临界区 | ActiveInputMethod、EnterCri |
-| `汇编/` | 汇编代码执行 | AsmAdd、AsmCall |
-| `答题/` | 答题系统 | FaqPost、FaqFetch |
-| `防护盾/` | 反检测保护 | DmGuard、DmGuardParams |
-| `常见问题/` | FAQ | 注册、绑定、兼容性问题 |
-| `Foobar/` | 透明窗口绘制 | CreateFoobarRect、FoobarDrawText |
+| 目录 | 功能 | 关键函数 | 典型场景 |
+|------|------|----------|----------|
+| `键鼠/` | 键盘鼠标模拟 | MoveTo, LeftClick, KeyPress | 点击、移动、拖拽、按键 |
+| `图色/` | 找图找色截图 | FindPic, FindColor, Capture | 图像匹配、颜色判断、截图 |
+| `文字识别/` | OCR 文字识别 | FindStr, Ocr, FindStrFast | 识别屏幕文字、找字 |
+| `窗口/` | 窗口查找与操作 | FindWindow, EnumWindow | 窗口句柄获取、枚举 |
+| `后台设置/` | 后台绑定与配置 | BindWindow, BindWindowEx | 后台自动化、绑定模式选择 |
+| `内存/` | 进程内存读写 | ReadInt, WriteString, FindData | 读取血量/蓝量、修改内存 |
+| `文件/` | 文件与 INI 操作 | ReadFile, WriteIni | 配置文件读写 |
+| `系统/` | 系统信息与控制 | GetTime, GetMachineCode | 延时、机器码、系统状态 |
+| `算法/` | 坐标与加密 | FindNearestPos, ExcludePos | 坐标过滤、智能寻路 |
+| `Ai/` | AI 找图与 YOLO | AiFindPic, AiYoloDetectObjects | AI 图像识别、YOLO 检测 |
+| `基本设置/` | 插件注册与路径 | Reg, SetPath, Ver | 注册插件、工作目录 |
+| `杂项/` | 输入法与临界区 | ActiveInputMethod, EnterCri | 输入法切换、临界区保护 |
+| `汇编/` | 汇编代码执行 | AsmAdd, AsmCall | 远程汇编注入 |
+| `答题/` | 答题系统 | FaqPost, FaqFetch | 远程答题、验证码识别 |
+| `防护盾/` | 反检测保护 | DmGuard, DmGuardParams | 反检测、隐藏保护 |
+| `常见问题/` | FAQ | 注册、绑定、兼容性 | 问题排查、兼容性 |
+| `Foobar/` | 透明窗口绘制 | CreateFoobarRect, FoobarDrawText | 透明信息叠加显示 |
 
 ## 输出规范
 
 - 始终用中文回复
-- 引用函数时标注分类来源，如 `图色/FindPic`
+- 引用函数时标注分类来源，如 `图色/FindPic`、`后台设置/BindWindow`
 - 提供代码示例时使用 VBS/按键精灵语法
-- 如果函数有多个模式或复杂参数，重点说明常用模式和注意事项
-- 当用户的问题涉及多个函数协作时（如"后台找图"需要先 BindWindow 再 FindPic），给出完整流程
+- 参数类型简写：int(整形数)、str(字符串)、double(双精度浮点数)、long(长整形数)、int*(变参指针/输出参数)
+- 当函数有多种模式或复杂参数时，重点说明常用模式和注意事项
+- 当用户的问题涉及多个函数协作时，给出完整执行流程和顺序
+- 涉及后台操作时，提醒用户必须先 BindWindow 再进行后续操作
+- 涉及内存操作时，提醒用户需要先绑定窗口并注意 SetMemoryHwndAsProcessId 的设置

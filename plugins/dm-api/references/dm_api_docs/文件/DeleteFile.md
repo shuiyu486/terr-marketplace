@@ -1,26 +1,29 @@
-函数简介:
+# DeleteFile
 
-删除文件.
+**分类:** 文件
 
-函数原型:  
-  
-long DeleteFile(file)
+**签名:** `long DeleteFile(file)`
 
-参数定义:
+**描述:** 删除文件.
 
-file 字符串: 文件名
+## 参数
 
-返回值:  
-  
-整形数:  
-0 : 失败  
-1 : 成功
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| file | str | 文件名 |
 
-示例:  
-  
-// 绝对路径  
-dm.DeleteFile "c:\123.txt"  
-  
-// 相对路径  
-dm.SetPath "c:\test\_game"  
+## 返回值
+
+- 0 : 失败
+- 1 : 成功
+
+## 示例
+
+```vbs
+// 绝对路径
+dm.DeleteFile "c:\123.txt"
+
+// 相对路径
+dm.SetPath "c:\test_game"
 dm.DeleteFile "123.txt"
+```

@@ -1,30 +1,28 @@
-函数简介:
+# FoobarTextRect
 
-设置指定Foobar窗口的滚动文本框范围,默认的文本框范围是窗口区域
+**分类:** Foobar
 
-函数原型:  
-  
-long FoobarTextRect(hwnd,x,y,w,h)
+**签名:** `long FoobarTextRect(hwnd,x,y,w,h)`
 
-参数定义:  
-  
-hwnd 整形数: 指定的Foobar窗口句柄,此句柄必须是通过CreateFoobarxxx创建而来
+**描述:** 设置指定Foobar窗口的滚动文本框范围,默认的文本框范围是窗口区域
 
-x 整形数: x坐标
+## 参数
 
-y 整形数: y坐标
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 指定的Foobar窗口句柄,此句柄必须是通过CreateFoobarxxx创建而来 |
+| x | int | x坐标 |
+| y | int | y坐标 |
+| w | int | 宽度 |
+| h | int | 高度 |
 
-w 整形数: 宽度
+## 返回值
 
-h 整形数: 高度
+- 0 : 失败
+- 1 : 成功
 
-返回值:
+## 示例
 
-整形数:  
-0 : 失败
-
-1 : 成功
-
-示例:
-
-dm\_ret = dm.FoobarTextRect(foobar,10,10,100,200)
+```vbs
+dm_ret = dm.FoobarTextRect(foobar,10,10,100,200)
+```

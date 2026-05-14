@@ -1,21 +1,24 @@
-函数简介:
+# GetCommandLine
 
-获取指定窗口所在进程的启动命令行
+**分类:** 内存
 
-函数原型:  
-  
-string GetCommandLine(hwnd)
+**签名:** `string GetCommandLine(hwnd)`
 
-参数定义:  
-  
-hwnd 整形数: 窗口句柄或者进程ID.  默认是窗口句柄. 如果要指定为进程ID,需要调用[SetMemoryHwndAsProcessId](SetMemoryHwndAsProcessId.htm).
+**描述:** 获取指定窗口所在进程的启动命令行
 
-返回值:
+## 参数
 
-字符串:  
-读取到的启动命令行
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 窗口句柄或者进程ID.  默认是窗口句柄. 如果要指定为进程ID,需要调用[SetMemoryHwndAsProcessId](SetMemoryHwndAsProcessId.htm). |
 
-示例:
+## 返回值
 
-command = dm.GetCommandLine(hwnd)  
+- 读取到的启动命令行
+
+## 示例
+
+```vbs
+command = dm.GetCommandLine(hwnd)
 MessageBox  command
+```

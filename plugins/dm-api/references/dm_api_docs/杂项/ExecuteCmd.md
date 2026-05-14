@@ -1,27 +1,28 @@
-函数简介:
+# ExecuteCmd
 
-执行指定的CMD指令,并返回cmd的输出结果.
+**分类:** 杂项
 
-函数原型:  
-  
-string ExecuteCmd(cmd,current\_dir,time\_out)
+**签名:** `string ExecuteCmd(cmd,current_dir,time_out)`
 
-参数定义:  
-  
-cmd字符串: 需要执行的CMD指令. 比如"dir"
+**描述:** 执行指定的CMD指令,并返回cmd的输出结果.
 
-current\_dir字符串: 执行此cmd命令时,所在目录. 如果为空，表示使用当前目录. 比如""或者"c:"
+## 参数
 
-time\_out 整形数: 超时设置,单位是毫秒. 0表示一直等待. 大于0表示等待指定的时间后强制结束,防止卡死.
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| cmd | str | 需要执行的CMD指令. 比如"dir" |
+| current_dir | str | 执行此cmd命令时,所在目录. 如果为空，表示使用当前目录. 比如""或者"c:" |
+| time_out | int | 超时设置,单位是毫秒. 0表示一直等待. 大于0表示等待指定的时间后强制结束,防止卡死. |
 
-返回值:
+## 返回值
 
-字符串: cmd指令的执行结果.  返回空字符串表示执行失败.
+- 字符串: cmd指令的执行结果.  返回空字符串表示执行失败.
 
-示例:
+## 示例
 
-TracePrint dm.ExecuteCmd("dir","",0)  
-TracePrint dm.ExecuteCmd("dir","c:",2000)  
+```vbs
+TracePrint dm.ExecuteCmd("dir","",0)
+TracePrint dm.ExecuteCmd("dir","c:",2000)
 TracePrint dm.ExecuteCmd("dir","c:\windows",3000)
 
 介于很多人不会用命令行操作CMD,这里写一份常用的adb命令来给大家参考.
@@ -35,12 +36,12 @@ TracePrint dm.ExecuteCmd("dir","c:\windows",3000)
 
 1. 查看adb的版本信息. 这个可以用于测试adb.exe是否是你想要的版本,如下:
 
-**adb\_version
+**adb_version
 = dm.ExecuteCmd("adb.exe
 version","d:\dnplayer2",0)**
 
 **TracePrint
-adb\_version**
+adb_version**
 
 比如我的机器的返回值是以下内容
 
@@ -49,11 +50,11 @@ version 1.0.31
 
 2. 接下来我们开始对模拟器里的东东做一些操作.比如安装APK，拷贝文件之类的。 我们首先要先列出当前系统的所有device(可以是模拟器，也可以是用USB连接的手机),例子如下:
 
-**adb\_devices
+**adb_devices
 = dm.ExecuteCmd("adb.exe devices","d:\dnplayer2",0)**
 
 **TracePrint
-adb\_devices**
+adb_devices**
 
 比如我的机器的返回值如下:(我打开了2个模拟器)
 
@@ -70,12 +71,12 @@ List of devices attached
 3. 接下来我们来对127.0.0.1:5555这个device来查看下安装的应用,例子如下:(这里我们要用到adb
 shell命令,顾名思义，这个shell的意思就是去device上去执行命令,这里的语法都和linux的语法一样)
 
-**adb\_device\_1\_apps
+**adb_device_1_apps
 = dm.ExecuteCmd("adb.exe -s 127.0.0.1:5555 shell pm list
 packages","d:\dnplayer2",0)**
 
 **TracePrint
-adb\_device\_1\_apps**
+adb_device_1_apps**
 
 这里输出的内容比较多，我就不列举了
 
@@ -95,8 +96,9 @@ devices中有列出来.
 -s 127.0.0.1:5555 uninstall
 com.qihoo360.mobilesafe","d:\dnplayer2",0)**
 
-好到此为止，如何操作adb去控制模拟器，就说到这里。 
+好到此为止，如何操作adb去控制模拟器，就说到这里。
 
 这里贴一份常用详细的adb中文说明给大家参考
 
 https://blog.csdn.net/u010375364/article/details/52344120
+```

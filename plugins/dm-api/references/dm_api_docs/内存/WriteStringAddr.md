@@ -1,37 +1,34 @@
-函数简介:
+# WriteStringAddr
 
-对指定地址写入字符串，可以是Ascii字符串或者是Unicode字符串
+**分类:** 内存
 
-函数原型:  
-  
-long WriteStringAddr(hwnd,addr,type,v)
+**签名:** `long WriteStringAddr(hwnd,addr,type,v)`
 
-参数定义:  
-  
-hwnd 整形数: 窗口句柄或者进程ID.  默认是窗口句柄. 如果要指定为进程ID,需要调用[SetMemoryHwndAsProcessId](SetMemoryHwndAsProcessId.htm).
+**描述:** 对指定地址写入字符串，可以是Ascii字符串或者是Unicode字符串
 
-addr长整形数: 地址
+## 参数
 
-type 整形数: 字符串类型,取值如下
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 窗口句柄或者进程ID.  默认是窗口句柄. 如果要指定为进程ID,需要调用[SetMemoryHwndAsProcessId](SetMemoryHwndAsProcessId.htm). |
+| addr长 | int | 地址 |
+| type | int | 字符串类型,取值如下 |
+| Ascii | str |  |
+| Unicode | str |  |
+| UTF8 | str |  |
+| v | str | 字符串 |
 
-      0 : Ascii字符串
+## 返回值
 
-      1 : Unicode字符串
+- 0: 失败
+- 1: 成功
 
-      2 : UTF8字符串
+## 示例
 
-v 字符串: 字符串
+```vbs
+dm_ret = dm.WriteStringAddr(hwnd,123456 ,0,"我是来测试的")
+```
 
-返回值:
+## 注意
 
-整形数:  
-0: 失败
-
-1: 成功
-
-示例:
-
-dm\_ret =
-dm.WriteStringAddr(hwnd,123456 ,0,"我是来测试的")
-
-注: DmGuard中的memory护盾也可以突破部分窗口内存保护，可以尝试使用。
+- DmGuard中的memory护盾也可以突破部分窗口内存保护，可以尝试使用。

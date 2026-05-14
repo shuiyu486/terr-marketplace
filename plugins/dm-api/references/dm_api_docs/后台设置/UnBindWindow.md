@@ -1,22 +1,24 @@
-函数简介:
+# UnBindWindow
 
-解除绑定窗口,并释放系统资源.一般在OnScriptExit调用
+**分类:** 后台设置
 
-函数原型:  
-  
-long UnBindWindow()
+**签名:** `long UnBindWindow()`
 
-参数定义:
+**描述:** 解除绑定窗口,并释放系统资源.一般在OnScriptExit调用
 
-返回值:
+## 参数
 
-整形数:  
-0: 失败  
-1: 成功
+*此函数无参数。*
 
-示例:
+## 返回值
 
-Sub OnScriptExit()  
-    dm\_ret =
-dm.UnBindWindow()   
+- 0: 失败
+- 1: 成功
+
+## 示例
+
+```vbs
+Sub OnScriptExit()
+dm_ret = dm.UnBindWindow()
 End Sub
+```

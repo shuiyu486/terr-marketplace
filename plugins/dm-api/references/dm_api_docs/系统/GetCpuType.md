@@ -1,26 +1,27 @@
-函数简介:
+# GetCpuType
 
-获取当前CPU类型(intel或者amd).
+**分类:** 系统
 
-函数原型:  
-  
-long GetCpuType()
+**签名:** `long GetCpuType()`
 
-参数定义:
+**描述:** 获取当前CPU类型(intel或者amd).
 
-返回值:  
-  
-整形数:  
-0 : 未知
+## 参数
 
-1 : Intel cpu
+*此函数无参数。*
 
-2 : AMD cpu
+## 返回值
 
-示例:
+- 0 : 未知
+- 1 : Intel cpu
+- 2 : AMD cpu
 
-if dm.GetCpuType() <> 1 then  
-    MessageBox "当前系统CPU不是intel
-cpu,不支持!"  
-    EndScript  
+## 示例
+
+```vbs
+if dm.GetCpuType() <> 1 then
+MessageBox "当前系统CPU不是intel
+cpu,不支持!"
+EndScript
 end if
+```

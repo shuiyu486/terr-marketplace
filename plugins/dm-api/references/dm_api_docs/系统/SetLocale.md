@@ -1,23 +1,25 @@
-函数简介:
+# SetLocale
 
-设置当前系统的非UNICOD字符集. 会弹出一个字符集选择列表,用户自己选择到简体中文即可.
+**分类:** 系统
 
-函数原型:  
-  
-long SetLocale()
+**签名:** `long SetLocale()`
 
-参数定义:
+**描述:** 设置当前系统的非UNICOD字符集. 会弹出一个字符集选择列表,用户自己选择到简体中文即可.
 
-返回值:  
-  
-整形数:  
-0 : 失败
+## 参数
 
-1 : 成功
+*此函数无参数。*
 
-示例:
+## 返回值
 
-if dm.GetLocale() = 0 then  
-    dm.SetLocale()  
-    dm.ExitOs(2)  
+- 0 : 失败
+- 1 : 成功
+
+## 示例
+
+```vbs
+if dm.GetLocale() = 0 then
+dm.SetLocale()
+dm.ExitOs(2)
 end if
+```

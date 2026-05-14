@@ -1,21 +1,24 @@
-函数简介:
+# GetWindowProcessPath
 
-获取指定窗口所在的进程的exe文件全路径.
+**分类:** 窗口
 
-函数原型:  
-  
-string GetWindowProcessPath(hwnd)
+**签名:** `string GetWindowProcessPath(hwnd)`
 
-参数定义:
+**描述:** 获取指定窗口所在的进程的exe文件全路径.
 
-hwnd 整形数: 窗口句柄
+## 参数
 
-返回值:
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 窗口句柄 |
 
-字符串:  
-返回字符串表示的是exe全路径名
+## 返回值
 
-示例:
+- 返回字符串表示的是exe全路径名
 
-process\_path =
+## 示例
+
+```vbs
+process_path =
 dm.GetWindowProcessPath(hwnd)
+```

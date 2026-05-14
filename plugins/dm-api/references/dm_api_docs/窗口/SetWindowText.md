@@ -1,24 +1,25 @@
-函数简介:
+# SetWindowText
 
-设置窗口的标题
+**分类:** 窗口
 
-函数原型:  
-  
-long SetWindowText(hwnd,title)
+**签名:** `long SetWindowText(hwnd,title)`
 
-参数定义:  
-  
-hwnd 整形数: 指定的窗口句柄  
-  
-titie 字符串: 标题
+**描述:** 设置窗口的标题
 
-返回值:
+## 参数
 
-整形数:  
-0: 失败  
-1: 成功
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 指定的窗口句柄 |
+| titie | str | 标题 |
 
-示例:
+## 返回值
 
-dm\_ret =
-dm.SetWindowText(hwnd,"test")
+- 0: 失败
+- 1: 成功
+
+## 示例
+
+```vbs
+dm_ret = dm.SetWindowText(hwnd,"test")
+```

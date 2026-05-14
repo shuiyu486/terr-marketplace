@@ -1,28 +1,30 @@
-函数简介:
+# WriteFile
 
-向指定文件追加字符串.
+**分类:** 文件
 
-函数原型:  
-  
-long WriteFile(file,content)
+**签名:** `long WriteFile(file,content)`
 
-参数定义:
+**描述:** 向指定文件追加字符串.
 
-file 字符串: 文件
+## 参数
 
-content 字符串: 写入的字符串.
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| file | str | 文件 |
+| content | str | 写入的字符串. |
 
-返回值:  
-  
-整形数:  
-0 : 失败  
-1 : 成功
+## 返回值
 
-示例:  
-  
-// 绝对路径  
-dm.WriteFile "c:\123.txt","哈哈哈"  
-  
-// 相对路径  
-dm.SetPath "c:\test\_game"  
+- 0 : 失败
+- 1 : 成功
+
+## 示例
+
+```vbs
+// 绝对路径
+dm.WriteFile "c:\123.txt","哈哈哈"
+
+// 相对路径
+dm.SetPath "c:\test_game"
 dm.WriteFile "123.txt","哈哈哈"
+```

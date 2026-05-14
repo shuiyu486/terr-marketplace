@@ -1,26 +1,27 @@
-函数简介:
+# ScreenToClient
 
-把屏幕坐标转换为窗口坐标
+**分类:** 窗口
 
-函数原型:  
-  
-long ScreenToClient(hwnd,x,y)
+**签名:** `long ScreenToClient(hwnd,x,y)`
 
-参数定义:  
-  
-hwnd 整形数: 指定的窗口句柄  
-  
-x 变参指针: 屏幕X坐标
+**描述:** 把屏幕坐标转换为窗口坐标
 
-y 变参指针: 屏幕Y坐标
+## 参数
 
-返回值:
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 指定的窗口句柄 |
+| x | int* | 屏幕X坐标 |
+| y | int* | 屏幕Y坐标 |
 
-整形数:  
-0: 失败  
-1: 成功
+## 返回值
 
-示例:
+- 0: 失败
+- 1: 成功
 
-x = 100:y = 100   
-dm\_ret = dm.ScreenToClient(hwnd,x,y)
+## 示例
+
+```vbs
+x = 100:y = 100
+dm_ret = dm.ScreenToClient(hwnd,x,y)
+```

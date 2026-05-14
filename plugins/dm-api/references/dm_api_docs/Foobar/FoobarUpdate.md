@@ -1,24 +1,26 @@
-函数简介:
+# FoobarUpdate
 
-刷新指定的Foobar窗口
+**分类:** Foobar
 
-函数原型:  
-  
-long FoobarUpdate(hwnd)
+**签名:** `long FoobarUpdate(hwnd)`
 
-参数定义:  
-  
-hwnd 整形数: 指定的Foobar窗口,注意,此句柄必须是通过CreateFoobarxxxx系列函数创建出来的
+**描述:** 刷新指定的Foobar窗口
 
-返回值:
+## 参数
 
-整形数:  
-0 : 失败
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 指定的Foobar窗口,注意,此句柄必须是通过CreateFoobarxxxx系列函数创建出来的 |
 
-1 : 成功
+## 返回值
 
-示例:
+- 0 : 失败
+- 1 : 成功
 
-dm\_ret = dm.FoobarUpdate(foobar)
+## 示例
+
+```vbs
+dm_ret = dm.FoobarUpdate(foobar)
 
 注意： 所有绘制完成以后,必须通过调用此函数来刷新窗口,否则窗口内容不会改变.
+```

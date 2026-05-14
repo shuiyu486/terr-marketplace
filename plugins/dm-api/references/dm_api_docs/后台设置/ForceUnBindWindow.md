@@ -1,26 +1,31 @@
-函数简介:
+# ForceUnBindWindow
 
-强制解除绑定窗口,并释放系统资源.  
+**分类:** 后台设置
 
-函数原型:  
-  
-long ForceUnBindWindow(hwnd)
+**签名:** `long ForceUnBindWindow(hwnd)`
 
-参数定义:
+**描述:** 强制解除绑定窗口,并释放系统资源.
 
-hwnd 整形数: 需要强制解除绑定的窗口句柄.
+## 参数
 
-返回值:
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 需要强制解除绑定的窗口句柄. |
 
-整形数:  
-0: 失败  
-1: 成功
+## 返回值
 
-示例:
+- 0: 失败
+- 1: 成功
 
-dm\_ret = dm.ForceUnBindWindow(hwnd)
+## 示例
 
-注: 此接口一般用在BindWindow和BindWindowEx中，使用了模式1 3 5 7或者属性dx.public.hide.dll后，在线程或者进程结束后，没有正确调用UnBindWindow而导致下次绑定无法成功时，可以先调用这个函数强制解除绑定，并释放资源，再进行绑定.  
-此接口不可替代UnBindWindow. 只是用在非常时刻. 切记.  
-一般情况下可以无条件的在BindWindow或者BindWindowEx之前调用一次此函数。保证此刻窗口处于非绑定状态.  
-另外，需要注意的是,此函数只可以强制解绑在同进程绑定的窗口.  不可在不同的进程解绑别的进程绑定的窗口.(会产生异常)
+```vbs
+dm_ret = dm.ForceUnBindWindow(hwnd)
+```
+
+## 注意
+
+- 此接口一般用在BindWindow和BindWindowEx中，使用了模式1 3 5 7或者属性dx.public.hide.dll后，在线程或者进程结束后，没有正确调用UnBindWindow而导致下次绑定无法成功时，可以先调用这个函数强制解除绑定，并释放资源，再进行绑定.
+- 此接口不可替代UnBindWindow. 只是用在非常时刻. 切记.
+- 一般情况下可以无条件的在BindWindow或者BindWindowEx之前调用一次此函数。保证此刻窗口处于非绑定状态.
+- 另外，需要注意的是,此函数只可以强制解绑在同进程绑定的窗口.  不可在不同的进程解绑别的进程绑定的窗口.(会产生异常)

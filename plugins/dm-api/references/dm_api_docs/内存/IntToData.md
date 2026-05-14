@@ -1,30 +1,25 @@
-函数简介:
+# IntToData
 
-把整数转换成二进制形式.
+**分类:** 内存
 
-函数原型:  
-  
-string IntToData(value,type)
+**签名:** `string IntToData(value,type)`
 
-参数定义:  
-  
-value 长整形数: 需要转化的整型数  
-type  整形数: 取值如下:  
-           
-0: 4字节整形数 (一般都选这个)  
-           
-1: 2字节整形数  
-           
-2: 1字节整形数  
-           
-3: 8字节整形数
+**描述:** 把整数转换成二进制形式.
 
-返回值:
+## 参数
 
-字符串:  
-字符串形式表达的二进制数据. 可以用于WriteData FindData FindDataEx等接口.
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| value | long | 需要转化的整型数 |
+| type | int | 取值如下: |
 
-示例:
+## 返回值
 
-int\_data =  dm.IntToData(&H12345678,0)  
-dm\_ret = dm.FindData(hwnd,"00000000-7fffffff",int\_data)
+- 字符串形式表达的二进制数据. 可以用于WriteData FindData FindDataEx等接口.
+
+## 示例
+
+```vbs
+int_data =  dm.IntToData(&H12345678,0)
+dm_ret = dm.FindData(hwnd,"00000000-7fffffff",int_data)
+```

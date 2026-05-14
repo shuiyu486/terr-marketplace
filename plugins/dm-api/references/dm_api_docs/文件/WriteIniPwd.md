@@ -1,40 +1,39 @@
-函数简介:
+# WriteIniPwd
 
-向指定的Ini写入信息.支持加密文件
+**分类:** 文件
 
-函数原型:  
-  
-long WriteIniPwd(section,key,value,file,pwd)
+**签名:** `long WriteIniPwd(section,key,value,file,pwd)`
 
-参数定义:
+**描述:** 向指定的Ini写入信息.支持加密文件
 
-section 字符串: 小节名
+## 参数
 
-key 字符串: 变量名.
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| section | str | 小节名 |
+| key | str | 变量名. |
+| value | str | 变量内容 |
+| file | str | ini文件名. |
+| pwd | str | 密码. |
 
-value 字符串: 变量内容
+## 返回值
 
-file 字符串: ini文件名.
+- 0 : 失败
+- 1 : 成功
 
-pwd 字符串: 密码.
+## 示例
 
-返回值:  
-  
-整形数:  
-0 : 失败  
-1 : 成功
-
-示例:  
-  
-// 绝对路径  
+```vbs
+// 绝对路径
 dm.WriteIniPwd
-"Global","var1","123","c:\test\_game\cfg.ini","1234"  
-  
-// 相对路径  
-dm.SetPath "c:\test\_game"  
+"Global","var1","123","c:\test_game\cfg.ini","1234"
+
+// 相对路径
+dm.SetPath "c:\test_game"
 dm.WriteIniPwd
 "Global","var1","123","cfg.ini","1234"
 
 注 : 此函数是多线程安全的. 多线程同时读写同个文件不会造成文件错乱. 但是多进程是不安全的,要避免多进程同时使用此接口,否则会造成数据错乱.
 
 如果此文件没加密，调用此函数会自动加密.
+```

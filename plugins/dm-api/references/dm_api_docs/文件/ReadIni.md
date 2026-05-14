@@ -1,32 +1,33 @@
-函数简介:
+# ReadIni
 
-从Ini中读取指定信息.
+**分类:** 文件
 
-函数原型:  
-  
-string ReadIni(section,key,file)
+**签名:** `string ReadIni(section,key,file)`
 
-参数定义:
+**描述:** 从Ini中读取指定信息.
 
-section 字符串: 小节名
+## 参数
 
-key 字符串: 变量名.
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| section | str | 小节名 |
+| key | str | 变量名. |
+| file | str | ini文件名. |
 
-file 字符串: ini文件名.
+## 返回值
 
-返回值:  
-  
-字符串:  
-字符串形式表达的读取到的内容
+- 字符串形式表达的读取到的内容
 
-示例:  
-  
-// 绝对路径  
+## 示例
+
+```vbs
+// 绝对路径
 Text =
-dm.ReadIni("Global","var1","c:\test\_game\cfg.ini")  
-  
-// 相对路径  
-dm.SetPath "c:\test\_game"  
+dm.ReadIni("Global","var1","c:\test_game\cfg.ini")
+
+// 相对路径
+dm.SetPath "c:\test_game"
 Text = dm.ReadIni("Global","var1","cfg.ini")
 
 注 : 此函数是多线程安全的. 多线程同时读写同个文件不会造成文件错乱.
+```

@@ -1,28 +1,29 @@
-函数简介:
+# DownloadFile
 
-从internet上下载一个文件.
+**分类:** 文件
 
-函数原型:  
-  
-long DownloadFile(url,save\_file,timeout)
+**签名:** `long DownloadFile(url,save_file,timeout)`
 
-参数定义:
+**描述:** 从internet上下载一个文件.
 
-url 字符串: 下载的url地址.
+## 参数
 
-save\_file 字符串: 要保存的文件名.
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| url | str | 下载的url地址. |
+| save_file | str | 要保存的文件名. |
+| timeout | int | 连接超时时间，单位是毫秒. |
 
-timeout整形数: 连接超时时间，单位是毫秒.
+## 返回值
 
-返回值:  
-  
-整形数:  
-1 : 成功  
--1 : 网络连接失败  
--2 : 写入文件失败
+- 1 : 成功
+- -1 : 网络连接失败
+- -2 : 写入文件失败
 
-示例:  
-  
+## 示例
+
+```vbs
 dm.DownloadFile "www.sohu.com","sohu.html",3000
 
 dm.DownloadFile "http://www.sohu.com","d:\sohu.html",3000
+```

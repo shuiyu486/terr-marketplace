@@ -1,22 +1,25 @@
-函数简介:
+# SendStringIme
 
-向绑定的窗口发送文本数据.必须配合dx.public.input.ime属性.
+**分类:** 窗口
 
-函数原型:  
-  
-long SendStringIme(str)
+**签名:** `long SendStringIme(str)`
 
-参数定义:  
-  
-str 字符串: 发送的文本数据
+**描述:** 向绑定的窗口发送文本数据.必须配合dx.public.input.ime属性.
 
-返回值:
+## 参数
 
-整形数:  
-0: 失败  
-1: 成功
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| str | str | 发送的文本数据 |
 
-示例:
+## 返回值
 
-dm\_ret = dm.BindWindowEx(hwnd,"normal","normal","normal","dx.public.input.ime",0)  
+- 0: 失败
+- 1: 成功
+
+## 示例
+
+```vbs
+dm_ret = dm.BindWindowEx(hwnd,"normal","normal","normal","dx.public.input.ime",0)
 dm.SendStringIme "我是来测试的"
+```

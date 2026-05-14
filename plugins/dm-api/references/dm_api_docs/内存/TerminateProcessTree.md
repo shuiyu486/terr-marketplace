@@ -1,26 +1,30 @@
-函数简介:
+# TerminateProcessTree
 
-根据指定的PID，强制结束进程以及此进程创建的所有子进程.
+**分类:** 内存
 
-函数原型:  
-  
-long TerminateProcessTree(pid)
+**签名:** `long TerminateProcessTree(pid)`
 
-参数定义:  
-  
-pid 整形数:进程ID.
+**描述:** 根据指定的PID，强制结束进程以及此进程创建的所有子进程.
 
-返回值:
+## 参数
 
-整形数:  
-0 : 失败
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| pid | int | 进程ID. |
 
-1 : 成功
+## 返回值
 
-示例:
+- 0 : 失败
+- 1 : 成功
 
-hwnd = dm.GetMousePointWindow()  
-pid = dm.GetWindowProcessId(hwnd)  
+## 示例
+
+```vbs
+hwnd = dm.GetMousePointWindow()
+pid = dm.GetWindowProcessId(hwnd)
 dm.TerminateProcessTree pid
+```
 
-注:另外DmGuard中的memory护盾也可以突破部分窗口内存保护，可以尝试使用。
+## 注意
+
+- 另外DmGuard中的memory护盾也可以突破部分窗口内存保护，可以尝试使用。

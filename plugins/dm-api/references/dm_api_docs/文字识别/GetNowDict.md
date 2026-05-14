@@ -1,19 +1,22 @@
-函数简介:
+# GetNowDict
 
-获取当前使用的字库序号(0-99)
+**分类:** 文字识别
 
-函数原型:  
-  
-long GetNowDict()
+**签名:** `long GetNowDict()`
 
-参数定义:
+**描述:** 获取当前使用的字库序号(0-99)
 
-返回值:
+## 参数
 
-整形数:  
-字库序号(0-99)
+*此函数无参数。*
 
-示例:
+## 返回值
 
-index = dm.GetNowDict()  
+- 字库序号(0-99)
+
+## 示例
+
+```vbs
+index = dm.GetNowDict()
 TracePrint "当前使用的字库序号是:"&index
+```

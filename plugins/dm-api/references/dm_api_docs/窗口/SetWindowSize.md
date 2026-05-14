@@ -1,26 +1,26 @@
-函数简介:
+# SetWindowSize
 
-设置窗口的大小
+**分类:** 窗口
 
-函数原型:  
-  
-long SetWindowSize(hwnd,width,height)
+**签名:** `long SetWindowSize(hwnd,width,height)`
 
-参数定义:  
-  
-hwnd 整形数: 指定的窗口句柄  
-  
-width 整形数: 宽度
+**描述:** 设置窗口的大小
 
-height 整形数: 高度
+## 参数
 
-返回值:
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 指定的窗口句柄 |
+| width | int | 宽度 |
+| height | int | 高度 |
 
-整形数:  
-0: 失败  
-1: 成功
+## 返回值
 
-示例:
+- 0: 失败
+- 1: 成功
 
-dm\_ret =
-dm.SetWindowSize(hwnd,300,400)
+## 示例
+
+```vbs
+dm_ret = dm.SetWindowSize(hwnd,300,400)
+```

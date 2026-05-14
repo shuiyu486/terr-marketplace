@@ -1,21 +1,24 @@
-函数简介:
+# DoubleToData
 
-把双精度浮点数转换成二进制形式.
+**分类:** 内存
 
-函数原型:  
-  
-string DoubleToData(value)
+**签名:** `string DoubleToData(value)`
 
-参数定义:  
-  
-value 双精度浮点数: 需要转化的双精度浮点数
+**描述:** 把双精度浮点数转换成二进制形式.
 
-返回值:
+## 参数
 
-字符串:  
-字符串形式表达的二进制数据. 可以用于WriteData FindData FindDataEx等接口.
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| value | double | 需要转化的双精度浮点数 |
 
-示例:
+## 返回值
 
-double\_data =  dm.DoubleToData(1.24)  
-dm\_ret = dm.FindData(hwnd,"00000000-7fffffff",double\_data)
+- 字符串形式表达的二进制数据. 可以用于WriteData FindData FindDataEx等接口.
+
+## 示例
+
+```vbs
+double_data =  dm.DoubleToData(1.24)
+dm_ret = dm.FindData(hwnd,"00000000-7fffffff",double_data)
+```

@@ -1,18 +1,21 @@
-函数简介:
+# GetForegroundFocus
 
-获取顶层活动窗口中具有输入焦点的窗口句柄
+**分类:** 窗口
 
-函数原型:  
-  
-long GetForegroundFocus()
+**签名:** `long GetForegroundFocus()`
 
-参数定义:
+**描述:** 获取顶层活动窗口中具有输入焦点的窗口句柄
 
-返回值:
+## 参数
 
-整形数:  
-返回整型表示的窗口句柄
+*此函数无参数。*
 
-示例:
+## 返回值
 
+- 返回整型表示的窗口句柄
+
+## 示例
+
+```vbs
 hwnd = dm.GetForegroundFocus()
+```

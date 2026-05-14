@@ -1,21 +1,24 @@
-函数简介:
+# SetColGapNoDict
 
-高级用户使用,在不使用字库进行词组识别前,可设定文字的列距,默认列距是1
+**分类:** 文字识别
 
-函数原型:  
-  
-long SetColGapNoDict(col\_gap)
+**签名:** `long SetColGapNoDict(col_gap)`
 
-参数定义:  
-  
-col\_gap 整形数:文字列距
+**描述:** 高级用户使用,在不使用字库进行词组识别前,可设定文字的列距,默认列距是1
 
-返回值:
+## 参数
 
-整形数:  
-0:失败  
-1:成功
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| col_gap | int | 文字列距 |
 
-示例:
+## 返回值
 
-dm\_ret = dm.SetColGapNoDict(3)
+- 0:失败
+- 1:成功
+
+## 示例
+
+```vbs
+dm_ret = dm.SetColGapNoDict(3)
+```

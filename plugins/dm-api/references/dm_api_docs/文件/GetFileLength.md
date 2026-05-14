@@ -1,25 +1,28 @@
-函数简介:
+# GetFileLength
 
-获取指定的文件长度.
+**分类:** 文件
 
-函数原型:  
-  
-long GetFileLength(file)
+**签名:** `long GetFileLength(file)`
 
-参数定义:
+**描述:** 获取指定的文件长度.
 
-file 字符串: 文件名
+## 参数
 
-返回值:  
-  
-整形数:  
-文件长度(字节数)
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| file | str | 文件名 |
 
-示例:  
-  
-// 绝对路径  
-TracePrint dm.GetFileLength("c:\123.txt")  
-  
-// 相对路径  
-dm.SetPath "c:\test\_game"  
+## 返回值
+
+- 文件长度(字节数)
+
+## 示例
+
+```vbs
+// 绝对路径
+TracePrint dm.GetFileLength("c:\123.txt")
+
+// 相对路径
+dm.SetPath "c:\test_game"
 TracePrint dm.GetFileLength("123.txt")
+```

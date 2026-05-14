@@ -1,19 +1,22 @@
-函数简介:
+# LeftDoubleClick
 
-双击鼠标左键
+**分类:** 键鼠
 
-函数原型:  
-  
-long LeftDoubleClick()
+**签名:** `long LeftDoubleClick()`
 
-参数定义:
+**描述:** 双击鼠标左键
 
-返回值:
+## 参数
 
-整形数:  
-0:失败  
-1:成功
+*此函数无参数。*
 
-示例:
+## 返回值
 
+- 0:失败
+- 1:成功
+
+## 示例
+
+```vbs
 dm.LeftDoubleClick
+```

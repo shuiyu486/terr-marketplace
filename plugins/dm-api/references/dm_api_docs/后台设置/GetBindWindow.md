@@ -1,17 +1,21 @@
-函数简介:
+# GetBindWindow
 
-获取当前对象已经绑定的窗口句柄. 无绑定返回0
+**分类:** 后台设置
 
-函数原型:  
-  
-long GetBindWindow()
+**签名:** `long GetBindWindow()`
 
-参数定义:
+**描述:** 获取当前对象已经绑定的窗口句柄. 无绑定返回0
 
-返回值:
+## 参数
 
-整形数: 窗口句柄
+*此函数无参数。*
 
-示例:
+## 返回值
 
-bind\_hwnd = dm.GetBindWindow()
+- 整形数: 窗口句柄
+
+## 示例
+
+```vbs
+bind_hwnd = dm.GetBindWindow()
+```

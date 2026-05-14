@@ -1,22 +1,23 @@
-函数简介:
+# DisableScreenSave
 
-关闭屏幕保护.
+**分类:** 系统
 
-函数原型:  
-  
-long DisableScreenSave()
+**签名:** `long DisableScreenSave()`
 
-参数定义:
+**描述:** 关闭屏幕保护.
 
-返回值:
+## 参数
 
-整形数:  
-0 : 失败
+*此函数无参数。*
 
-1 : 成功
+## 返回值
 
-示例:
+- 0 : 失败
+- 1 : 成功
 
+## 示例
+
+```vbs
 dm.DisableScreenSave
 
 注 : 调用此函数后，可能在系统中还是看到屏保是开启状态。但实际上屏保已经失效了.
@@ -25,3 +26,4 @@ dm.DisableScreenSave
 
 此函数经常用在后台操作过程中.
 避免被系统干扰.
+```

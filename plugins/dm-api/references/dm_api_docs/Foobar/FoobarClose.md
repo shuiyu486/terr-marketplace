@@ -1,22 +1,24 @@
-函数简介:
+# FoobarClose
 
-关闭一个Foobar,注意,必须调用此函数来关闭窗口,用SetWindowState也可以关闭,但会造成内存泄漏.
+**分类:** Foobar
 
-函数原型:  
-  
-long FoobarClose(hwnd)
+**签名:** `long FoobarClose(hwnd)`
 
-参数定义:  
-  
-hwnd整形数: 指定的Foobar窗口句柄
+**描述:** 关闭一个Foobar,注意,必须调用此函数来关闭窗口,用SetWindowState也可以关闭,但会造成内存泄漏.
 
-返回值:  
-  
-整形数:  
-0: 失败
+## 参数
 
-1: 成功
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 指定的Foobar窗口句柄 |
 
-示例:
+## 返回值
 
-dm\_ret = dm.FoobarClose(foobar)
+- 0: 失败
+- 1: 成功
+
+## 示例
+
+```vbs
+dm_ret = dm.FoobarClose(foobar)
+```

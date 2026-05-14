@@ -1,20 +1,23 @@
-函数简介:
+# GetWindowThreadId
 
-获取指定窗口所在的线程ID.
+**分类:** 窗口
 
-函数原型:  
-  
-long GetWindowThreadId(hwnd)
+**签名:** `long GetWindowThreadId(hwnd)`
 
-参数定义:
+**描述:** 获取指定窗口所在的线程ID.
 
-hwnd 整形数: 窗口句柄
+## 参数
 
-返回值:
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| hwnd | int | 窗口句柄 |
 
-整形数:  
-返回整型表示的是线程ID
+## 返回值
 
-示例:
+- 返回整型表示的是线程ID
 
-thread\_id = dm.GetWindowThreadId(hwnd)
+## 示例
+
+```vbs
+thread_id = dm.GetWindowThreadId(hwnd)
+```

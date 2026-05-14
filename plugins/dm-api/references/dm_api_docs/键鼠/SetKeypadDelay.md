@@ -1,32 +1,28 @@
-函数简介:
+# SetKeypadDelay
 
-设置按键时,键盘按下和弹起的时间间隔。高级用户使用。某些窗口可能需要调整这个参数才可以正常按键。
+**分类:** 键鼠
 
-函数原型:  
-  
-long SetKeypadDelay(type,delay)
+**签名:** `long SetKeypadDelay(type,delay)`
 
-参数定义:  
-  
-type 字符串: 键盘类型,取值有以下
+**描述:** 设置按键时,键盘按下和弹起的时间间隔。高级用户使用。某些窗口可能需要调整这个参数才可以正常按键。
 
-     "normal" : 对应normal键盘  默认内部延时为30ms
+## 参数
 
-     "windows": 对应windows 键盘 默认内部延时为10ms
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| type | str | 键盘类型,取值有以下 "normal" : 对应normal键盘  默认内部延时为30ms "windows": 对应windows 键盘 默认内部延时为10ms "dx" :     对应dx 键盘 默认内部延时为50ms |
+| delay | int | 延时,单位是毫秒 |
 
-     "dx" :     对应dx 键盘 默认内部延时为50ms
+## 返回值
 
-delay 整形数: 延时,单位是毫秒
+- 0:失败
+- 1:成功
 
-返回值:
+## 示例
 
-整形数:  
-0:失败  
-1:成功
-
-示例:
-
+```vbs
 dm.SetKeypadDelay
 "dx",10
 
 注 : 此函数影响的接口有KeyPress
+```

@@ -1,27 +1,29 @@
-函数简介:
+# EnableKeypadPatch
 
-键盘消息发送补丁. 默认是关闭.
+**分类:** 后台设置
 
-函数原型:  
-  
-long EnableKeypadPatch(enable)
+**签名:** `long EnableKeypadPatch(enable)`
 
-参数定义:
+**描述:** 键盘消息发送补丁. 默认是关闭.
 
-enable
-整形数: 0 禁止  
-              
-1开启 
+## 参数
 
-返回值:
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| enable | int | 0 禁止 |
 
-整形数:  
-0: 失败  
-1: 成功
+## 返回值
 
-示例:
+- 0: 失败
+- 1: 成功
 
-dm\_ret = dm.BindWindow(hwnd,"dx","dx2","dx",0)  
+## 示例
+
+```vbs
+dm_ret = dm.BindWindow(hwnd,"dx","dx2","dx",0)
 dm.EnableKeypadPatch 1
+```
 
-注: 此接口必须在绑定之后才能调用。
+## 注意
+
+- 此接口必须在绑定之后才能调用。
