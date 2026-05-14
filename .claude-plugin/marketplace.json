@@ -28,7 +28,7 @@
         "path": "plugins/skills2ccPlugin"
       },
       "description": "将 skill 转换为 terr-marketplace 可安装插件并发布。自动生成 plugin.json、组织目录、注册 marketplace.json",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": { "name": "terrapin" },
       "repository": "https://github.com/shuiyu486/terr-marketplace",
       "license": "MIT",
@@ -46,6 +46,20 @@
       "author": { "name": "terrapin" },
       "license": "MIT",
       "keywords": ["大漠插件", "dm", "按键精灵", "automation", "找图", "找色", "OCR", "后台绑定", "内存读写"]
+    },
+    {
+      "name": "skill-creator",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/shuiyu486/terr-marketplace.git",
+        "path": "plugins/skill-creator"
+      },
+      "description": "创建、修改、修复和优化 Claude Code skills。支持 skill 全生命周期：从零创建、迭代改进、运行 evals、基准测试、盲比评估、描述触发优化、打包发布。",
+      "version": "1.0.0",
+      "author": { "name": "Anthropic" },
+      "repository": "https://github.com/anthropics/claude-plugins-official",
+      "license": "MIT",
+      "keywords": ["skill", "creator", "eval", "benchmark", "improve", "fix", "repair", "optimize", "package"]
     }
   ]
 }
