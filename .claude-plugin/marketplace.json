@@ -19,6 +19,20 @@
       "repository": "https://github.com/shuiyu486/ccNovaTerm",
       "license": "MIT",
       "keywords": ["terminal", "configuration", "sync", "wezterm", "nushell"]
+    },
+    {
+      "name": "plugin-publisher",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/shuiyu486/terr-marketplace.git",
+        "path": "plugins/plugin-publisher"
+      },
+      "description": "将 skill-creator 生成的 skill 转换为 terr-marketplace 可安装的插件格式",
+      "version": "1.0.0",
+      "author": { "name": "terrapin" },
+      "repository": "https://github.com/shuiyu486/terr-marketplace",
+      "license": "MIT",
+      "keywords": ["marketplace", "publish", "skill-creator", "git-subdir", "plugin"]
     }
   ]
 }

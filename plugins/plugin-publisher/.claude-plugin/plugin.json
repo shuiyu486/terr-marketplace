@@ -1,0 +1,11 @@
+{
+  "name": "plugin-publisher",
+  "version": "1.0.0",
+  "description": "将 skill-creator 生成的 skill 转换为 terr-marketplace 可安装的插件格式，自动创建 plugin.json、组织目录结构并注册到 marketplace.json",
+  "author": {
+    "name": "terrapin"
+  },
+  "repository": "https://github.com/shuiyu486/terr-marketplace",
+  "license": "MIT",
+  "keywords": ["marketplace", "publish", "skill-creator", "git-subdir", "plugin"]
+}
