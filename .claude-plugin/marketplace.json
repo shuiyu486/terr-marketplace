@@ -14,7 +14,7 @@
         "path": "plugins/config-sync"
       },
       "description": "双向同步终端配置文件（WezTerm, Nushell, Starship 等）",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": { "name": "ccNovaTerm" },
       "repository": "https://github.com/shuiyu486/ccNovaTerm",
       "license": "MIT",

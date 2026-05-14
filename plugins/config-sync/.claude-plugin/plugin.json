@@ -1,6 +1,6 @@
 {
   "name": "config-sync",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Two-way sync of terminal config files between local environment and ccNovaTerm project. Supports WezTerm, Nushell, Starship, and Claude Code statusline configs.",
   "author": {
     "name": "ccNovaTerm"
