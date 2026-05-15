@@ -1,0 +1,10 @@
+{
+  "name": "hookify",
+  "version": "1.0.1",
+  "description": "Easily create hooks to prevent unwanted behaviors by analyzing conversation patterns. Forked with Windows encoding fix (stdin/stdout UTF-8 reconfigure, debug dump crash fix, config_loader UTF-8).",
+  "author": {
+    "name": "terrapin"
+  },
+  "license": "MIT",
+  "keywords": ["hooks", "safety", "rules", "stop", "pretooluse", "posttooluse"]
+}
