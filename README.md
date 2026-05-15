@@ -43,8 +43,11 @@ claude plugin marketplace add shuiyu486/terr-marketplace
 
 | 插件 | 版本 | 说明 |
 |------|------|------|
-| `config-sync` | 1.0.0 | 双向同步终端配置文件（WezTerm, Nushell, Starship 等） |
-| `skills2ccPlugin` | 1.0.0 | 将 skill-creator 生成的 skill 发布到 terr-marketplace |
+| `config-sync` | 1.1.3 | 终端配置双向同步+快速兼容检查（WezTerm, Nushell, Starship, Claude Code） |
+| `dm-api` | 1.0.0 | 大漠插件 API 文档查询（465 个函数，17 个分类） |
+| `hookify` | 1.0.1 | 从对话模式创建钩子规则，防止不期望的行为 |
+| `skill-creator` | 1.0.0 | Skill 全生命周期管理（创建、修改、评估、优化触发） |
+| `skills2ccPlugin` | 1.0.1 | 将 skill 转换为 terr-marketplace 可安装插件并发布 |
 
 ## 目录结构
 
@@ -55,21 +58,11 @@ terr-marketplace/
 ├── .gitignore
 ├── README.md                  ← 本文档
 └── plugins/                   ← 所有插件存放目录
-    ├── config-sync/
-    │   ├── .claude-plugin/
-    │   │   └── plugin.json
-    │   └── skills/
-    │       └── config-sync/
-    │           ├── SKILL.md
-    │           ├── references/
-    │           └── scripts/
-    └── skills2ccPlugin/
-        ├── .claude-plugin/
-        │   └── plugin.json
-        └── skills/
-            └── skills2ccPlugin/
-                ├── SKILL.md
-                └── references/
+    ├── config-sync/           ← 终端配置双向同步
+    ├── dm-api/                ← 大漠插件 API 文档
+    ├── hookify/               ← 钩子规则创建
+    ├── skill-creator/         ← Skill 全生命周期管理
+    └── skills2ccPlugin/       ← Skill → 插件发布工具
 ```
 
 ## 添加新插件
