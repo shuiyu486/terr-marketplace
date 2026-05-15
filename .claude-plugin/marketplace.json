@@ -13,8 +13,8 @@
         "url": "https://github.com/shuiyu486/terr-marketplace.git",
         "path": "plugins/config-sync"
       },
-      "description": "双向同步终端配置文件（WezTerm, Nushell, Starship 等）",
-      "version": "1.0.1",
+      "description": "双向同步终端配置文件（WezTerm, Nushell, Starship 等）。支持 ~/.configsyncignore 本地排除规则。",
+      "version": "1.0.2",
       "author": { "name": "ccNovaTerm" },
       "repository": "https://github.com/shuiyu486/ccNovaTerm",
       "license": "MIT",

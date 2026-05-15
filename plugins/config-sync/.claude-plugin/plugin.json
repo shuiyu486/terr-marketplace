@@ -1,7 +1,7 @@
-{
+﻿{
   "name": "config-sync",
-  "version": "1.0.1",
-  "description": "Two-way sync of terminal config files between local environment and ccNovaTerm project. Supports WezTerm, Nushell, Starship, and Claude Code statusline configs.",
+  "version": "1.0.2",
+  "description": "Two-way sync of terminal config files between local environment and ccNovaTerm project. Supports ~/.configsyncignore for local-only exclusions (proxy settings, custom paths). Handles WezTerm, Nushell, Starship, and Claude Code statusline configs.",
   "author": {
     "name": "ccNovaTerm"
   },

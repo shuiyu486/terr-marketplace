@@ -3,7 +3,8 @@ name: config-sync
 description: |
   Two-way sync and comparison of terminal config files between local environment and
   ccNovaTerm project. Can fetch templates directly from remote git repository when local
-  project is not available. Use this whenever the user wants to sync, compare, diff, or check
+  project is not available. Respects ~/.configsyncignore for local-only exclusions (e.g.,
+  proxy settings, API keys). Use this whenever the user wants to sync, compare, diff, or check
   config changes between their local machine and the ccNovaTerm repo templates — even if
   they don't say "sync" explicitly. Trigger phrases:
   - "同步到项目" / "sync to project" / "push configs to ccNovaTerm"
@@ -141,6 +142,95 @@ $wc.Dispose()
 - `__GIT_USR_BIN__` — Git 安装目录下的 `usr\bin` 路径（双反斜杠）
 - `__USERNAME__` — Windows 用户名，出现在 `settings.json` 的 statusLine command 路径中
 
+## 本地排除规则（`~/.configsyncignore`）
+
+用户可以在 `~/.configsyncignore` 中定义规则，标记某些文件或文件内的行/字段为"本地专属"——这些内容在同步和对比时会被自动跳过。这对于以下场景至关重要：
+
+- **代理设置**：`env.nu` 中的 `load-env { http_proxy: ... }` 指向个人代理，不应进入共享模板
+- **本地路径偏好**：某些用户可能自定义了与标准模板不同的工具路径
+- **敏感信息**：与 `settings.json` 的敏感字段保护逻辑互补
+
+### 文件格式
+
+每行一条规则，`#` 开头为注释行。两种规则类型：
+
+```
+# === 文件级排除：跳过整个文件 ===
+# 同步方向 1（→项目）：不读取、不推送该文件
+# 同步方向 2（→本地）：不覆盖该本地文件
+# 对比方向 3：标注"已排除"，不比较内容
+env.nu
+
+# === 行/字段级排除：只跳过含指定关键字的行 ===
+# 格式：文件名::关键字
+# 同步方向 1（→项目）：模板化时保留注释/原样，不替换为占位符
+# 同步方向 2（→本地）：保留本地文件中的匹配行，不被模板覆盖
+# 对比方向 3：匹配行视为一致，不标差异
+env.nu::load-env
+env.nu::http_proxy
+```
+
+### 规则行为矩阵
+
+| 规则类型 | 方向 1（→项目） | 方向 2（→本地） | 方向 3（对比） |
+|---------|----------------|----------------|---------------|
+| 文件级 `env.nu` | 跳过，不包含在 commit 中 | 跳过，保留本地文件原样 | 标注"⏭️ 已排除" |
+| 字段级 `env.nu::load-env` | 该行保留原样推送 | 保留本地版本的行 | 该行不标差异 |
+| 无规则 | 正常同步 | 正常同步 | 正常对比 |
+
+### 解析排除规则
+
+在每次操作开始时（第零步之后），读取并解析 `~/.configsyncignore`：
+
+```powershell
+$excludeRules = @{}  # key=filename, value=@("*") for full file, or @("pattern1","pattern2") for line-level
+$ignoreFile = "$env:USERPROFILE\.configsyncignore"
+if (Test-Path $ignoreFile) {
+    $lines = [System.Text.Encoding]::UTF8.GetString([System.IO.File]::ReadAllBytes($ignoreFile)) -split "`n"
+    foreach ($line in $lines) {
+        $trimmed = $line.Trim()
+        if (-not $trimmed -or $trimmed.StartsWith('#')) { continue }
+        if ($trimmed -match '^(.+?)::(.+)$') {
+            $fname = $Matches[1].Trim()
+            $pattern = $Matches[2].Trim()
+            if (-not $excludeRules.ContainsKey($fname)) { $excludeRules[$fname] = @() }
+            if ($excludeRules[$fname][0] -ne "*") { $excludeRules[$fname] += $pattern }
+        } else {
+            $excludeRules[$trimmed] = @("*")  # * 哨兵值 = 全文件排除
+        }
+    }
+}
+# 结果示例：
+# $excludeRules = @{
+#     "env.nu" = @("load-env", "http_proxy")   # 行级排除
+#     "starship.toml" = @("*")                  # 文件级排除
+# }
+```
+
+### isExcludedFile / isExcludedLine 判断
+
+后续各方向中通过以下逻辑判断：
+
+```powershell
+# 是否全文件排除？
+function Test-FileExcluded([string]$Filename) {
+    return ($excludeRules.ContainsKey($Filename) -and $excludeRules[$Filename][0] -eq "*")
+}
+
+# 某行是否匹配字段级排除？
+function Test-LineExcluded([string]$Filename, [string]$LineContent) {
+    if (-not $excludeRules.ContainsKey($Filename)) { return $false }
+    $patterns = $excludeRules[$Filename]
+    if ($patterns[0] -eq "*") { return $true }  # 全文件排除也匹配
+    foreach ($p in $patterns) {
+        if ($LineContent.Contains($p)) { return $true }
+    }
+    return $false
+}
+```
+
+如果 `~/.configsyncignore` 不存在，所有文件正常同步——向后兼容。
+
 ## 工作流程
 
 ### 方向 1：本地 → 项目（local → ccNovaTerm）
@@ -151,8 +241,9 @@ $wc.Dispose()
 
 #### 第一步：准备模板化的本地配置
 
-1. **读取本地文件** — 用 UTF-8 编码读取 6 个配置文件
-2. **检测系统特定值** — 自动识别：
+1. **读取排除规则** — 解析 `~/.configsyncignore`（如存在），构建 `$excludeRules`
+2. **读取本地文件** — 用 UTF-8 编码读取配置文件。**跳过文件级排除的文件**（`Test-FileExcluded` 返回 `$true` 的文件不参与后续步骤）
+3. **检测系统特定值** — 自动识别：
    - nu.exe 路径（`Get-Command nu.exe` → `~\AppData\Local\Programs\nu\bin\nu.exe` → `${env:ProgramFiles}\nu\bin\nu.exe`）
    - Git usr/bin 路径（从 `git.exe` 推断 → `C:\Program Files\Git\usr\bin`）
    - 用户名（`$env:USERNAME`）
@@ -167,9 +258,9 @@ $wc.Dispose()
 #### 第二步：展示差异并确认
 
 1. **获取远程基准** — 如第零步 0b 无本地项目，执行 0c 远程获取模板到缓存
-2. **对比差异** — 将模板化后的本地内容与远程基准逐文件对比（settings.json 只比较 statusLine 字段）
+2. **对比差异** — 将模板化后的本地内容与远程基准逐文件对比（settings.json 只比较 statusLine 字段）。**不包含文件级排除的文件**
 3. **无变更则终止** — 如果所有文件与远程一致，告知用户"本地配置与项目模板完全一致，无需推送"，不执行任何写入操作
-4. **展示变更清单** — 列出哪些文件有变更、变更内容概要
+4. **展示变更清单** — 列出哪些文件有变更、变更内容概要。**单独列出被排除规则跳过的文件**
 5. **请求确认** — 向用户展示变更摘要并询问是否继续推送。**必须获得用户明确同意才能执行推送**（涉及远程仓库写入）
 
 #### 第三步：推送变更
@@ -242,6 +333,7 @@ sync: update <文件1>, <文件2> from local environment
 #### 第四步：报告结果
 
 - 列出成功推送的文件
+- 列出被排除规则跳过的文件
 - 临时 clone 是否已清理（路径 B）
 - 如果是本地项目，提醒可能需要更新 README 等文档
 
@@ -249,36 +341,62 @@ sync: update <文件1>, <文件2> from local environment
 
 用户说"同步到本地"时触发。将 ccNovaTerm 模板应用到本地环境。**本地 clone 或远程获取均可。**
 
-1. **读取项目模板** — 从 `$configDir`（本地项目或远程缓存）读取 6 个模板文件
-2. **检测系统值** — 自动查找当前系统对应的实际路径：
+1. **读取排除规则** — 解析 `~/.configsyncignore`（如存在），构建 `$excludeRules`
+2. **读取项目模板** — 从 `$configDir`（本地项目或远程缓存）读取模板文件。**跳过文件级排除的文件**
+3. **检测系统值** — 自动查找当前系统对应的实际路径：
    - nu.exe 完整路径（按优先级查找）
    - Git usr/bin 路径
    - 当前用户名
-3. **备份本地配置** — 将现有配置文件备份到 `~\ccNovaTerm-backup\yyyyMMdd_HHmmss\`
-4. **替换占位符** — 将模板中的占位符替换为实际值
-5. **settings.json 合并** — 只添加/更新 `statusLine` 字段，保留用户已有的 API key、模型设置、权限等
-6. **写入本地** — 写入本地配置路径，自动创建所需目录。**必须使用 UTF-8 编码**，`starship.toml` 尤其敏感
-7. **运行验证** — 执行语法、Unicode 完整性和文件大小检查
-8. **报告结果** — 列出写入的文件、备份位置、下一步操作（重启 WezTerm 等）。如果模板来自远程缓存，注明来源
+4. **备份本地配置** — 将现有配置文件备份到 `~\ccNovaTerm-backup\yyyyMMdd_HHmmss\`
+5. **替换占位符** — 将模板中的占位符替换为实际值。**对于字段级排除规则**：替换占位符后，从备份中恢复被排除的行（保留本地版本）
+6. **settings.json 合并** — 只添加/更新 `statusLine` 字段，保留用户已有的 API key、模型设置、权限等
+7. **写入本地** — 写入本地配置路径，自动创建所需目录。**必须使用 UTF-8 编码**，`starship.toml` 尤其敏感。**跳过文件级排除的文件**（不覆盖）
+8. **运行验证** — 执行语法、Unicode 完整性和文件大小检查
+9. **报告结果** — 列出写入的文件、跳过的文件（含排除原因）、备份位置、下一步操作（重启 WezTerm 等）。如果模板来自远程缓存，注明来源
+
+**字段级排除的行级合并**：当某文件有字段级排除规则时，在写入模板内容前：
+```powershell
+# 对于有字段级排除的文件，逐行处理
+if ($excludeRules.ContainsKey($fname) -and $excludeRules[$fname][0] -ne "*") {
+    $tplLines = $templatedContent -split "`n"
+    $localLines = $localContent -split "`n"
+    $mergedLines = @()
+    for ($i = 0; $i -lt $tplLines.Count; $i++) {
+        $excluded = $false
+        foreach ($pattern in $excludeRules[$fname]) {
+            if ($tplLines[$i].Contains($pattern)) { $excluded = $true; break }
+        }
+        if ($excluded -and $i -lt $localLines.Count) {
+            $mergedLines += $localLines[$i]  # 保留本地行
+        } else {
+            $mergedLines += $tplLines[$i]     # 使用模板行
+        }
+    }
+    $templatedContent = $mergedLines -join "`n"
+}
+```
 
 ### 方向 3：对比差异（Compare / Diff）
 
 用户说"对比"、"看看有什么不同"、"check differences"时触发。只读不写，报告本地和项目模板之间的差异。**本地 clone 或远程获取均可。**
 
 1. **获取模板源** — 执行第零步的完整流程（0a → 0b → 0c 或 0d）
-2. **成对读取** — 对 6 个文件，同时读取本地版本和模板版本（均用 UTF-8 编码）。**settings.json 特殊处理**：本地只提取 `statusLine` 字段参与对比，忽略 `env`、`permissions`、`model` 等包含敏感信息的字段（避免 API key 泄露到 diff 输出）。如果模板只有 `statusLine` 而本地有其他字段，标注"本地有额外设置"即可，不输出具体值。
-3. **占位符感知对比** — 比较时将模板中的占位符替换为当前系统实际值后再 diff，这样差异反映的是真实的配置变化，而非路径不同：
+2. **读取排除规则** — 解析 `~/.configsyncignore`（如存在），构建 `$excludeRules`
+3. **成对读取** — 对 6 个文件，同时读取本地版本和模板版本（均用 UTF-8 编码）。**跳过文件级排除的文件**。**settings.json 特殊处理**：本地只提取 `statusLine` 字段参与对比，忽略 `env`、`permissions`、`model` 等包含敏感信息的字段（避免 API key 泄露到 diff 输出）。如果模板只有 `statusLine` 而本地有其他字段，标注"本地有额外设置"即可，不输出具体值。
+4. **占位符感知对比** — 比较时将模板中的占位符替换为当前系统实际值后再 diff，这样差异反映的是真实的配置变化，而非路径不同：
    - `__NU_PATH__` → 当前系统 nu.exe 路径
    - `__GIT_USR_BIN__` → 当前系统 Git usr/bin 路径
    - `__USERNAME__` → 当前用户名
    - `# load-env { ... }` → 视为与本地 `load-env` 行匹配（不标差异）
+   - **字段级排除规则**：对于匹配排除关键字的行，视为一致（不标差异）
    - 对于 `settings.json`：本地和模板都只取 `statusLine` 字段对比，其余字段只报告"存在差异"但不输出内容
-4. **输出差异报告** — 对每个文件报告：
+5. **输出差异报告** — 对每个文件报告：
    - ✅ 一致：内容相同（占位符展开后）
    - ⚠️ 仅本地有不同：列出差异行
    - ❌ 模板不存在：文件仅在本地
    - ➖ 本地不存在：文件仅在模板中
-5. **总结建议** — 如果所有文件一致，告知用户。如果有差异，建议同步方向（本地→项目 还是 项目→本地），让用户决定。如果模板来自远程缓存，注明来源
+   - ⏭️ 已排除：文件在 `.configsyncignore` 中，不比较
+6. **总结建议** — 如果所有文件一致，告知用户。如果有差异，建议同步方向（本地→项目 还是 项目→本地），让用户决定。如果模板来自远程缓存，注明来源。**说明排除规则影响的文件数**
 
 ## 编码要求（关键！）
 
