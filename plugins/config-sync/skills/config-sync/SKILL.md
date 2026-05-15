@@ -142,7 +142,7 @@ $wc.Dispose()
 **占位符规则**：
 - `__NU_PATH__` — Windows 用 nu.exe 完整路径（双反斜杠），macOS 用 `'nu'`
 - `__GIT_USR_BIN__` — Git 安装目录下的 `usr\bin` 路径（双反斜杠）
-- `__USERNAME__` — Windows 用户名，出现在 `settings.json` 的 statusLine command 路径中
+- `__USERNAME__` — `Split-Path -Leaf $env:USERPROFILE`（用户目录名，不是 `$env:USERNAME`——两者在 Windows 上可能不同）
 
 ## 双重排除机制
 
@@ -171,9 +171,9 @@ config-sync 有两层排除规则：
 
 **必须使用**：
 - 读取: `[System.IO.File]::ReadAllBytes()` + `[System.Text.Encoding]::UTF8.GetString()`
-- 写入: `[System.IO.File]::WriteAllText($path, $content, [System.Text.Encoding]::UTF8)`
+- 写入: `$utf8NoBom = New-Object System.Text.UTF8Encoding $false; [System.IO.File]::WriteAllText($path, $content, $utf8NoBom)`
 
-**绝对禁止**：`Set-Content -Encoding UTF8`（BOM 破坏 Nushell alias 解析）、不带 `-Encoding UTF8` 的 `Get-Content`/`Set-Content`（默认 GBK）、`Invoke-WebRequest` 的 `.Content` 属性。
+**绝对禁止**：`Set-Content -Encoding UTF8`（BOM 破坏 Nushell alias 解析）、不带 `-Encoding UTF8` 的 `Get-Content`/`Set-Content`（默认 GBK）、`Invoke-WebRequest` 的 `.Content` 属性。**注意：`[System.Text.Encoding]::UTF8` 作为写入参数在 .NET Framework 中带有 BOM——必须用 `New-Object System.Text.UTF8Encoding $false`。**
 
 详见 `references/encoding.md`，包含 starship.toml 编码损坏检测、远程获取安全方法、BOM 危害说明。
 

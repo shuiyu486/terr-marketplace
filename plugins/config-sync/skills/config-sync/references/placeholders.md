@@ -8,7 +8,7 @@ When syncing templates to local environment, replace these:
 |-------------|-----------------|----------|
 | `__NU_PATH__` | `(Get-Command nu.exe).Source`, then `~\AppData\Local\Programs\nu\bin\nu.exe`, then `${env:ProgramFiles}\nu\bin\nu.exe` | `'nu.exe'` (relies on PATH) |
 | `__GIT_USR_BIN__` | Find `git.exe` via `Get-Command`, locate parent's `usr\bin`, then check `C:\Program Files\Git\usr\bin` | `C:\Program Files\Git\usr\bin` |
-| `__USERNAME__` | `$env:USERNAME` | N/A (always available) |
+| `__USERNAME__` | `Split-Path -Leaf $env:USERPROFILE`（用户目录名，非 `$env:USERNAME`，两者可能不同） | N/A (always available) |
 
 ## Value → Placeholder (Local → Project)
 
@@ -38,6 +38,7 @@ When syncing local environment to templates, detect and replace:
 - `config.nu` — contains `alias cc = claude` and yazi wrapper. Copy as-is both directions.
 - `starship.toml` — Pastel Powerline preset. Copy as-is both directions.
 - `statusline.ps1` — Full script. Copy as-is both directions.
+- `CLAUDE.local.md` — Project instructions. Copy as-is both directions.
 
 ## Nu.exe Path — Double Backslash Rule
 

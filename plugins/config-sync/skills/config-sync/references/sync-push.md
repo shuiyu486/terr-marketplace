@@ -8,10 +8,11 @@
 
 1. **读取排除规则** — 解析 `~/.configsyncignore`（如存在），构建 `$excludeRules`
 2. **读取本地文件** — 用 UTF-8 编码读取配置文件。**跳过文件级排除的文件**（`Test-FileExcluded` 返回 `$true` 的文件不参与后续步骤）
+   - **CLAUDE.local.md** 从项目根目录 `$repoRoot\CLAUDE.local.md` 读取（非 `$env:USERPROFILE`）。仅在 Step 0b 找到本地项目时参与同步；路径 B（临时 clone）跳过此文件。
 3. **检测系统特定值** — 自动识别：
    - nu.exe 路径（`Get-Command nu.exe` → `~\AppData\Local\Programs\nu\bin\nu.exe` → `${env:ProgramFiles}\nu\bin\nu.exe`）
    - Git usr/bin 路径（从 `git.exe` 推断 → `C:\Program Files\Git\usr\bin`）
-   - 用户名（`$env:USERNAME`）
+   - 用户名（`Split-Path -Leaf $env:USERPROFILE`，即用户目录名，不是 `$env:USERNAME`——两者可能不同）
 4. **生成模板** — 将系统值替换为占位符：
    - nu.exe 完整路径 → `__NU_PATH__`
    - Git usr/bin 路径 → `__GIT_USR_BIN__`
@@ -49,7 +50,7 @@ try { $null = Get-Command git.exe -ErrorAction Stop } catch {
 ```powershell
 # 1. 写入模板化后的文件到 $configDir（UTF-8 无 BOM）
 foreach ($f in $changedFiles) {
-    [System.IO.File]::WriteAllText("$configDir\$f", $templatedContent, [System.Text.Encoding]::UTF8)
+    [System.IO.File]::WriteAllText("$configDir\$f", $templatedContent, (New-Object System.Text.UTF8Encoding $false))
 }
 
 # 2. 提交并推送
@@ -68,7 +69,7 @@ git clone --depth 1 $repoUrl $tmpDir
 
 # 2. 写入模板化后的文件（UTF-8 无 BOM）
 foreach ($f in $changedFiles) {
-    [System.IO.File]::WriteAllText("$tmpDir\config\$f", $templatedContent, [System.Text.Encoding]::UTF8)
+    [System.IO.File]::WriteAllText("$tmpDir\config\$f", $templatedContent, (New-Object System.Text.UTF8Encoding $false))
 }
 
 # 3. 提交

@@ -20,14 +20,18 @@ $content = Get-Content $path -Raw -Encoding UTF8
 
 写入文件：
 ```powershell
-# 唯一推荐方法 — .NET UTF8，不写 BOM（关键！）
-[System.IO.File]::WriteAllText($path, $content, [System.Text.Encoding]::UTF8)
+# 唯一推荐方法 — .NET UTF8Encoding($false)，不写 BOM（关键！）
+# 注意：[System.Text.Encoding]::UTF8 在 .NET Framework 中默认写入 BOM！
+# 必须使用 New-Object System.Text.UTF8Encoding $false
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+[System.IO.File]::WriteAllText($path, $content, $utf8NoBom)
 
 # 定义 helper 以便复用：
 function Write-FileUtf8NoBom([string]$Path, [string]$Content) {
     $dir = Split-Path -Parent $Path
     if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Force $dir | Out-Null }
-    [System.IO.File]::WriteAllText($Path, $Content, [System.Text.Encoding]::UTF8)
+    $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllText($Path, $Content, $utf8NoBom)
 }
 ```
 

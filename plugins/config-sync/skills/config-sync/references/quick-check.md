@@ -75,7 +75,7 @@ try { $nuPath = (Get-Command nu.exe -ErrorAction Stop).Source } catch {
 }
 $gitUsrBin = "$env:ProgramFiles\Git\usr\bin"
 if (-not (Test-Path $gitUsrBin)) { $gitUsrBin = "C:\Program Files\Git\usr\bin" }
-$username = $env:USERNAME
+$username = Split-Path -Leaf $env:USERPROFILE
 
 $results = @()
 foreach ($fname in $fileMap.Keys) {
