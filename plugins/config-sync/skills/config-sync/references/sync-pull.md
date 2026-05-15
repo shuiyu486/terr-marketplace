@@ -27,8 +27,7 @@ $merged = $localJson | ConvertTo-Json -Depth 10
 ```
 
 **注意**：`ConvertTo-Json` 在 PS5.1 中默认深度为 2，需显式指定 `-Depth` 以确保嵌套结构不被截断。写入必须用 `WriteAllText` 而非 `Set-Content`（防 BOM）。
-7. **写入本地** — 写入本地配置路径，自动创建所需目录。**必须使用 UTF-8 编码**（`New-Object System.Text.UTF8Encoding $false`），`starship.toml` 尤其敏感。**跳过文件级排除的文件**（不覆盖）
-   - **CLAUDE.local.md 特殊处理**：仅在 Step 0b 找到本地项目时写入 `$repoRoot\CLAUDE.local.md`。如果模板来自远程缓存（0c）而无本地项目，跳过此文件并在报告中标注"跳过（无本地项目）"。
+7. **写入本地** — 写入本地配置路径，自动创建所需目录。**必须使用 UTF-8 编码**（`New-Object System.Text.UTF8Encoding $false`），`starship.toml` 尤其敏感。**跳过文件级排除的文件**（不覆盖）。文件路径见 `paths.md`——CLAUDE.local.md 写入 `$repoRoot\CLAUDE.local.md`（如 `$repoRoot` 不存在则跳过）。
 8. **运行验证** — 执行语法、Unicode 完整性和文件大小检查
 9. **报告结果** — 列出写入的文件、跳过的文件（含排除原因）、备份位置、下一步操作（重启 WezTerm 等）。如果模板来自远程缓存，注明来源
 

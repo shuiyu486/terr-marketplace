@@ -1,22 +1,7 @@
 ---
 name: config-sync
 description: |
-  Two-way sync and comparison of terminal config files between local environment and
-  ccNovaTerm project. Can fetch templates directly from remote git repository when local
-  project is not available. Auto-protects local proxy settings (env.nu load-env) without
-  configuration; supports ~/.configsyncignore for custom exclusions. Use this whenever the
-  user wants to sync, compare, diff, or check config changes between their local machine
-  and the ccNovaTerm repo templates — even if they don't say "sync" explicitly. Trigger phrases:
-  - "同步到项目" / "sync to project" / "push configs to ccNovaTerm"
-  - "同步到本地" / "sync to local" / "pull configs from ccNovaTerm"
-  - "对比" / "compare" / "diff" / "check differences" / "有什么不同" / "看看区别"
-  - "更新项目模板" / "update project templates"
-  - "apply config from project"
-  - "快速检查" / "quick check" / "兼容吗" / "兼容性检查" / "check compatibility" — lightweight hash-based check using local clone only
-  Use proactively when users ask about config differences between their local environment
-  and ccNovaTerm, or mention WezTerm / Nushell / Starship / Claude Code configs in the
-  context of the project — comparison is as important as syncing. After editing any managed
-  config file, suggest a quick check to verify compatibility.
+  Two-way sync, diff, and quick compatibility check of terminal configs (WezTerm, Nushell, Starship, Claude Code) between local environment and ccNovaTerm project. Manages 7 files with auto-fetch from remote git; auto-protects proxy settings. Triggers on: "同步到项目/本地", "sync/push/pull/apply configs", "对比/diff/compare/有什么不同/看看区别", "更新模板", "快速检查/quick check/兼容吗/check compatibility", or any mention of comparing/syncing configs against ccNovaTerm. Use proactively when users edit or discuss WezTerm/Nushell/Starship/Claude Code configs — suggest a quick check after editing managed files.
 compatibility: Windows (PowerShell 5.1+), supports local project and remote GitHub fetch
 ---
 
