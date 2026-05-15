@@ -10,6 +10,7 @@
 | Starship | `$env:USERPROFILE\.config\starship.toml` |
 | Claude statusline | `$env:USERPROFILE\.claude\statusline.ps1` |
 | Claude settings | `$env:USERPROFILE\.claude\settings.json` |
+| CLAUDE.local.md | `$repoRoot\CLAUDE.local.md`（项目根目录，由 Step 0 的 `$repoRoot` 确定） |
 
 ## ccNovaTerm Project Template Paths
 
@@ -23,6 +24,7 @@ All under `<repo-root>/config/`:
 | Starship | `config/starship.toml` |
 | Claude statusline | `config/statusline.ps1` |
 | Claude settings | `config/settings.json` |
+| CLAUDE.local.md | `config/CLAUDE.local.md` |
 
 ## Finding ccNovaTerm Repo Root (优先顺序)
 
