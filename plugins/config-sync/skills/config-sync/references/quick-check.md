@@ -12,6 +12,7 @@
 $repoRoot = $null
 $candidates = @(
     $PWD.Path,
+    "$($PWD.Path)\ccNovaTerm",
     "$env:USERPROFILE\ccNovaTerm"
 )
 foreach ($c in $candidates) {

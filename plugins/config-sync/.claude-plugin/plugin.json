@@ -1,6 +1,6 @@
 ﻿{
   "name": "config-sync",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Two-way sync and quick compatibility check of terminal config files between local environment and ccNovaTerm project. Manages 7 config files including CLAUDE.local.md. Hash-based quick check mode for instant compatibility verification. Progressive disclosure architecture with 8 reference files. Auto-protects proxy settings; supports ~/.configsyncignore for custom exclusions.",
   "author": {
     "name": "ccNovaTerm"

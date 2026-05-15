@@ -68,7 +68,7 @@ $rawBase = $repoUrl -replace 'https://github.com/', 'https://raw.githubuserconte
 
 ```powershell
 $repoRoot = $null
-$candidates = @($PWD.Path, "$env:USERPROFILE\ccNovaTerm")
+$candidates = @($PWD.Path, "$($PWD.Path)\ccNovaTerm", "$env:USERPROFILE\ccNovaTerm")
 foreach ($c in $candidates) {
     if (Test-Path "$c\config\.wezterm.lua") { $repoRoot = $c; break }
 }
