@@ -23,6 +23,14 @@ Then run the setup command:
 /cc-statusline:setup
 ```
 
+## Update
+
+```
+/cc-statusline:update
+```
+
+One-click update to the latest version — finds, builds, and relinks.
+
 ## Configuration
 
 ```

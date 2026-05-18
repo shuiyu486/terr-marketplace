@@ -13,7 +13,8 @@ cc-statusline/
 ├── .claude-plugin/plugin.json    ← 插件元数据（commands: setup, configure）
 ├── commands/
 │   ├── setup.md                  ← /cc-statusline:setup 3步引导
-│   └── configure.md              ← /cc-statusline:configure 交互式配置
+│   ├── configure.md              ← /cc-statusline:configure 交互式配置
+│   └── update.md                 ← /cc-statusline:update 一键更新
 ├── src/
 │   ├── types.ts                  ← StatusLineData, SessionCache, Config 接口
 │   ├── stdin.ts                  ← 500ms 超时 stdin JSON 读取
@@ -67,7 +68,7 @@ echo '{"model":{"display_name":"Opus"},"context_window":{"used_percentage":50,"c
 
 用户配置存储在 `~/.claude/cc-statusline.json`，字段：showEffort, showTokensLine, showPath, ctxWarnThreshold(70), ctxDangerThreshold(90)。
 
-settings.json 的 statusLine 字段由 `/cc-statusline:setup` 写入，不在 plugin.json 中声明（Claude Code 插件系统不支持 statusLine 字段）。
+settings.json 的 statusLine 字段由 `/cc-statusline:setup` 写入，由 `/cc-statusline:update` 更新路径，不在 plugin.json 中声明（Claude Code 插件系统不支持 statusLine 字段）。
 
 ### 修改后验证
 
