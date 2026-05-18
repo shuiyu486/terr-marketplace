@@ -47,26 +47,18 @@ references/           # 按需加载的参考文档
 commands/             # setup / configure / update
 ```
 
-## 同步规则 (长期)
+## 代码-文档同步
 
-每次修改以下文件后，必须执行同步：
+修改代码后，AI 主动检查并同步更新对应文档：
 
-| 文件 | 同步目标 |
-|------|---------|
-| `CLAUDE.local.md` | `C:\AI\m_projects\cc-statusline\CLAUDE.local.md` |
-| `references/*.md` | `C:\AI\m_projects\cc-statusline\references\` |
-| `commands/*.md` | `C:\AI\m_projects\cc-statusline\commands\` |
-| `src/*.ts` | `.claude-plugin/marketplace.json` 版本号同步 |
+| 修改代码 | 同步更新文档 |
+|---------|-------------|
+| `src/transcript.ts` | `references/architecture.md` |
+| `src/render.ts` / 颜色 | `references/rendering.md` |
+| `src/features/*.ts` | `references/features.md` |
+| `Config` 接口 / `DEFAULT_CONFIG` | `references/config.md` |
+| `package.json` scripts | `CLAUDE.local.md` 命令 |
+| 发布 `.claude-plugin/plugin.json` | `references/publish.md` + `marketplace.json` |
+| 发现新 gotcha / bug | `CLAUDE.local.md` Gotchas |
 
-同步命令：
-```bash
-# terr-marketplace → 工作目录
-cp ~/.claude/plugins/marketplaces/terr-marketplace/plugins/cc-statusline/CLAUDE.local.md "C:/AI/m_projects/cc-statusline/"
-cp -r ~/.claude/plugins/marketplaces/terr-marketplace/plugins/cc-statusline/references "C:/AI/m_projects/cc-statusline/"
-
-# 工作目录 → terr-marketplace (反向)
-cp "C:/AI/m_projects/cc-statusline/CLAUDE.local.md" ~/.claude/plugins/marketplaces/terr-marketplace/plugins/cc-statusline/
-cp -r "C:/AI/m_projects/cc-statusline/references/"* ~/.claude/plugins/marketplaces/terr-marketplace/plugins/cc-statusline/references/
-```
-
-两处文件的 `CLAUDE.local.md` + `references/` + `commands/` 应始终保持一致。
+CLAUDE.local.md 本文件存在于两处位置，修改后互相同步。
