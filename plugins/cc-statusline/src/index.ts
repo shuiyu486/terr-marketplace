@@ -14,6 +14,10 @@ const DEFAULT_CONFIG: Config = {
   showPath: true,
   ctxWarnThreshold: 70,
   ctxDangerThreshold: 90,
+  showToolActivity: true,
+  showAgentTracking: true,
+  showTodoProgress: true,
+  showUsageLimits: true,
 };
 
 function loadConfig(): Config {
@@ -32,8 +36,8 @@ async function main(): Promise<void> {
   }
 
   const cfg = loadConfig();
-  const { sesApiIn, sesApiOut } = parseTranscript(data.transcript_path);
-  const output = render(data, sesApiIn, sesApiOut, cfg);
+  const ctx = parseTranscript(data.transcript_path);
+  const output = render(data, ctx, cfg);
   process.stdout.write(output);
 }
 

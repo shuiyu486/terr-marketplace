@@ -17,6 +17,16 @@ export interface StatusLineData {
     project_dir?: string;
   };
   cwd?: string;
+  rate_limits?: {
+    five_hour?: {
+      used_percentage: number;
+      resets_at: string;
+    };
+    seven_day?: {
+      used_percentage: number;
+      resets_at: string;
+    };
+  };
 }
 
 export interface ServerToolUse {
@@ -34,17 +44,52 @@ export interface UsageEntry {
   service_tier?: string;
 }
 
+export interface ContentBlock {
+  type: string;
+  id?: string;
+  name?: string;
+  input?: Record<string, unknown>;
+  tool_use_id?: string;
+  is_error?: boolean;
+}
+
 export interface TranscriptMessage {
   type: string;
   message?: {
     type?: string;
     role?: string;
     usage?: UsageEntry;
+    content?: ContentBlock[];
   };
   usage?: UsageEntry;
 }
 
-export interface SessionCache {
+// --- v2 cache (JSON with version marker) ---
+export interface ToolEvent {
+  id: string;
+  name: string;
+  target: string;
+  status: "running" | "completed";
+  seenAt: number;
+}
+
+export interface AgentEvent {
+  id: string;
+  type: string;
+  model: string;
+  description: string;
+  status: "running" | "completed";
+  startTime: number;
+}
+
+export interface TodoItem {
+  id: string;
+  subject: string;
+  status: string;
+}
+
+export interface SessionCacheV2 {
+  version: 2;
   lineNum: number;
   lastIn: number;
   lastOut: number;
@@ -52,6 +97,21 @@ export interface SessionCache {
   lastCacheRead: number;
   sesApiIn: number;
   sesApiOut: number;
+  tools: ToolEvent[];
+  agents: AgentEvent[];
+  todos: TodoItem[];
+  todoCompleted: number;
+  todoTotal: number;
+}
+
+export interface ParseResult {
+  sesApiIn: number;
+  sesApiOut: number;
+  tools: ToolEvent[];
+  agents: AgentEvent[];
+  todos: TodoItem[];
+  todoCompleted: number;
+  todoTotal: number;
 }
 
 export interface Config {
@@ -60,4 +120,8 @@ export interface Config {
   showPath: boolean;
   ctxWarnThreshold: number;
   ctxDangerThreshold: number;
+  showToolActivity: boolean;
+  showAgentTracking: boolean;
+  showTodoProgress: boolean;
+  showUsageLimits: boolean;
 }

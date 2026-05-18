@@ -2,7 +2,11 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as cp from "child_process";
-import type { TranscriptMessage, SessionCache } from "./types";
+import type { TranscriptMessage, SessionCacheV2, ParseResult } from "./types";
+import { extractToolEvent } from "./features/tools";
+import { extractAgentEvent } from "./features/agents";
+import { extractTodoEvent } from "./features/todos";
+import type { TodoState } from "./features/todos";
 
 const CACHE_DIR = path.join(os.tmpdir(), "cc-statusline-cache");
 
@@ -16,40 +20,59 @@ function cachePath(pid: number): string {
   return path.join(CACHE_DIR, `ses-${pid}.txt`);
 }
 
-function readCache(pid: number): SessionCache | null {
+function newCacheV2(): SessionCacheV2 {
+  return {
+    version: 2,
+    lineNum: 0,
+    lastIn: 0,
+    lastOut: 0,
+    lastCacheCreate: 0,
+    lastCacheRead: 0,
+    sesApiIn: 0,
+    sesApiOut: 0,
+    tools: [],
+    agents: [],
+    todos: [],
+    todoCompleted: 0,
+    todoTotal: 0,
+  };
+}
+
+function readCache(pid: number): SessionCacheV2 {
   const p = cachePath(pid);
   try {
     const raw = fs.readFileSync(p, "utf8").trim();
-    if (!raw) return null;
+    if (!raw) return newCacheV2();
+
+    // Try v2 JSON first
+    if (raw.startsWith("{")) {
+      const parsed = JSON.parse(raw);
+      if (parsed.version === 2) return parsed as SessionCacheV2;
+    }
+
+    // CSV fallback (v1)
     const parts = raw.split(",");
-    if (parts.length !== 7) return null;
-    return {
-      lineNum: parseInt(parts[0], 10),
-      lastIn: parseInt(parts[1], 10),
-      lastOut: parseInt(parts[2], 10),
-      lastCacheCreate: parseInt(parts[3], 10),
-      lastCacheRead: parseInt(parts[4], 10),
-      sesApiIn: parseInt(parts[5], 10),
-      sesApiOut: parseInt(parts[6], 10),
-    };
+    if (parts.length >= 7) {
+      const cache = newCacheV2();
+      cache.lineNum = parseInt(parts[0], 10);
+      cache.lastIn = parseInt(parts[1], 10);
+      cache.lastOut = parseInt(parts[2], 10);
+      cache.lastCacheCreate = parseInt(parts[3], 10);
+      cache.lastCacheRead = parseInt(parts[4], 10);
+      cache.sesApiIn = parseInt(parts[5], 10);
+      cache.sesApiOut = parseInt(parts[6], 10);
+      return cache;
+    }
   } catch {
-    return null;
+    // Corrupt cache → start fresh
   }
+  return newCacheV2();
 }
 
-function writeCache(pid: number, cache: SessionCache): void {
+function writeCache(pid: number, cache: SessionCacheV2): void {
   ensureCacheDir();
   const p = cachePath(pid);
-  const line = [
-    cache.lineNum,
-    cache.lastIn,
-    cache.lastOut,
-    cache.lastCacheCreate,
-    cache.lastCacheRead,
-    cache.sesApiIn,
-    cache.sesApiOut,
-  ].join(",");
-  fs.writeFileSync(p, line, "utf8");
+  fs.writeFileSync(p, JSON.stringify(cache), "utf8");
 }
 
 function findClaudePid(): number {
@@ -98,22 +121,37 @@ function findClaudePid(): number {
   return myPid;
 }
 
-export function parseTranscript(transcriptPath: string): {
-  sesApiIn: number;
-  sesApiOut: number;
-} {
-  if (!transcriptPath) return { sesApiIn: 0, sesApiOut: 0 };
+export function parseTranscript(transcriptPath: string): ParseResult {
+  if (!transcriptPath) {
+    return {
+      sesApiIn: 0,
+      sesApiOut: 0,
+      tools: [],
+      agents: [],
+      todos: [],
+      todoCompleted: 0,
+      todoTotal: 0,
+    };
+  }
 
   const pid = findClaudePid();
   const cache = readCache(pid);
 
-  let startLine = cache ? cache.lineNum : 0;
-  let sesApiIn = cache ? cache.sesApiIn : 0;
-  let sesApiOut = cache ? cache.sesApiOut : 0;
-  let lastIn = cache ? cache.lastIn : 0;
-  let lastOut = cache ? cache.lastOut : 0;
-  let lastCacheCreate = cache ? cache.lastCacheCreate : 0;
-  let lastCacheRead = cache ? cache.lastCacheRead : 0;
+  const startLine = cache.lineNum;
+  let sesApiIn = cache.sesApiIn;
+  let sesApiOut = cache.sesApiOut;
+  let lastIn = cache.lastIn;
+  let lastOut = cache.lastOut;
+  let lastCacheCreate = cache.lastCacheCreate;
+  let lastCacheRead = cache.lastCacheRead;
+
+  const tools = cache.tools;
+  const agents = cache.agents;
+  const todoState: TodoState = {
+    items: cache.todos,
+    completed: cache.todoCompleted,
+    total: cache.todoTotal,
+  };
 
   let lines: string[];
 
@@ -121,7 +159,15 @@ export function parseTranscript(transcriptPath: string): {
     const content = fs.readFileSync(transcriptPath, "utf8");
     lines = content.split("\n");
   } catch {
-    return { sesApiIn, sesApiOut };
+    return {
+      sesApiIn,
+      sesApiOut,
+      tools,
+      agents,
+      todos: todoState.items,
+      todoCompleted: todoState.completed,
+      todoTotal: todoState.total,
+    };
   }
 
   for (let i = startLine; i < lines.length; i++) {
@@ -135,36 +181,46 @@ export function parseTranscript(transcriptPath: string): {
       continue;
     }
 
-    if (msg.type !== "assistant" || !msg.message?.usage) continue;
-
-    const u = msg.message.usage;
-    // Deduplicate: skip if all 4 token values identical to previous
-    if (
-      u.input_tokens === lastIn &&
-      u.output_tokens === lastOut &&
-      u.cache_creation_input_tokens === lastCacheCreate &&
-      u.cache_read_input_tokens === lastCacheRead
-    ) {
-      continue;
+    // Feature extraction — must run BEFORE token dedup to avoid losing events
+    try {
+      extractToolEvent(tools, msg);
+      extractAgentEvent(agents, msg);
+      extractTodoEvent(todoState, msg);
+    } catch {
+      // Feature extraction errors are non-fatal — skip this message
     }
 
-    const apiIn =
-      u.input_tokens +
-      u.cache_creation_input_tokens +
-      u.cache_read_input_tokens +
-      (u.server_tool_use_input_tokens ?? ((u.server_tool_use?.web_search_requests ?? 0) + (u.server_tool_use?.web_fetch_requests ?? 0)));
-    const apiOut = u.output_tokens;
+    // Token accumulation (existing logic)
+    if (msg.type === "assistant" && msg.message?.usage) {
+      const u = msg.message.usage;
+      if (
+        u.input_tokens === lastIn &&
+        u.output_tokens === lastOut &&
+        u.cache_creation_input_tokens === lastCacheCreate &&
+        u.cache_read_input_tokens === lastCacheRead
+      ) {
+        continue;
+      }
 
-    sesApiIn += apiIn;
-    sesApiOut += apiOut;
+      const apiIn =
+        u.input_tokens +
+        u.cache_creation_input_tokens +
+        u.cache_read_input_tokens +
+        (u.server_tool_use_input_tokens ?? 0);
+      const apiOut = u.output_tokens;
 
-    lastIn = u.input_tokens;
-    lastOut = u.output_tokens;
-    lastCacheCreate = u.cache_creation_input_tokens;
-    lastCacheRead = u.cache_read_input_tokens;
+      sesApiIn += apiIn;
+      sesApiOut += apiOut;
+
+      lastIn = u.input_tokens;
+      lastOut = u.output_tokens;
+      lastCacheCreate = u.cache_creation_input_tokens;
+      lastCacheRead = u.cache_read_input_tokens;
+    }
   }
 
-  const newCache: SessionCache = {
+  const newCache: SessionCacheV2 = {
+    version: 2,
     lineNum: lines.length,
     lastIn,
     lastOut,
@@ -172,8 +228,21 @@ export function parseTranscript(transcriptPath: string): {
     lastCacheRead,
     sesApiIn,
     sesApiOut,
+    tools,
+    agents,
+    todos: todoState.items,
+    todoCompleted: todoState.completed,
+    todoTotal: todoState.total,
   };
   writeCache(pid, newCache);
 
-  return { sesApiIn, sesApiOut };
+  return {
+    sesApiIn,
+    sesApiOut,
+    tools,
+    agents,
+    todos: todoState.items,
+    todoCompleted: todoState.completed,
+    todoTotal: todoState.total,
+  };
 }
