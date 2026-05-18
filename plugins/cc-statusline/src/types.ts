@@ -19,19 +19,28 @@ export interface StatusLineData {
   cwd?: string;
 }
 
+export interface ServerToolUse {
+  web_search_requests?: number;
+  web_fetch_requests?: number;
+}
+
 export interface UsageEntry {
-  type: string;
   input_tokens: number;
   output_tokens: number;
   cache_creation_input_tokens: number;
   cache_read_input_tokens: number;
-  server_tool_use_input_tokens: number;
-  service_tier: string;
+  server_tool_use_input_tokens?: number;
+  server_tool_use?: ServerToolUse;
+  service_tier?: string;
 }
 
 export interface TranscriptMessage {
   type: string;
-  timestamp: string;
+  message?: {
+    type?: string;
+    role?: string;
+    usage?: UsageEntry;
+  };
   usage?: UsageEntry;
 }
 
