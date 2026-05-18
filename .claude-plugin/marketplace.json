@@ -82,7 +82,7 @@
         "path": "plugins/cc-statusline"
       },
       "description": "A feature-rich status line for Claude Code — model, effort, context, tokens (in/out/ses/api with wan-format), session cost tracking via transcript JSONL, and ANSI color rendering. Cross-platform Node.js runtime.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": { "name": "terrapin" },
       "repository": "https://github.com/shuiyu486/terr-marketplace",
       "license": "MIT",
