@@ -43,7 +43,8 @@ claude plugin marketplace add shuiyu486/terr-marketplace
 
 | 插件 | 版本 | 说明 |
 |------|------|------|
-| `config-sync` | 1.1.3 | 终端配置双向同步+快速兼容检查（WezTerm, Nushell, Starship, Claude Code） |
+| `cc-statusline` | 1.0.0 | Claude Code 状态栏（模型、effort、上下文、token 统计、会话 API 消耗） |
+| `config-sync` | 1.3.0 | 终端配置双向同步+快速兼容检查（WezTerm, Nushell, Starship，5 个文件） |
 | `dm-api` | 1.0.0 | 大漠插件 API 文档查询（465 个函数，17 个分类） |
 | `hookify` | 1.0.1 | 从对话模式创建钩子规则，防止不期望的行为 |
 | `skill-creator` | 1.0.0 | Skill 全生命周期管理（创建、修改、评估、优化触发） |
@@ -58,6 +59,7 @@ terr-marketplace/
 ├── .gitignore
 ├── README.md                  ← 本文档
 └── plugins/                   ← 所有插件存放目录
+    ├── cc-statusline/        ← Claude Code 状态栏
     ├── config-sync/           ← 终端配置双向同步
     ├── dm-api/                ← 大漠插件 API 文档
     ├── hookify/               ← 钩子规则创建
