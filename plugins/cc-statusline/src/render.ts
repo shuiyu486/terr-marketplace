@@ -48,7 +48,7 @@ export function render(
   const inTok = fmtW(data.context_window.total_input_tokens);
   const ctxSize = fmtW(data.context_window.context_window_size);
 
-  const line1 = `${model}${effort} │ ctx:${color(inTok, 117)}/${color(ctxSize, 117)} ${ctx}`;
+  const line1 = `${model}${effort} │ ${color('ctx', 147)}:${color(inTok, 183)}/${color(ctxSize, 183)} ${ctx}`;
 
   let lines = line1;
 
@@ -58,14 +58,14 @@ export function render(
     const sesOut = fmtW(sesApiOut);
     const apiTotal = fmtW(sesApiIn + sesApiOut);
     const ts = color(now(), 245);
-    const line2 = `in:${color(inTok, 183)} out:${color(outTok, 183)} │ ses:${color(sesIn, 117)}/${color(sesOut, 117)} │ api:${color(apiTotal, 220)} │ ${ts}`;
+    const line2 = `${color('in', 147)}:${color(inTok, 183)} ${color('out', 147)}:${color(outTok, 183)} │ ${color('ses', 109)}:${color(sesIn, 117)}/${color(sesOut, 117)} │ ${color('api', 178)}:${color(apiTotal, 220)} │ ${ts}`;
     lines += `\n${line2}`;
   }
 
   const dir = data.workspace?.current_dir ?? data.cwd;
   if (cfg.showPath && dir) {
-    const path = color(dir, 117);
-    lines += `\n${path}`;
+    const path = color(dir, 109);
+    lines += `\n${color('path', 109)}:${path}`;
   }
 
   return lines;
