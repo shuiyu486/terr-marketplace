@@ -1,5 +1,4 @@
 ---
-name: configure
 description: Configure cc-statusline display options (effort, tokens, path, thresholds)
 allowed-tools: ["Bash", "Read", "Edit", "Write", "AskUserQuestion"]
 ---

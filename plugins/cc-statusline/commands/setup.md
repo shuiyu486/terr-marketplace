@@ -1,5 +1,4 @@
 ---
-name: setup
 description: Set up cc-statusline in Claude Code settings (detect platform, build, configure statusLine)
 allowed-tools: ["Bash", "Read", "Edit", "Write", "AskUserQuestion"]
 ---
