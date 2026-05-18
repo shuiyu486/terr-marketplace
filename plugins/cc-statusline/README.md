@@ -33,7 +33,7 @@ Then run the setup command:
 /cc-statusline:update
 ```
 
-One-click update to the latest version — finds, builds, and relinks.
+One-click update: pulls the latest from remote marketplace, builds, and relinks. No git push/commit needed.
 
 ## Configuration
 

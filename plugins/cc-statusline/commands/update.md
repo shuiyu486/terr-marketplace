@@ -1,62 +1,67 @@
 ---
-description: Update cc-statusline to the latest installed version (build + relink settings.json path)
+description: One-click update cc-statusline — pull latest from remote, build, and relink settings.json
 allowed-tools: ["Bash", "Read", "Edit", "Write"]
 ---
 
 # cc-statusline Update
 
-One-click update: find the latest installed version, build it, and update settings.json to point to the new path. Preserves your existing cc-statusline.json config.
+One-click update for already-installed users. Pulls the latest plugin from the remote marketplace, builds it, and updates `settings.json` to point to the new version. Preserves your existing `cc-statusline.json` config.
 
-## Step 0: Pull Latest (if needed)
+No git push/commit — this is a user-side update, not a maintainer publish.
 
-If you haven't pulled the latest plugin version yet, run this first:
+## Step 1: Git Pull Marketplace
 
-```
-/plugin install cc-statusline
-```
-
-Then re-run `/cc-statusline:update`.
-
-## Step 1: Find Latest Version Directory
-
-Scan for all installed versions of cc-statusline and pick the latest:
+Pull the latest plugin code from the remote marketplace repo:
 
 **Windows (PowerShell):**
 
 ```powershell
 $claudeDir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }
-$latest = (Get-ChildItem (Join-Path $claudeDir 'plugins\cache\*\cc-statusline\*') -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^\d+(\.\d+)+$' } | Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1)
-if (-not $latest) {
-    Write-Output "ERROR: cc-statusline not found. Install first: /plugin install cc-statusline"
+$marketplaceDir = Join-Path $claudeDir 'plugins\marketplaces\terr-marketplace'
+cd $marketplaceDir
+git pull 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Output "ERROR: git pull failed. Check network or run /plugin install cc-statusline manually."
     exit 1
 }
-$latestVersion = $latest.Name
-$latestPath = $latest.FullName
-Write-Output "LATEST_VERSION=$latestVersion"
-Write-Output "LATEST_PATH=$latestPath"
+Write-Output "MARKETPLACE_UPDATED"
 ```
 
 **macOS / Linux:**
 
 ```bash
-LATEST=$(ls -d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/*/cc-statusline/*/ 2>/dev/null | sort -V | tail -1)
-if [ -z "$LATEST" ]; then
-    echo "ERROR: cc-statusline not found. Install first: /plugin install cc-statusline"
-    exit 1
-fi
-LATEST_VERSION=$(basename "$LATEST")
-echo "LATEST_VERSION=$LATEST_VERSION"
-echo "LATEST_PATH=$LATEST"
+MARKETPLACE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/marketplaces/terr-marketplace"
+cd "$MARKETPLACE_DIR"
+git pull || { echo "ERROR: git pull failed. Check network or run /plugin install cc-statusline manually."; exit 1; }
+echo "MARKETPLACE_UPDATED"
 ```
 
-## Step 2: Read Current Version from settings.json
+## Step 2: Read Latest Version from Marketplace
 
-Read `settings.json` and extract the version from `statusLine.command`:
+Read the version from the plugin's `plugin.json`:
 
 **Windows (PowerShell):**
 
 ```powershell
-$claudeDir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }
+$sourceDir = Join-Path $marketplaceDir 'plugins\cc-statusline'
+$pluginJson = Get-Content (Join-Path $sourceDir '.claude-plugin\plugin.json') -Raw | ConvertFrom-Json
+$latestVersion = $pluginJson.version
+Write-Output "LATEST_VERSION=$latestVersion"
+```
+
+**macOS / Linux:**
+
+```bash
+SOURCE_DIR="$MARKETPLACE_DIR/plugins/cc-statusline"
+LATEST_VERSION=$(node -e "console.log(require('$SOURCE_DIR/.claude-plugin/plugin.json').version)")
+echo "LATEST_VERSION=$LATEST_VERSION"
+```
+
+## Step 3: Read Current Version from settings.json
+
+**Windows (PowerShell):**
+
+```powershell
 $settingsPath = Join-Path $claudeDir 'settings.json'
 if (-not (Test-Path $settingsPath)) {
     Write-Output "ERROR: settings.json not found. Run /cc-statusline:setup first."
@@ -64,13 +69,11 @@ if (-not (Test-Path $settingsPath)) {
 }
 $settings = Get-Content $settingsPath -Raw | ConvertFrom-Json
 $currentCmd = $settings.statusLine.command
-# Extract version from path like .../cc-statusline/1.0.0/dist/index.js
 $currentVersion = "unknown"
 if ($currentCmd -match 'cc-statusline[/\\]([\d.]+)[/\\]') {
     $currentVersion = $matches[1]
 }
 Write-Output "CURRENT_VERSION=$currentVersion"
-Write-Output "CURRENT_CMD=$currentCmd"
 ```
 
 **macOS / Linux:**
@@ -85,22 +88,52 @@ CURRENT_VERSION=$(node -e "try{process.stdout.write(require('$SETTINGS').statusL
 echo "CURRENT_VERSION=$CURRENT_VERSION"
 ```
 
-## Step 3: Compare Versions
+## Step 4: Compare Versions
 
 Compare `LATEST_VERSION` with `CURRENT_VERSION`:
 
 - If `LATEST_VERSION == CURRENT_VERSION`: tell the user **"Already up to date (v{version})."** and stop.
-- If `LATEST_VERSION > CURRENT_VERSION`: proceed to Step 4.
-- If comparison fails (unknown current version): proceed to Step 4 (repair mode).
+- If `LATEST_VERSION > CURRENT_VERSION`: proceed to Step 5.
+- If `CURRENT_VERSION` is "unknown" or comparison fails: proceed to Step 5 (repair mode).
 
-## Step 4: Build Latest Version
+## Step 5: Copy to Cache
 
-Run `npm install && npm run build` in the latest version directory:
+Copy the plugin source from marketplace to the cache directory, excluding build artifacts:
 
 **Windows (PowerShell):**
 
 ```powershell
-cd $latestPath
+$cacheDir = Join-Path $claudeDir "plugins\cache\terr-marketplace\cc-statusline\$latestVersion"
+# Remove existing stale copy if any
+if (Test-Path $cacheDir) { Remove-Item -Recurse -Force $cacheDir }
+New-Item -ItemType Directory -Force $cacheDir | Out-Null
+# Copy all except node_modules and dist (will rebuild)
+Copy-Item -Path "$sourceDir\*" -Destination $cacheDir -Recurse -Force
+# Remove stale node_modules and dist from cache copy
+Remove-Item -Recurse -Force (Join-Path $cacheDir 'node_modules') -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force (Join-Path $cacheDir 'dist') -ErrorAction SilentlyContinue
+Write-Output "CACHE_COPIED=$cacheDir"
+```
+
+**macOS / Linux:**
+
+```bash
+CACHE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/cache/terr-marketplace/cc-statusline/$LATEST_VERSION"
+rm -rf "$CACHE_DIR"
+mkdir -p "$CACHE_DIR"
+# Copy all except node_modules and dist
+rsync -a --exclude='node_modules' --exclude='dist' --exclude='.git' "$SOURCE_DIR/" "$CACHE_DIR/"
+echo "CACHE_COPIED=$CACHE_DIR"
+```
+
+## Step 6: Build
+
+Run `npm install && npm run build` in the cache directory:
+
+**Windows (PowerShell):**
+
+```powershell
+cd $cacheDir
 npm install 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Output "ERROR: npm install failed"
@@ -117,29 +150,23 @@ Write-Output "BUILD_OK"
 **macOS / Linux:**
 
 ```bash
-cd "$LATEST_PATH"
-npm install && npm run build
-if [ $? -ne 0 ]; then
-    echo "ERROR: build failed"
-    exit 1
-fi
+cd "$CACHE_DIR"
+npm install && npm run build || { echo "ERROR: build failed"; exit 1; }
 echo "BUILD_OK"
 ```
 
-## Step 5: Update settings.json
+## Step 7: Update settings.json
 
-Replace the `statusLine.command` path with the latest version path:
-
-The new command uses forward slashes (Claude Code handles this correctly on all platforms):
+Point `statusLine.command` to the new cached build. Uses forward slashes (Claude Code handles this correctly on all platforms):
 
 ```
-node "<LATEST_PATH>/dist/index.js"
+node "<CACHE_DIR>/dist/index.js"
 ```
 
 **Windows PowerShell — UTF-8 without BOM:**
 
 ```powershell
-$newCmd = "node `"$($latestPath -replace '\\','/')/dist/index.js`""
+$newCmd = "node `"$($cacheDir -replace '\\','/')/dist/index.js`""
 $settings = Get-Content $settingsPath -Raw | ConvertFrom-Json
 $settings.statusLine.command = $newCmd
 $json = $settings | ConvertTo-Json -Depth 10
@@ -154,12 +181,37 @@ Write-Output "PATH_UPDATED"
 node -e "
 const fs = require('fs');
 const s = JSON.parse(fs.readFileSync('$SETTINGS', 'utf8'));
-s.statusLine.command = 'node \"$LATEST_PATH/dist/index.js\"';
+s.statusLine.command = 'node \"$CACHE_DIR/dist/index.js\"';
 fs.writeFileSync('$SETTINGS', JSON.stringify(s, null, 2));
 "
 ```
 
-## Step 6: Verify
+## Step 8: Clean Old Versions
+
+Remove outdated cached versions, keeping only the current one:
+
+**Windows (PowerShell):**
+
+```powershell
+$cacheRoot = Join-Path $claudeDir 'plugins\cache\terr-marketplace\cc-statusline'
+Get-ChildItem $cacheRoot -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne $latestVersion } | Remove-Item -Recurse -Force
+Write-Output "OLD_CLEANED"
+```
+
+**macOS / Linux:**
+
+```bash
+CACHE_ROOT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/cache/terr-marketplace/cc-statusline"
+for d in "$CACHE_ROOT"/*/; do
+    dir_name=$(basename "$d")
+    if [ "$dir_name" != "$LATEST_VERSION" ]; then
+        rm -rf "$d"
+    fi
+done
+echo "OLD_CLEANED"
+```
+
+## Step 9: Verify
 
 Read `settings.json` and confirm the path points to the new version:
 
@@ -170,3 +222,5 @@ cat ~/.claude/settings.json | grep -A2 statusLine
 Tell the user:
 
 > **Updated to v{LATEST_VERSION}!** The status line now runs from the latest build. If it was already running, the new version takes effect on the next status line refresh (~300ms). No restart needed.
+> 
+> Previous version was v{CURRENT_VERSION}. Old cached versions have been cleaned up.

@@ -1,4 +1,6 @@
-# 发布流程
+# 发布流程 (Maintainer)
+
+> 这是 **维护者** 发布新版本的流程。**终端用户** 使用 `/cc-statusline:update` 一键更新，无需执行以下步骤。
 
 源码位于 terr-marketplace 仓库子目录 `plugins/cc-statusline/`。
 
