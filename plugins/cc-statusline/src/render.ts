@@ -46,25 +46,7 @@ export function render(
   const line1 = `${model}${effort} │ ${color("ctx", 74)}:${color(inTok, 252)}/${color(ctxSize, 252)} ${ctxInfo}`;
   lines.push(line1);
 
-  // Feature lines (between line1 and token line)
-  const toolLine = renderTools(ctx.tools, cfg);
-  if (toolLine) lines.push(`${color("tools", 74)}: ${toolLine}`);
-
-  const agentLine = renderAgents(ctx.agents, cfg);
-  if (agentLine) lines.push(`${color("agent", 141)}: ${agentLine}`);
-
-  const todoLine = renderTodos(
-    ctx.todos,
-    ctx.todoCompleted,
-    ctx.todoTotal,
-    cfg,
-  );
-  if (todoLine) lines.push(`${color("todo", 115)}: ${todoLine}`);
-
-  const limitLine = renderLimits(data.rate_limits, cfg);
-  if (limitLine) lines.push(limitLine);
-
-  // Line N+1: tokens / session / api
+  // Line 2: tokens / session / api
   if (cfg.showTokensLine) {
     const outTok = fmtW(data.context_window.total_output_tokens);
     const sesIn = fmtW(ctx.sesApiIn);
@@ -74,6 +56,27 @@ export function render(
     const line2 = `${color("in", 74)}:${color(inTok, 252)} ${color("out", 74)}:${color(outTok, 252)} │ ${color("ses", 138)}:${color(sesIn, 115)}/${color(sesOut, 115)} │ ${color("api", 172)}:${color(apiTotal, 172)} │ ${ts}`;
     lines.push(line2);
   }
+
+  // Line 3: usage limits
+  const limitLine = renderLimits(data.rate_limits, cfg);
+  if (limitLine) lines.push(limitLine);
+
+  // Line 4: tool activity
+  const toolLine = renderTools(ctx.tools, cfg);
+  if (toolLine) lines.push(`${color("tools", 74)}: ${toolLine}`);
+
+  // Line 5: agent tracking
+  const agentLine = renderAgents(ctx.agents, cfg);
+  if (agentLine) lines.push(`${color("agent", 141)}: ${agentLine}`);
+
+  // Line 6: todo progress
+  const todoLine = renderTodos(
+    ctx.todos,
+    ctx.todoCompleted,
+    ctx.todoTotal,
+    cfg,
+  );
+  if (todoLine) lines.push(`${color("todo", 115)}: ${todoLine}`);
 
   // Last line: path
   const dir = data.workspace?.current_dir ?? data.cwd;

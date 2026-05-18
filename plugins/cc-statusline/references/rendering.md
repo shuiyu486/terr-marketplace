@@ -6,11 +6,11 @@
 
 ```
 Line 1: model │ effort │ ctx:inTok/ctxSize pct%        [始终显示]
-Line 2: tools: ◐ Read file.ts  │  ✓ Read ×3           [showToolActivity]
-Line 3: agent: ◷ explore: desc (2m 15s)               [showAgentTracking]
-Line 4: todo: ▸ Fix bug (2/5)                          [showTodoProgress]
-Line 5: usage: ████████░░ 75% (12h 50m)               [showUsageLimits, 有数据时]
-Line 6: in:inTok out:outTok │ ses:in/out │ api:total │ ts  [showTokensLine]
+Line 2: in:inTok out:outTok │ ses:in/out │ api:total │ ts  [showTokensLine]
+Line 3: usage: ████████░░ 75% (12h 50m)               [showUsageLimits, 有数据时]
+Line 4: tools: ◐ Read file.ts  │  ✓ Read ×3           [showToolActivity]
+Line 5: agent: ◷ explore: desc (2m 15s)               [showAgentTracking]
+Line 6: todo: ▸ Fix bug (2/5)                          [showTodoProgress]
 Line 7: path: /dir                                     [showPath]
 ```
 
