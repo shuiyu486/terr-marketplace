@@ -1,6 +1,7 @@
 ## cc-statusline 插件
 
 Claude Code 状态栏插件。每 ~300ms 通过 stdin JSON 读入 `StatusLineData`，解析 transcript JSONL，渲染 ANSI 状态栏。
+项目路径在：~\.claude\plugins\marketplaces\terr-marketplace\plugins\cc-statusline
 
 ## 模块索引
 
