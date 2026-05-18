@@ -132,3 +132,17 @@ settings.json 的 statusLine 字段由 `/cc-statusline:setup` 写入，由 `/cc-
 - Windows 10/11 + macOS（跨平台 PID 查找）
 - Claude Code v2.1+（stdin JSON + transcript_path 字段）
 - ANSI 256色终端（WezTerm、Windows Terminal、iTerm2 等）
+
+### CLAUDE.local.md 同步
+
+每次更新本文件时，必须同步到工作目录 `C:\AI\m_projects\cc-statusline\` 和 terr-marketplace 插件目录：
+
+```bash
+# 从 terr-marketplace 插件目录同步到工作目录
+cp ~/.claude/plugins/marketplaces/terr-marketplace/plugins/cc-statusline/CLAUDE.local.md "C:/AI/m_projects/cc-statusline/CLAUDE.local.md"
+
+# 从工作目录同步到 terr-marketplace 插件目录
+cp "C:/AI/m_projects/cc-statusline/CLAUDE.local.md" ~/.claude/plugins/marketplaces/terr-marketplace/plugins/cc-statusline/CLAUDE.local.md
+```
+
+两处文件应始终保持一致。
