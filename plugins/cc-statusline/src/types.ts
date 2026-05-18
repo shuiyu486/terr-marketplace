@@ -12,7 +12,11 @@ export interface StatusLineData {
     level: string;
   };
   transcript_path: string;
-  currentDirectory?: string;
+  workspace?: {
+    current_dir?: string;
+    project_dir?: string;
+  };
+  cwd?: string;
 }
 
 export interface UsageEntry {

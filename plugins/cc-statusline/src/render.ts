@@ -48,7 +48,7 @@ export function render(
   const inTok = fmtW(data.context_window.total_input_tokens);
   const ctxSize = fmtW(data.context_window.context_window_size);
 
-  const line1 = `${model}${effort} │ ctx:${inTok}/${ctxSize} ${ctx}`;
+  const line1 = `${model}${effort} │ ctx:${color(inTok, 117)}/${color(ctxSize, 117)} ${ctx}`;
 
   let lines = line1;
 
@@ -58,12 +58,13 @@ export function render(
     const sesOut = fmtW(sesApiOut);
     const apiTotal = fmtW(sesApiIn + sesApiOut);
     const ts = color(now(), 245);
-    const line2 = `in:${inTok} out:${outTok} │ ses:${sesIn}/${sesOut} │ api:${apiTotal} │ ${ts}`;
+    const line2 = `in:${color(inTok, 183)} out:${color(outTok, 183)} │ ses:${color(sesIn, 117)}/${color(sesOut, 117)} │ api:${color(apiTotal, 220)} │ ${ts}`;
     lines += `\n${line2}`;
   }
 
-  if (cfg.showPath && data.currentDirectory) {
-    const path = color(data.currentDirectory, 245);
+  const dir = data.workspace?.current_dir ?? data.cwd;
+  if (cfg.showPath && dir) {
+    const path = color(dir, 117);
     lines += `\n${path}`;
   }
 
