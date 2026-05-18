@@ -1,12 +1,21 @@
-﻿{
+{
   "name": "config-sync",
-  "version": "1.1.3",
-  "description": "Two-way sync and quick compatibility check of terminal config files between local environment and ccNovaTerm project. Manages 7 config files including CLAUDE.local.md. Hash-based quick check mode for instant compatibility verification. Progressive disclosure architecture with 8 reference files. Auto-protects proxy settings; supports ~/.configsyncignore for custom exclusions.",
+  "version": "1.2.0",
+  "description": "Two-way sync and quick compatibility check of terminal config files between local environment and ccNovaTerm project. Manages 8 config files including CLAUDE.local.md and statusline-wrapper.sh. Hash-based quick check mode for instant compatibility verification. Progressive disclosure architecture with 8 reference files. Auto-protects proxy settings; supports ~/.configsyncignore for custom exclusions. Uses bash wrapper for Windows stdin pipe workaround.",
   "author": {
     "name": "ccNovaTerm"
   },
   "homepage": "https://github.com/shuiyu486/ccNovaTerm",
   "repository": "https://github.com/shuiyu486/ccNovaTerm",
   "license": "MIT",
-  "keywords": ["terminal", "configuration", "sync", "wezterm", "nushell", "starship", "claude-code", "ccnovaterm"]
+  "keywords": [
+    "terminal",
+    "configuration",
+    "sync",
+    "wezterm",
+    "nushell",
+    "starship",
+    "claude-code",
+    "ccnovaterm"
+  ]
 }

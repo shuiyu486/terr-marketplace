@@ -54,7 +54,7 @@ if ($behindCount -gt 0) {
 
 ## 4c. Hash 级快速对比
 
-对 7 个文件计算 SHA256。**hash 一致直接跳过，只有 hash 不同的文件才展开占位符做内容 diff：**
+对 8 个文件计算 SHA256。**hash 一致直接跳过，只有 hash 不同的文件才展开占位符做内容 diff：**
 
 ```powershell
 # 路径映射
@@ -64,6 +64,7 @@ $fileMap = @{
     "env.nu"           = "$env:APPDATA\nushell\env.nu"
     "starship.toml"    = "$env:USERPROFILE\.config\starship.toml"
     "statusline.ps1"   = "$env:USERPROFILE\.claude\statusline.ps1"
+    "statusline-wrapper.sh" = "$env:USERPROFILE\.claude\statusline-wrapper.sh"
     "settings.json"    = "$env:USERPROFILE\.claude\settings.json"
     "CLAUDE.local.md"  = "$repoRoot\CLAUDE.local.md"
 }

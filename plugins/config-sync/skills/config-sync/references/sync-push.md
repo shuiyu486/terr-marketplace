@@ -7,7 +7,7 @@
 ## 第一步：准备模板化的本地配置
 
 1. **读取排除规则** — 解析 `~/.configsyncignore`（如存在），构建 `$excludeRules`
-2. **读取本地文件** — 用 UTF-8 编码读取所有 7 个配置文件。**跳过文件级排除的文件**（`Test-FileExcluded` 返回 `$true` 的文件不参与后续步骤）。文件路径见 `paths.md`——CLAUDE.local.md 从 `$repoRoot\CLAUDE.local.md` 读取（非 `$env:USERPROFILE`）。
+2. **读取本地文件** — 用 UTF-8 编码读取所有 8 个配置文件。**跳过文件级排除的文件**（`Test-FileExcluded` 返回 `$true` 的文件不参与后续步骤）。文件路径见 `paths.md`——CLAUDE.local.md 从 `$repoRoot\CLAUDE.local.md` 读取（非 `$env:USERPROFILE`）。
 3. **检测系统特定值** — 自动识别：
    - nu.exe 路径（`Get-Command nu.exe` → `~\AppData\Local\Programs\nu\bin\nu.exe` → `${env:ProgramFiles}\nu\bin\nu.exe`）
    - Git usr/bin 路径（从 `git.exe` 推断 → `C:\Program Files\Git\usr\bin`）

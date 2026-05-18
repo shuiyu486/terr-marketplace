@@ -1,7 +1,7 @@
 ---
 name: config-sync
 description: |
-  Two-way sync, diff, and quick compatibility check of terminal configs (WezTerm, Nushell, Starship, Claude Code) between local environment and ccNovaTerm project. Manages 7 files with auto-fetch from remote git; auto-protects proxy settings. Triggers on: "同步到项目/本地", "sync/push/pull/apply configs", "对比/diff/compare/有什么不同/看看区别", "更新模板", "快速检查/quick check/兼容吗/check compatibility", or any mention of comparing/syncing configs against ccNovaTerm. Use proactively when users edit or discuss WezTerm/Nushell/Starship/Claude Code configs — suggest a quick check after editing managed files.
+  Two-way sync, diff, and quick compatibility check of terminal configs (WezTerm, Nushell, Starship, Claude Code) between local environment and ccNovaTerm project. Manages 8 files with auto-fetch from remote git; auto-protects proxy settings. Triggers on: "同步到项目/本地", "sync/push/pull/apply configs", "对比/diff/compare/有什么不同/看看区别", "更新模板", "快速检查/quick check/兼容吗/check compatibility", or any mention of comparing/syncing configs against ccNovaTerm. Use proactively when users edit or discuss WezTerm/Nushell/Starship/Claude Code configs — suggest a quick check after editing managed files.
 compatibility: Windows (PowerShell 5.1+), supports local project and remote GitHub fetch
 ---
 
@@ -84,7 +84,7 @@ $cacheDir = "$env:TEMP\ccNovaTerm-remote-config"
 New-Item -ItemType Directory -Force $cacheDir | Out-Null
 
 $wc = New-Object System.Net.WebClient
-$files = @(".wezterm.lua", "config.nu", "env.nu", "starship.toml", "statusline.ps1", "settings.json", "CLAUDE.local.md")
+$files = @(".wezterm.lua", "config.nu", "env.nu", "starship.toml", "statusline.ps1", "statusline-wrapper.sh", "settings.json", "CLAUDE.local.md")
 $remoteOk = $true
 foreach ($f in $files) {
     $url = "$rawBase/$branch/config/$f"
@@ -121,6 +121,7 @@ $wc.Dispose()
 | `~\AppData\Roaming\nushell\env.nu` | `config/env.nu` | `__GIT_USR_BIN__` → Git usr/bin 目录 |
 | `~/.config/starship.toml` | `config/starship.toml` | 无 |
 | `~/.claude/statusline.ps1` | `config/statusline.ps1` | 无 |
+| `~/.claude/statusline-wrapper.sh` | `config/statusline-wrapper.sh` | 无 |
 | `~/.claude/settings.json` | `config/settings.json` | `__USERNAME__` → 当前用户名（仅 statusLine 字段） |
 | `<项目根>/CLAUDE.local.md` | `config/CLAUDE.local.md` | 无 |
 

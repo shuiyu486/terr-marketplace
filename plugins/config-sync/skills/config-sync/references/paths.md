@@ -9,6 +9,7 @@
 | Nushell env | `$env:APPDATA\nushell\env.nu` |
 | Starship | `$env:USERPROFILE\.config\starship.toml` |
 | Claude statusline | `$env:USERPROFILE\.claude\statusline.ps1` |
+| Claude statusline wrapper | `$env:USERPROFILE\.claude\statusline-wrapper.sh` |
 | Claude settings | `$env:USERPROFILE\.claude\settings.json` |
 | CLAUDE.local.md | `$repoRoot\CLAUDE.local.md`（项目根目录，由 Step 0 的 `$repoRoot` 确定） |
 
