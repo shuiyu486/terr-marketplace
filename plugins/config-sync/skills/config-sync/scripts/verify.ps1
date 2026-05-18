@@ -2,8 +2,7 @@
 .SYNOPSIS
     Verify config file syntax and integrity after sync
 .DESCRIPTION
-    Checks PowerShell syntax (statusline.ps1), JSON syntax (settings.json),
-    file size sanity, and WezTerm availability.
+    Checks file size sanity, BOM detection, and WezTerm availability.
     Exit code 0 = all good, 1 = issues found.
 .PARAMETER ConfigDir
     Directory containing config files to verify (local env or ccNovaTerm config/)
@@ -25,42 +24,10 @@ function Write-NG([string]$msg) { Write-Host "  [NG] $msg" -ForegroundColor Red;
 
 Write-Host "Verifying configs in: $ConfigDir" -ForegroundColor Cyan
 
-# --- PowerShell syntax check (statusline.ps1) ---
-$statuslinePath = Join-Path $ConfigDir "statusline.ps1"
-if (Test-Path $statuslinePath) {
-    $tokens = $null; $errors = @()
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile($statuslinePath, [ref]$tokens, [ref]$errors)
-    if ($errors.Count -eq 0) { Write-OK "statusline.ps1 syntax" }
-    else {
-        Write-NG "statusline.ps1 has $($errors.Count) syntax error(s)"
-        $errors | ForEach-Object { Write-Host "    $_" }
-    }
-} else {
-    Write-NG "statusline.ps1 not found at $statuslinePath"
-}
-
-# --- JSON syntax check (settings.json) ---
-$settingsPath = Join-Path $ConfigDir "settings.json"
-if (Test-Path $settingsPath) {
-    try {
-        $raw = Get-Content $settingsPath -Raw -Encoding UTF8
-        if ($raw.Trim()) {
-            $null = $raw | ConvertFrom-Json
-            Write-OK "settings.json valid JSON"
-        } else {
-            Write-NG "settings.json is empty"
-        }
-    } catch {
-        Write-NG "settings.json JSON parse error: $_"
-    }
-} else {
-    Write-OK "settings.json not present (skipped)"
-}
-
 # --- BOM detection (EF BB BF breaks Nushell alias parsing) ---
 Write-Host "Checking for BOM..." -ForegroundColor Cyan
 $bomFiles = @()
-$checkFiles = @(".wezterm.lua", "config.nu", "env.nu", "starship.toml", "statusline.ps1", "settings.json")
+$checkFiles = @(".wezterm.lua", "config.nu", "env.nu", "starship.toml")
 foreach ($f in $checkFiles) {
     $fp = Join-Path $ConfigDir $f
     if (-not (Test-Path $fp)) { continue }
@@ -73,7 +40,7 @@ foreach ($f in $checkFiles) {
 if ($bomFiles.Count -eq 0) { Write-OK "No BOM detected" }
 
 # --- File size sanity ---
-$files = @(".wezterm.lua", "config.nu", "env.nu", "starship.toml", "statusline.ps1")
+$files = @(".wezterm.lua", "config.nu", "env.nu", "starship.toml")
 foreach ($f in $files) {
     $fp = Join-Path $ConfigDir $f
     if (Test-Path $fp) {

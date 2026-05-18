@@ -8,9 +8,6 @@
 | Nushell config | `$env:APPDATA\nushell\config.nu` (i.e., `~\AppData\Roaming\nushell\config.nu`) |
 | Nushell env | `$env:APPDATA\nushell\env.nu` |
 | Starship | `$env:USERPROFILE\.config\starship.toml` |
-| Claude statusline | `$env:USERPROFILE\.claude\statusline.ps1` |
-| Claude statusline wrapper | `$env:USERPROFILE\.claude\statusline-wrapper.sh` |
-| Claude settings | `$env:USERPROFILE\.claude\settings.json` |
 | CLAUDE.local.md | `$repoRoot\CLAUDE.local.md`（项目根目录，由 Step 0 的 `$repoRoot` 确定） |
 
 ## ccNovaTerm Project Template Paths
@@ -23,8 +20,6 @@ All under `<repo-root>/config/`:
 | Nushell config | `config/config.nu` |
 | Nushell env | `config/env.nu` |
 | Starship | `config/starship.toml` |
-| Claude statusline | `config/statusline.ps1` |
-| Claude settings | `config/settings.json` |
 | CLAUDE.local.md | `config/CLAUDE.local.md` |
 
 ## Finding ccNovaTerm Repo Root (优先顺序)
@@ -122,7 +117,3 @@ When pushing configs to the remote repository without a local clone (方向 1 �
 ## Backup Directory
 
 `$env:USERPROFILE\ccNovaTerm-backup\<yyyyMMdd_HHmmss>\`
-
-## Cache Directory (statusline runtime)
-
-`$env:TEMP\ccNovaTerm-statusline-cache\ses-{PID}.txt`

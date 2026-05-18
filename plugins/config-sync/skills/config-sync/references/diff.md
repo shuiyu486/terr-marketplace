@@ -4,14 +4,12 @@
 
 1. **获取模板源** — 执行第零步的完整流程（0a → 0b → 0c 或 0d）
 2. **读取排除规则** — 解析 `~/.configsyncignore`（如存在），构建 `$excludeRules`
-3. **成对读取** — 对 8 个文件，同时读取本地版本和模板版本（均用 UTF-8 编码）。**跳过文件级排除的文件**。文件路径见 `paths.md`；CLAUDE.local.md 本地路径为 `$repoRoot\CLAUDE.local.md`。**settings.json 特殊处理**：本地只提取 `statusLine` 字段参与对比，忽略 `env`、`permissions`、`model` 等包含敏感信息的字段（避免 API key 泄露到 diff 输出）。如果模板只有 `statusLine` 而本地有其他字段，标注"本地有额外设置"即可，不输出具体值。
+3. **成对读取** — 对 5 个文件，同时读取本地版本和模板版本（均用 UTF-8 编码）。**跳过文件级排除的文件**。文件路径见 `paths.md`；CLAUDE.local.md 本地路径为 `$repoRoot\CLAUDE.local.md`。
 4. **占位符感知对比** — 比较时将模板中的占位符替换为当前系统实际值后再 diff，这样差异反映的是真实的配置变化，而非路径不同：
    - `__NU_PATH__` → 当前系统 nu.exe 路径
    - `__GIT_USR_BIN__` → 当前系统 Git usr/bin 路径
-   - `__USERNAME__` → `Split-Path -Leaf $env:USERPROFILE`（用户目录名）
    - **内置保护规则**：`# load-env { http_proxy: ... }` 视为与本地 `load-env` 行一致（不标差异）
    - **用户排除规则**：对于匹配用户排除关键字的行，视为一致（不标差异）
-   - 对于 `settings.json`：本地和模板都只取 `statusLine` 字段对比，其余字段只报告"存在差异"但不输出内容
 5. **输出差异报告** — 对每个文件报告：
    - ✅ 一致：内容相同（占位符展开后）
    - ⚠️ 仅本地有不同：列出差异行

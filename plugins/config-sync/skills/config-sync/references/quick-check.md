@@ -4,7 +4,7 @@
 
 **设计理念**：完整对比每次都要远程获取 → 占位符展开 → 逐文件内容 diff，即使文件完全一致也消耗大量 token。快速检查翻转流程：**先用 SHA256 hash 判断有无变化，只有 hash 不同时才展开占位符做内容对比。** 大多数时候用户只改了 1-2 个文件，其余文件 hash 一致直接跳过。
 
-**排除规则说明**：快速检查为保持轻量，跳过 `~/.configsyncignore` 用户排除规则，仅使用内联保护（env.nu 代理行 + settings.json 字段过滤）。如需完整双层排除系统，使用方向 3（完整对比）。
+**排除规则说明**：快速检查为保持轻量，跳过 `~/.configsyncignore` 用户排除规则，仅使用内联保护（env.nu 代理行）。如需完整双层排除系统，使用方向 3（完整对比）。
 
 ## 4a. 定位本地 ccNovaTerm 项目（不执行远程获取）
 
@@ -54,7 +54,7 @@ if ($behindCount -gt 0) {
 
 ## 4c. Hash 级快速对比
 
-对 8 个文件计算 SHA256。**hash 一致直接跳过，只有 hash 不同的文件才展开占位符做内容 diff：**
+对 5 个文件计算 SHA256。**hash 一致直接跳过，只有 hash 不同的文件才展开占位符做内容 diff：**
 
 ```powershell
 # 路径映射
@@ -63,9 +63,6 @@ $fileMap = @{
     "config.nu"        = "$env:APPDATA\nushell\config.nu"
     "env.nu"           = "$env:APPDATA\nushell\env.nu"
     "starship.toml"    = "$env:USERPROFILE\.config\starship.toml"
-    "statusline.ps1"   = "$env:USERPROFILE\.claude\statusline.ps1"
-    "statusline-wrapper.sh" = "$env:USERPROFILE\.claude\statusline-wrapper.sh"
-    "settings.json"    = "$env:USERPROFILE\.claude\settings.json"
     "CLAUDE.local.md"  = "$repoRoot\CLAUDE.local.md"
 }
 
@@ -76,7 +73,6 @@ try { $nuPath = (Get-Command nu.exe -ErrorAction Stop).Source } catch {
 }
 $gitUsrBin = "$env:ProgramFiles\Git\usr\bin"
 if (-not (Test-Path $gitUsrBin)) { $gitUsrBin = "C:\Program Files\Git\usr\bin" }
-$username = Split-Path -Leaf $env:USERPROFILE
 
 $results = @()
 foreach ($fname in $fileMap.Keys) {
@@ -109,22 +105,8 @@ foreach ($fname in $fileMap.Keys) {
     $expanded = $tplContent
     $expanded = $expanded -replace '__NU_PATH__', ($nuPath -replace '\\', '\\')
     $expanded = $expanded -replace '__GIT_USR_BIN__', ($gitUsrBin -replace '\\', '\\')
-    $expanded = $expanded -replace '__USERNAME__', $username
 
-    # settings.json 特殊处理：只对比 statusLine 字段
-    if ($fname -eq "settings.json") {
-        $tplJson = $expanded | ConvertFrom-Json
-        $localJson = $localContent | ConvertFrom-Json
-        $tplSL = ($tplJson.statusLine | ConvertTo-Json -Compress)
-        $localSL = if ($localJson.statusLine) { ($localJson.statusLine | ConvertTo-Json -Compress) } else { "" }
-        if ($tplSL -eq $localSL) {
-            $results += [PSCustomObject]@{ File=$fname; Status="✅ 一致"; Detail="statusLine 相同（本地有其他字段）" }
-        } else {
-            $results += [PSCustomObject]@{ File=$fname; Status="⚠️ 有差异"; Detail="statusLine 不同" }
-        }
-        continue
-    }
-
+    
     # env.nu 代理行保护：模板中注释的 load-env 与本地激活的 load-env 视为一致
     if ($fname -eq "env.nu") {
         $normalizedLocal = ($localContent -split "`n" | ForEach-Object {
@@ -172,11 +154,9 @@ config.nu        ✅ 一致
 env.nu           ✅ 一致（代理行差异自动忽略）
 starship.toml    ⚠️ 有差异
   L12: 模板='format = "$all"' → 本地='format = "$directory$git_branch"'
-statusline.ps1   ✅ 一致
-settings.json    ✅ 一致（本地有其他字段）
 CLAUDE.local.md ✅ 一致
 
-结果: 6/7 兼容, 1 个文件有差异
+结果: 4/5 兼容, 1 个文件有差异
 建议: starship.toml 需要同步 → "同步到项目" 或 "同步到本地"
 ```
 
@@ -192,4 +172,4 @@ CLAUDE.local.md ✅ 一致
 | Token 消耗 | **极低**（无变更文件 hash 一致即跳过） | 较高 |
 | 适用场景 | 修改配置后快速验证 | 首次对比、无本地 clone 时、需要完整 diff |
 | 依赖本地 clone | **必须** | 自动远程获取 |
-| 排除规则 | 复用内置代理保护 + settings.json 字段过滤 | 完整双层排除系统 |
+| 排除规则 | 复用内置代理保护 | 完整双层排除系统 |

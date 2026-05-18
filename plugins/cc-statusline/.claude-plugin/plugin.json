@@ -1,0 +1,15 @@
+{
+  "name": "cc-statusline",
+  "version": "1.0.0",
+  "description": "A feature-rich status line for Claude Code — model, effort, context, tokens, session cost, and path",
+  "commands": [
+    {
+      "name": "setup",
+      "description": "Set up the status line in Claude Code settings"
+    },
+    {
+      "name": "configure",
+      "description": "Configure status line display options"
+    }
+  ]
+}

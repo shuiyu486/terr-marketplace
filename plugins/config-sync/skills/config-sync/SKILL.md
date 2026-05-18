@@ -1,7 +1,7 @@
 ---
 name: config-sync
 description: |
-  Two-way sync, diff, and quick compatibility check of terminal configs (WezTerm, Nushell, Starship, Claude Code) between local environment and ccNovaTerm project. Manages 8 files with auto-fetch from remote git; auto-protects proxy settings. Triggers on: "同步到项目/本地", "sync/push/pull/apply configs", "对比/diff/compare/有什么不同/看看区别", "更新模板", "快速检查/quick check/兼容吗/check compatibility", or any mention of comparing/syncing configs against ccNovaTerm. Use proactively when users edit or discuss WezTerm/Nushell/Starship/Claude Code configs — suggest a quick check after editing managed files.
+  Two-way sync, diff, and quick compatibility check of terminal configs (WezTerm, Nushell, Starship, Claude Code) between local environment and ccNovaTerm project. Manages 5 files with auto-fetch from remote git; auto-protects proxy settings. Triggers on: "同步到项目/本地", "sync/push/pull/apply configs", "对比/diff/compare/有什么不同/看看区别", "更新模板", "快速检查/quick check/兼容吗/check compatibility", or any mention of comparing/syncing configs against ccNovaTerm. Use proactively when users edit or discuss WezTerm/Nushell/Starship/Claude Code configs — suggest a quick check after editing managed files.
 compatibility: Windows (PowerShell 5.1+), supports local project and remote GitHub fetch
 ---
 
@@ -84,7 +84,7 @@ $cacheDir = "$env:TEMP\ccNovaTerm-remote-config"
 New-Item -ItemType Directory -Force $cacheDir | Out-Null
 
 $wc = New-Object System.Net.WebClient
-$files = @(".wezterm.lua", "config.nu", "env.nu", "starship.toml", "statusline.ps1", "statusline-wrapper.sh", "settings.json", "CLAUDE.local.md")
+$files = @(".wezterm.lua", "config.nu", "env.nu", "starship.toml", "CLAUDE.local.md")
 $remoteOk = $true
 foreach ($f in $files) {
     $url = "$rawBase/$branch/config/$f"
@@ -120,15 +120,11 @@ $wc.Dispose()
 | `~\AppData\Roaming\nushell\config.nu` | `config/config.nu` | 无 |
 | `~\AppData\Roaming\nushell\env.nu` | `config/env.nu` | `__GIT_USR_BIN__` → Git usr/bin 目录 |
 | `~/.config/starship.toml` | `config/starship.toml` | 无 |
-| `~/.claude/statusline.ps1` | `config/statusline.ps1` | 无 |
-| `~/.claude/statusline-wrapper.sh` | `config/statusline-wrapper.sh` | 无 |
-| `~/.claude/settings.json` | `config/settings.json` | `__USERNAME__` → 当前用户名（仅 statusLine 字段） |
 | `<项目根>/CLAUDE.local.md` | `config/CLAUDE.local.md` | 无 |
 
 **占位符规则**：
 - `__NU_PATH__` — Windows 用 nu.exe 完整路径（双反斜杠），macOS 用 `'nu'`
 - `__GIT_USR_BIN__` — Git 安装目录下的 `usr\bin` 路径（双反斜杠）
-- `__USERNAME__` — `Split-Path -Leaf $env:USERPROFILE`（用户目录名，不是 `$env:USERNAME`——两者在 Windows 上可能不同）
 
 ## 双重排除机制
 
@@ -167,8 +163,8 @@ config-sync 有两层排除规则：
 
 每次同步后执行这些检查：
 
-1. **PowerShell 语法** — 用 `[System.Management.Automation.Language.Parser]::ParseFile()` 检查 `statusline.ps1`
-2. **JSON 语法** — 用 `ConvertFrom-Json` 检查 `settings.json`
+1. **PowerShell 语法** — 用 `[System.Management.Automation.Language.Parser]::ParseFile()` 检查 `.wezterm.lua`（基本结构）
+2. **TOML 格式** — 检查 `starship.toml` 含 schema reference
 3. **文件大小** — 确认所有写入文件 > 10 字节
 4. **Unicode 完整性** — 检查 `starship.toml` 是否含有预期的 Nerd Font 字符。如果文件中出现 `顐` `禲` `癩` 等 CJK 替代字符，说明编码已损坏
 5. **WezTerm 状态** — 运行 `wezterm cli list` 确认 WezTerm 在运行
@@ -187,7 +183,7 @@ config-sync 有两层排除规则：
 
 3. `references/exclusions.md` — 排除规则（方向 1-3 需要；方向 4 跳过，使用内联保护）
 4. `references/sync-push.md` — 方向 1 完整流程
-5. `references/sync-pull.md` — 方向 2 完整流程（含 settings.json 合并代码）
+5. `references/sync-pull.md` — 方向 2 完整流程
 6. `references/diff.md` — 方向 3 完整流程
 7. `references/quick-check.md` — 方向 4 完整流程（含 git 新鲜度检测）
 

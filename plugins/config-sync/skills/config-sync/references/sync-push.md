@@ -7,7 +7,7 @@
 ## 第一步：准备模板化的本地配置
 
 1. **读取排除规则** — 解析 `~/.configsyncignore`（如存在），构建 `$excludeRules`
-2. **读取本地文件** — 用 UTF-8 编码读取所有 8 个配置文件。**跳过文件级排除的文件**（`Test-FileExcluded` 返回 `$true` 的文件不参与后续步骤）。文件路径见 `paths.md`——CLAUDE.local.md 从 `$repoRoot\CLAUDE.local.md` 读取（非 `$env:USERPROFILE`）。
+2. **读取本地文件** — 用 UTF-8 编码读取所有 5 个配置文件。**跳过文件级排除的文件**（`Test-FileExcluded` 返回 `$true` 的文件不参与后续步骤）。文件路径见 `paths.md`——CLAUDE.local.md 从 `$repoRoot\CLAUDE.local.md` 读取（非 `$env:USERPROFILE`）。
 3. **检测系统特定值** — 自动识别：
    - nu.exe 路径（`Get-Command nu.exe` → `~\AppData\Local\Programs\nu\bin\nu.exe` → `${env:ProgramFiles}\nu\bin\nu.exe`）
    - Git usr/bin 路径（从 `git.exe` 推断 → `C:\Program Files\Git\usr\bin`）
@@ -15,15 +15,13 @@
 4. **生成模板** — 将系统值替换为占位符：
    - nu.exe 完整路径 → `__NU_PATH__`
    - Git usr/bin 路径 → `__GIT_USR_BIN__`
-   - 用户名 → `__USERNAME__`
-   - `load-env { http_proxy: ... }` → 注释掉（如 `# load-env { http_proxy: "http://127.0.0.1:7890", https_proxy: "http://127.0.0.1:7890" }`）
-   - `settings.json`：只取 `statusLine` 字段，不包含 API key 等敏感信息
+   - `load-env { http_proxy: ... }` → 注释掉
    - `.wezterm.lua`：`config.default_prog` 用操作系统检测包裹（如模板已有则保持）
 
 ## 第二步：展示差异并确认
 
 1. **获取远程基准** — 如第零步 0b 无本地项目，执行 0c 远程获取模板到缓存
-2. **对比差异** — 将模板化后的本地内容与远程基准逐文件对比（settings.json 只比较 statusLine 字段）。**不包含文件级排除的文件**
+2. **对比差异** — 将模板化后的本地内容与远程基准逐文件对比。**不包含文件级排除的文件**
 3. **无变更则终止** — 如果所有文件与远程一致，告知用户"本地配置与项目模板完全一致，无需推送"，不执行任何写入操作
 4. **展示变更清单** — 列出哪些文件有变更、变更内容概要。**单独列出被排除规则跳过的文件**
 5. **请求确认** — 向用户展示变更摘要并询问是否继续推送。**必须获得用户明确同意才能执行推送**（涉及远程仓库写入）

@@ -19,8 +19,6 @@
 | `~\AppData\Roaming\nushell\config.nu` | Nushell 主配置 |
 | `~\AppData\Roaming\nushell\env.nu` | Nushell 环境变量 |
 | `~/.config/starship.toml` | Starship 提示符配置 |
-| `~/.claude/statusline.ps1` | Claude Code 状态栏 |
-| `~/.claude/settings.json` | Claude Code 设置 |
 | `<项目根>/CLAUDE.local.md` | 项目级 CLAUDE 指令 |
 
 ## 使用方式
