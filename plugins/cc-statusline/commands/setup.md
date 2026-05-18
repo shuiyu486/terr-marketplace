@@ -1,38 +1,20 @@
 ---
-description: Set up cc-statusline in Claude Code settings (detect platform, build, configure statusLine)
+description: Set up cc-statusline in Claude Code settings (find path, write statusLine config)
 allowed-tools: ["Bash", "Read", "Edit", "Write", "AskUserQuestion"]
 ---
 
 # cc-statusline Setup
 
-Configure Claude Code's status line to use cc-statusline. This command detects your platform, builds the plugin, and writes the `statusLine` configuration to `~/.claude/settings.json`.
+Configure Claude Code's status line to use cc-statusline. The plugin auto-builds on first run if needed, so this command only needs to find the path and write the config.
 
-## Step 1: Detect Environment
+## Step 1: Find Plugin Path
 
-Check that Node.js is available and find the plugin's installed path.
-
-**On any platform**, run:
-
-```bash
-node --version
-```
-
-If node is not found, tell the user:
-
-> Node.js 18+ is required. Install from https://nodejs.org or via your package manager, then re-run `/cc-statusline:setup`.
-
-**Find the plugin cache directory** — the plugin is installed under `~/.claude/plugins/cache/`:
+Find the plugin cache directory — the plugin is installed under `~/.claude/plugins/cache/`:
 
 **macOS / Linux:**
 
 ```bash
 ls -d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/*/cc-statusline/*/ 2>/dev/null | sort -V | tail -1
-```
-
-**Windows (Git Bash):**
-
-```bash
-ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/*/cc-statusline/*/ 2>/dev/null | sort -V | tail -1
 ```
 
 **Windows (PowerShell):**
@@ -44,39 +26,15 @@ $claudeDir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-
 
 If no path is found, tell the user to install the plugin first: `/plugin install cc-statusline`.
 
-## Step 2: Build and Generate Command
+## Step 2: Write Configuration
 
-**Build the plugin** (install dependencies and compile TypeScript):
+Merge the `statusLine` field into `~/.claude/settings.json`, preserving all existing settings.
 
-```bash
-cd "<PLUGIN_PATH>" && npm install && npm run build
-```
-
-Verify `dist/index.js` exists:
-
-```bash
-ls -la "<PLUGIN_PATH>/dist/index.js"
-```
-
-**Generate the statusLine command.** The command is simply:
+The command string uses forward slashes (Claude Code handles this correctly on all platforms):
 
 ```
 node "<PLUGIN_PATH>/dist/index.js"
 ```
-
-On Windows, use forward slashes in the path for the command string (Claude Code handles this correctly).
-
-**Test the command** — pipe a minimal JSON to verify output:
-
-```bash
-echo '{"model":{"display_name":"test"},"context_window":{"used_percentage":50,"context_window_size":200000,"total_input_tokens":1000,"total_output_tokens":500},"effort":{"level":"medium"},"transcript_path":""}' | node "<PLUGIN_PATH>/dist/index.js"
-```
-
-If this produces output (colored text with model name, context, tokens), the command works. If it errors or hangs, do NOT proceed — tell the user to check Node.js and the plugin installation.
-
-## Step 3: Write Configuration
-
-Merge the `statusLine` field into `~/.claude/settings.json`, preserving all existing settings.
 
 **Settings file location:**
 - **macOS/Linux:** `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json`
@@ -141,4 +99,4 @@ cat ~/.claude/settings.json | grep -A2 statusLine
 
 Tell the user:
 
-> Setup complete! Restart Claude Code (exit and re-enter) to see the status line. If it doesn't appear, run `/cc-statusline:setup` again to verify.
+> Setup complete! Restart Claude Code (exit and re-enter) to see the status line. The plugin auto-builds on first run if needed. If it doesn't appear, run `/cc-statusline:setup` again to verify.
