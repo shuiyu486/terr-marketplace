@@ -135,9 +135,9 @@ export function parseTranscript(transcriptPath: string): {
       continue;
     }
 
-    if (msg.type !== "assistant" || !msg.usage) continue;
+    if (msg.type !== "assistant" || !msg.message?.usage) continue;
 
-    const u = msg.usage;
+    const u = msg.message.usage;
     // Deduplicate: skip if all 4 token values identical to previous
     if (
       u.input_tokens === lastIn &&
@@ -152,7 +152,7 @@ export function parseTranscript(transcriptPath: string): {
       u.input_tokens +
       u.cache_creation_input_tokens +
       u.cache_read_input_tokens +
-      (u.server_tool_use_input_tokens || 0);
+      (u.server_tool_use_input_tokens ?? ((u.server_tool_use?.web_search_requests ?? 0) + (u.server_tool_use?.web_fetch_requests ?? 0)));
     const apiOut = u.output_tokens;
 
     sesApiIn += apiIn;
