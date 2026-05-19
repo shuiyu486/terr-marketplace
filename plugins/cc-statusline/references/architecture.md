@@ -18,7 +18,7 @@ cc-statusline/
 │   ├── format.ts                 # fmtW 万格式化（>=1w→X.XXw）
 │   ├── render.ts                 # 主渲染入口，协调各功能行
 │   ├── transcript.ts             # JSONL 解析 + SessionCacheV2 缓存 + 特性提取
-│   ├── index.ts                  # 主入口：stdin → config → transcript → render
+│   ├── index.ts                  # 主入口：长驻循环 readStdinLoop → config → transcript → render → flush
 │   └── features/
 │       ├── tools.ts              # Tool Activity：extract + render
 │       ├── agents.ts             # Agent Tracking：extract + render
@@ -35,7 +35,16 @@ cc-statusline/
 ```
 stdin JSON (每 ~300ms)
   │
-  ├── readStdin() → StatusLineData
+  │  ┌─────────────────────────────────────┐
+  │  │ 长驻模式: 进程启动一次，循环读取     │
+  │  │ readStdinLoop(handler)              │
+  │  │   ├── data 事件 → 累积 buffer       │
+  │  │   ├── JSON.parse 完整 → handler()   │
+  │  │   ├── fs.writeSync(1, ...) 即时刷新  │
+  │  │   └── end/error → process.exit(0)   │
+  │  └─────────────────────────────────────┘
+  │
+  ├── StatusLineData
   │     ├── .model, .effort, .context_window → render.ts line 1
   │     ├── .rate_limits? → limits.ts render
   │     └── .transcript_path
@@ -47,7 +56,7 @@ stdin JSON (每 ~300ms)
   │                 │ 写回 JSON 缓存
   │                 └──→ ParseResult { tools, agents, todos, ... }
   │
-  └── render(data, parseResult, cfg) → ANSI string → stdout
+  └── render(data, parseResult, cfg) → fs.writeSync(1, ANSI + "\n") → stdout
 ```
 
 ## 核心复杂度
@@ -68,10 +77,12 @@ stdin JSON (每 ~300ms)
 - `todos.ts`: 解析 `TodoWrite`/`TaskCreate`/`TaskUpdate`，维护 TodoState
 - `limits.ts`: 纯渲染，无提取阶段
 
-### stdin.ts — 500ms 超时
+### stdin.ts — 500ms 超时 + 长驻循环
 
-- 增量 JSON 解析：每个 data chunk 尝试 parse
-- Windows 上正确处理 stdin EOF 避免管道阻塞
+- **`readStdin()`** (one-shot, 保留兼容): 单次读取，500ms 超时，用于手动测试
+- **`readStdinLoop()`** (长驻模式, 主用): 进程启动一次，stdin 每收到一个完整 JSON 对象调用 handler，stdin 关闭时退出
+  - 消除 Windows 上每 ~300ms spawn Node.js 进程的开销（Desktop Heap 碎片化的主因）
+  - buffer + drain() 模式: 累积 chunk 直到 JSON.parse 成功
 - 失败静默退出 (process.exit(0))
 
 ### colors.ts

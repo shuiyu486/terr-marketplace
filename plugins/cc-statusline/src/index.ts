@@ -1,4 +1,4 @@
-import { readStdin } from "./stdin";
+import { readStdinLoop } from "./stdin";
 import { parseTranscript } from "./transcript";
 import { render } from "./render";
 import type { Config } from "./types";
@@ -29,16 +29,22 @@ function loadConfig(): Config {
   }
 }
 
-async function main(): Promise<void> {
-  const data = await readStdin();
-  if (!data) {
-    process.exit(0);
-  }
+// Long-running mode: one Node.js process handles every ~300ms update.
+// Eliminates per-cycle spawn overhead that exhausts the Windows Desktop Heap.
+const cfg = loadConfig();
 
-  const cfg = loadConfig();
-  const ctx = parseTranscript(data.transcript_path);
-  const output = render(data, ctx, cfg);
-  process.stdout.write(output);
+function flush(msg: string): void {
+  // Synchronous unbuffered write — pipe stdout doesn't auto-flush in Node.js.
+  // Using fd 1 avoids the stream buffer so Claude Code sees each line immediately.
+  fs.writeSync(1, msg + "\n");
 }
 
-main().catch(() => process.exit(0));
+readStdinLoop((data) => {
+  try {
+    const ctx = parseTranscript(data.transcript_path);
+    const output = render(data, ctx, cfg);
+    flush(output);
+  } catch {
+    // Skip failed updates — a single corrupt frame shouldn't kill the daemon
+  }
+});
