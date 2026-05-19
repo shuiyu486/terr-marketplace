@@ -29,6 +29,8 @@ echo '{...}' | node dist/index.js  # 手动测试（见 references/architecture.
 2. **colors.ts 独立**: 避免 `render.ts ↔ features/*.ts` 循环依赖
 3. **缓存 JSON v2**: 写入 `SessionCacheV2`（`version: 2`），读取兼容旧 CSV 格式
 4. **rate_limits 可选**: 有则渲染，无则跳过——不依赖外部快照
+5. **长驻进程 stdin 循环**: `index.ts` 使用 `readStdinLoop()` 长驻模式，进程启动一次循环读 stdin。消除每 ~300ms spawn Node.js 的 Windows Desktop Heap 开销
+6. **stdout 即时刷新**: 管道模式下 `process.stdout.write()` 不自动 flush，必须用 `fs.writeSync(1, msg + "\n")` 确保每行即时发送
 
 ## 配置
 
@@ -62,4 +64,12 @@ commands/             # setup / configure / update
 | 发布 `.claude-plugin/plugin.json` | `references/publish.md` + `marketplace.json` |
 | 发现新 gotcha / bug | `CLAUDE.local.md` Gotchas |
 
-CLAUDE.local.md 本文件存在于两处位置，修改后互相同步。
+CLAUDE.local.md 本文件存在于三处位置，修改任意一处理后必须同步到其余两处：
+
+| # | 路径 | 用途 |
+|---|------|------|
+| 1 | `~\.claude\plugins\marketplaces\terr-marketplace\plugins\cc-statusline\CLAUDE.local.md` | **Git 源仓库（提交推送）** |
+| 2 | `~\.claude\plugins\cache\terr-marketplace\cc-statusline\<version>\CLAUDE.local.md` | 已安装的插件副本 |
+| 3 | `C:\AI\m_projects\cc-statusline\CLAUDE.local.md` | 工作区开发副本 |
+
+**同步方向**：修改 #3（工作区）→ 同步到 #2（cache）和 #1（git 源仓库）；#1 是 git 提交的唯一入口。
