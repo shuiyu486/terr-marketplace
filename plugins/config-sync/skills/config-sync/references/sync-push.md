@@ -2,12 +2,12 @@
 
 用户说"同步到项目"、"push"、"更新模板"时触发。将本地配置变更推送到 ccNovaTerm 仓库。
 
-**完全无需用户手动克隆项目。** 如果本地没有 clone，自动在临时目录 clone、提交、推送后清理。
+自动在临时目录 clone、提交、推送后清理。无需用户手动克隆项目，不使用本地项目。
 
 ## 第一步：准备模板化的本地配置
 
 1. **读取排除规则** — 解析 `~/.configsyncignore`（如存在），构建 `$excludeRules`
-2. **读取本地文件** — 用 UTF-8 编码读取所有 5 个配置文件。**跳过文件级排除的文件**（`Test-FileExcluded` 返回 `$true` 的文件不参与后续步骤）。文件路径见 `paths.md`——CLAUDE.local.md 从 `$repoRoot\CLAUDE.local.md` 读取（非 `$env:USERPROFILE`）。
+2. **读取本地文件** — 用 UTF-8 编码读取所有 5 个配置文件。**跳过文件级排除的文件**（`Test-FileExcluded` 返回 `$true` 的文件不参与后续步骤）。文件路径见 `paths.md`——CLAUDE.local.md 从 `Join-Path $PWD.Path "CLAUDE.local.md"` 读取（文件不存在则跳过）。
 3. **检测系统特定值** — 自动识别：
    - nu.exe 路径（`Get-Command nu.exe` → `~\AppData\Local\Programs\nu\bin\nu.exe` → `${env:ProgramFiles}\nu\bin\nu.exe`）
    - Git usr/bin 路径（从 `git.exe` 推断 → `C:\Program Files\Git\usr\bin`）
@@ -20,13 +20,13 @@
 
 ## 第二步：展示差异并确认
 
-1. **获取远程基准** — 如第零步 0b 无本地项目，执行 0c 远程获取模板到缓存
+1. **获取远程基准** — 使用第零步的远程模板（`$configDir`，由 Step 0b 设置）
 2. **对比差异** — 将模板化后的本地内容与远程基准逐文件对比。**不包含文件级排除的文件**
 3. **无变更则终止** — 如果所有文件与远程一致，告知用户"本地配置与项目模板完全一致，无需推送"，不执行任何写入操作
 4. **展示变更清单** — 列出哪些文件有变更、变更内容概要。**单独列出被排除规则跳过的文件**
 5. **请求确认** — 向用户展示变更摘要并询问是否继续推送。**必须获得用户明确同意才能执行推送**（涉及远程仓库写入）
 
-## 第三步：推送变更
+## 第三步：推送变更（通过临时 clone）
 
 推送前检查 git 是否可用：
 
@@ -38,25 +38,7 @@ try { $null = Get-Command git.exe -ErrorAction Stop } catch {
 }
 ```
 
-根据第零步结果选择路径：
-
-### 路径 A：本地项目存在（0b 成功）
-
-直接在本地项目上操作：
-
-```powershell
-# 1. 写入模板化后的文件到 $configDir（UTF-8 无 BOM）
-foreach ($f in $changedFiles) {
-    [System.IO.File]::WriteAllText("$configDir\$f", $templatedContent, (New-Object System.Text.UTF8Encoding $false))
-}
-
-# 2. 提交并推送
-git -C $repoRoot add config/
-git -C $repoRoot commit -m "<生成的提交信息>"
-git -C $repoRoot push
-```
-
-### 路径 B：无本地项目（通过临时 clone）
+统一通过临时 clone 推送：
 
 ```powershell
 $tmpDir = "$env:TEMP\ccNovaTerm-push-$((Get-Date -Format 'yyyyMMddHHmmss'))"
@@ -97,5 +79,4 @@ sync: update <文件1>, <文件2> from local environment
 
 - 列出成功推送的文件
 - 列出被排除规则跳过的文件
-- 临时 clone 是否已清理（路径 B）
-- 如果是本地项目，提醒可能需要更新 README 等文档
+- 临时 clone 是否已清理

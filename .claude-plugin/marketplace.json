@@ -13,8 +13,8 @@
         "url": "https://github.com/shuiyu486/terr-marketplace.git",
         "path": "plugins/config-sync"
       },
-      "description": "双向同步+快速兼容检查终端配置文件。管理5个文件含CLAUDE.local.md。Hash级快速检查模式。渐进式披露架构(8个reference文件)。内置代理保护+自定义排除规则。",
-      "version": "1.3.0",
+      "description": "双向同步+对比终端配置文件。管理5个文件含CLAUDE.local.md。统一diff含hash预检。渐进式披露架构(7个reference文件)。内置代理保护+自定义排除规则。远程仓库为唯一模板源。",
+      "version": "1.4.0",
       "author": { "name": "ccNovaTerm" },
       "repository": "https://github.com/shuiyu486/ccNovaTerm",
       "license": "MIT",

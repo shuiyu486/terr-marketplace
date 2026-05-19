@@ -2,7 +2,7 @@
 name: config-sync
 description: |
   Two-way sync, diff, and quick compatibility check of terminal configs (WezTerm, Nushell, Starship, Claude Code) between local environment and ccNovaTerm project. Manages 5 files with auto-fetch from remote git; auto-protects proxy settings. Triggers on: "同步到项目/本地", "sync/push/pull/apply configs", "对比/diff/compare/有什么不同/看看区别", "更新模板", "快速检查/quick check/兼容吗/check compatibility", or any mention of comparing/syncing configs against ccNovaTerm. Use proactively when users edit or discuss WezTerm/Nushell/Starship/Claude Code configs — suggest a quick check after editing managed files.
-compatibility: Windows (PowerShell 5.1+), supports local project and remote GitHub fetch
+compatibility: Windows (PowerShell 5.1+), primary template source is remote GitHub fetch (no local project auto-discovery)
 ---
 
 # Config Sync — 终端配置双向同步与对比
@@ -22,18 +22,17 @@ compatibility: Windows (PowerShell 5.1+), supports local project and remote GitH
 - 如需在 Bash 工具中运行 PowerShell，使用 `-EncodedCommand` 配合 Base64 编码，或将脚本写入临时 `.ps1` 文件后通过 `-File` 执行
 - `PowerShell` 工具是 Windows PowerShell 5.1，与本插件兼容；语法注意事项（无三元运算符、无双引号插值等）已在下文代码中适配
 
-## 第零步：获取配置模板源（所有操作之前强制执行！）
+## 第零步：获取远程配置模板源（所有操作之前强制执行！）
 
-**这是最容易出错的步骤——跳过会导致盲目假设。** 所有操作都优先远程获取，**完全不需要用户手动克隆项目**。本地 clone 和临时 clone 都是自动处理的实现细节。
+**这是最容易出错的步骤——跳过会导致盲目假设。** 所有操作从远程 GitHub 仓库获取模板基准，**不需要也不使用本地项目 clone**。本地 ccNovaTerm 项目仅用于编辑技能和文档，不参与同步操作。临时 clone 是 push 操作的自动实现细节。
 
 ### 0a. 确定操作类型并获取远程仓库 URL
 
 | 操作 | 触发词 | 最终需要 push？ |
 |------|--------|---------------|
-| 对比差异 | "对比"、"diff"、"compare"、"有什么不同" | 否 |
+| 对比差异 | "对比"、"diff"、"compare"、"有什么不同"、"快速检查"、"兼容吗"、"quick check"、"check compatibility" | 否 |
 | 项目→本地 | "同步到本地"、"pull"、"apply" | 否 |
 | 本地→项目 | "同步到项目"、"push"、"更新模板" | 是（通过临时 clone） |
-| 快速检查 | "快速检查"、"兼容吗"、"兼容性检查"、"quick check"、"check compatibility" | 否 |
 
 ```powershell
 # 尝试从插件元数据读取仓库 URL（版本号用通配符，适应升级）
@@ -49,21 +48,9 @@ if ($versions -and (Test-Path "$($versions[0].FullName)\.claude-plugin\plugin.js
 $rawBase = $repoUrl -replace 'https://github.com/', 'https://raw.githubusercontent.com/' -replace '\.git$', ''
 ```
 
-### 0b. 尝试本地项目（优先——所有操作类型都支持）
+### 0b. 远程获取（唯一模板源）
 
-```powershell
-$repoRoot = $null
-$candidates = @($PWD.Path, "$($PWD.Path)\ccNovaTerm", "$env:USERPROFILE\ccNovaTerm")
-foreach ($c in $candidates) {
-    if (Test-Path "$c\config\.wezterm.lua") { $repoRoot = $c; break }
-}
-```
-
-如果找到本地项目：设定 `$configDir = "$repoRoot\config"`。对于"本地→项目"操作，可以直接在本地项目上 commit/push（不需要临时 clone）。
-
-### 0c. 远程获取（本地项目不存在时的默认路径）
-
-**除快速检查外所有操作类型都适用。** 从 GitHub raw 获取模板文件作为基准。
+从 GitHub raw 获取模板文件作为基准。
 
 **默认分支检测**——先试 `main`，如 404 则回退到 `master`：
 
@@ -77,7 +64,7 @@ try {
 }
 ```
 
-**逐个获取 7 个模板文件**，使用 `WebClient.DownloadData` 获取原始字节（避免 PowerShell 的文本编码干扰）：
+**逐个获取 5 个模板文件**，使用 `WebClient.DownloadData` 获取原始字节（避免 PowerShell 的文本编码干扰）：
 
 ```powershell
 $cacheDir = "$env:TEMP\ccNovaTerm-remote-config"
@@ -100,15 +87,15 @@ $wc.Dispose()
 ```
 
 - **全部获取成功**：设定 `$configDir = $cacheDir`，进入操作步骤。
-- **部分或全部失败**：进入 0d。
+- **部分或全部失败**：进入 0c。
 
-### 0d. 远程获取失败时的处理
+### 0c. 远程获取失败时的处理
 
 询问用户：
 
-> 无法从远程仓库获取配置模板（网络不可达或仓库结构有变）。你可以：
-> - 手动克隆仓库：`git clone $repoUrl ~/ccNovaTerm`
-> - 或提供已有 ccNovaTerm 项目的本地路径
+> 无法从远程仓库获取配置模板（网络不可达或仓库结构有变）。config-sync 以远程仓库为准，不自动 fallback 到本地项目。你可以：
+> - 检查网络连接后重试
+> - 手动提供一个包含 config/ 目录的路径作为模板源
 
 设定 `$configDir` 后继续。详细信息见 `references/paths.md`。
 
@@ -120,7 +107,7 @@ $wc.Dispose()
 | `~\AppData\Roaming\nushell\config.nu` | `config/config.nu` | 无 |
 | `~\AppData\Roaming\nushell\env.nu` | `config/env.nu` | `__GIT_USR_BIN__` → Git usr/bin 目录 |
 | `~/.config/starship.toml` | `config/starship.toml` | 无 |
-| `<项目根>/CLAUDE.local.md` | `config/CLAUDE.local.md` | 无 |
+| `${PWD}/CLAUDE.local.md` | `config/CLAUDE.local.md` | 无（文件不存在则跳过） |
 
 **占位符规则**：
 - `__NU_PATH__` — Windows 用 nu.exe 完整路径（双反斜杠），macOS 用 `'nu'`
@@ -142,10 +129,9 @@ config-sync 有两层排除规则：
 |---------|------|---------|
 | 同步到项目 / push / 更新模板 | 方向 1: 本地 → 项目 | `references/sync-push.md` |
 | 同步到本地 / pull / apply | 方向 2: 项目 → 本地 | `references/sync-pull.md` |
-| 对比 / diff / 有什么不同 | 方向 3: 完整对比 | `references/diff.md` |
-| 快速检查 / 兼容吗 / 兼容性检查 | 方向 4: 快速检查（轻量，无远程获取） | `references/quick-check.md` |
+| 对比 / diff / 快速检查 / 兼容吗 | 方向 3: 对比（含 hash 预检） | `references/diff.md` |
 
-**执行流程**：第零步（获取模板源） → 选择方向 → 读取对应方向 reference。方向 1-3 额外读取 `references/exclusions.md`（排除规则）；方向 4 使用内联保护规则（不读 exclusions.md）。→ 执行操作 → 验证
+**执行流程**：第零步（获取远程模板源） → 选择方向 → 读取对应方向 reference → 执行操作 → 验证
 
 ## 编码要求（关键！）
 
@@ -176,19 +162,18 @@ config-sync 有两层排除规则：
 
 **在选择方向之前**先读取以下基础文件：
 
-1. `references/paths.md` — 本地路径、项目路径、备份路径、远程 URL 推导、缓存路径（含 CLAUDE.local.md 项目根路径说明）
+1. `references/paths.md` — 本地路径、项目路径、备份路径、远程 URL 推导、缓存路径（含 CLAUDE.local.md 由 $PWD 确定的说明）
 2. `references/placeholders.md` — 每个占位符的检测方法、替换规则、双反斜杠规则
 
-**确定方向后**读取对应流程文件，方向 1-3 同时读取排除规则：
+**确定方向后**读取对应流程文件，同时读取排除规则：
 
-3. `references/exclusions.md` — 排除规则（方向 1-3 需要；方向 4 跳过，使用内联保护）
+3. `references/exclusions.md` — 排除规则（方向 3 轻量模式跳过用户规则，使用内联保护）
 4. `references/sync-push.md` — 方向 1 完整流程
 5. `references/sync-pull.md` — 方向 2 完整流程
-6. `references/diff.md` — 方向 3 完整流程
-7. `references/quick-check.md` — 方向 4 完整流程（含 git 新鲜度检测）
+6. `references/diff.md` — 方向 3 完整流程（含 hash 预检，合并原快速检查）
 
 **遇到编码问题时**读取：
 
-8. `references/encoding.md` — 编码安全细节、starship.toml 保护、远程获取安全
+7. `references/encoding.md` — 编码安全细节、starship.toml 保护、远程获取安全
 
 读完后再继续。路径解析失败是最高频的错误——严格按照 paths.md 的流程执行。
