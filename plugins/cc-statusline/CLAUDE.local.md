@@ -64,12 +64,4 @@ commands/             # setup / configure / update
 | 发布 `.claude-plugin/plugin.json` | `references/publish.md` + `marketplace.json` |
 | 发现新 gotcha / bug | `CLAUDE.local.md` Gotchas |
 
-CLAUDE.local.md 本文件存在于三处位置，修改任意一处理后必须同步到其余两处：
-
-| # | 路径 | 用途 |
-|---|------|------|
-| 1 | `~\.claude\plugins\marketplaces\terr-marketplace\plugins\cc-statusline\CLAUDE.local.md` | **Git 源仓库（提交推送）** |
-| 2 | `~\.claude\plugins\cache\terr-marketplace\cc-statusline\<version>\CLAUDE.local.md` | 已安装的插件副本 |
-| 3 | `C:\AI\m_projects\cc-statusline\CLAUDE.local.md` | 工作区开发副本 |
-
-**同步方向**：修改 #3（工作区）→ 同步到 #2（cache）和 #1（git 源仓库）；#1 是 git 提交的唯一入口。
+本文件三处副本须互相同步；marketplaces/ 下的副本为 git 提交入口。
