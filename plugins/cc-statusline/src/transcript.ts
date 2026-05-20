@@ -1,7 +1,6 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import * as cp from "child_process";
 import type { TranscriptMessage, SessionCacheV2, ParseResult } from "./types";
 import { extractToolEvent } from "./features/tools";
 import { extractAgentEvent } from "./features/agents";
@@ -16,8 +15,9 @@ function ensureCacheDir(): void {
   }
 }
 
-function cachePath(pid: number): string {
-  return path.join(CACHE_DIR, `ses-${pid}.txt`);
+function cachePath(transcriptPath: string): string {
+  const name = path.basename(transcriptPath, path.extname(transcriptPath));
+  return path.join(CACHE_DIR, `ses-${name}.txt`);
 }
 
 function newCacheV2(): SessionCacheV2 {
@@ -38,8 +38,8 @@ function newCacheV2(): SessionCacheV2 {
   };
 }
 
-function readCache(pid: number): SessionCacheV2 {
-  const p = cachePath(pid);
+function readCache(transcriptPath: string): SessionCacheV2 {
+  const p = cachePath(transcriptPath);
   try {
     const raw = fs.readFileSync(p, "utf8").trim();
     if (!raw) return newCacheV2();
@@ -77,56 +77,10 @@ function readCache(pid: number): SessionCacheV2 {
   return newCacheV2();
 }
 
-function writeCache(pid: number, cache: SessionCacheV2): void {
+function writeCache(transcriptPath: string, cache: SessionCacheV2): void {
   ensureCacheDir();
-  const p = cachePath(pid);
+  const p = cachePath(transcriptPath);
   fs.writeFileSync(p, JSON.stringify(cache), "utf8");
-}
-
-function findClaudePid(): number {
-  const myPid = process.pid;
-
-  if (process.platform === "win32") {
-    try {
-      let pid = myPid;
-      for (let i = 0; i < 10; i++) {
-        const out = cp.execSync(
-          `wmic process where "ProcessId=${pid}" get ParentProcessId /value`,
-          { encoding: "utf8", timeout: 3000 },
-        ).trim();
-        const match = out.match(/ParentProcessId=(\d+)/);
-        if (!match) break;
-        const ppid = parseInt(match[1], 10);
-        const name = cp.execSync(
-          `wmic process where "ProcessId=${ppid}" get Name /value`,
-          { encoding: "utf8", timeout: 3000 },
-        ).trim();
-        if (/claude/i.test(name)) return ppid;
-        pid = ppid;
-      }
-    } catch {
-      // Fall through
-    }
-  } else {
-    try {
-      let pid = myPid;
-      for (let i = 0; i < 10; i++) {
-        const ppid = parseInt(
-          cp.execSync(`ps -o ppid= -p ${pid}`, { encoding: "utf8" }).trim(),
-          10,
-        );
-        const name = cp.execSync(`ps -o comm= -p ${ppid}`, {
-          encoding: "utf8",
-        }).trim();
-        if (/claude/i.test(name)) return ppid;
-        pid = ppid;
-      }
-    } catch {
-      // Fall through
-    }
-  }
-
-  return myPid;
 }
 
 export function parseTranscript(transcriptPath: string): ParseResult {
@@ -144,8 +98,7 @@ export function parseTranscript(transcriptPath: string): ParseResult {
     };
   }
 
-  const pid = findClaudePid();
-  const cache = readCache(pid);
+  const cache = readCache(transcriptPath);
 
   const startLine = cache.lineNum;
   let apiIn = cache.apiIn || 0;
@@ -251,7 +204,7 @@ export function parseTranscript(transcriptPath: string): ParseResult {
     todoCompleted: todoState.completed,
     todoTotal: todoState.total,
   };
-  writeCache(pid, newCache);
+  writeCache(transcriptPath, newCache);
 
   return {
     sesIn,
