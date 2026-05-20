@@ -9,6 +9,7 @@ Claude Code 状态栏插件。每 ~300ms 通过 stdin JSON 读入 `StatusLineDat
 
 | 修改目标 | 先读参考文件 |
 |---------|-------------|
+| 理解全项目架构/字段语义 | `references/ai-maintenance.md` (AI 维护手册) |
 | `src/transcript.ts` | `references/architecture.md` (数据流+缓存) |
 | `src/render.ts` | `references/rendering.md` (行格式+颜色) |
 | `src/features/*.ts` | `references/features.md` (提取+渲染模式) |
@@ -35,7 +36,7 @@ echo '{...}' | node dist/index.js  # 手动测试（见 references/architecture.
 8. **setup/update 构建检查**: `setup` 在写 settings.json 前检查 `dist/index.js` 是否存在，缺失则自动 `npm install && npm run build`；`update` 版本相同时也检查构建产物，缺失则进入 repair mode 重建
 9. **`|| 0` 而非 `?? 0` 防护 NaN**: `input_tokens=0` 的流式中间态行缺少 `cache_creation_input_tokens`/`cache_read_input_tokens` 字段，`0 + undefined = NaN`。`??` 只拦截 null/undefined，`NaN ?? 0` = `NaN`，必须用 `||` 彻底防护。修复后须清理旧缓存避免 NaN 污染链
 10. **两个插件目录**: 开发目录 (`marketplaces/.../plugins/cc-statusline`) 和运行时目录 (`cache/.../cc-statusline/{version}`)。`settings.json` 的 `statusLine.command` 指向运行时目录。修改源码后须 `cp dist/` 同步到运行时目录才能生效
-11. **ses 与 api 语义不同**: `ses` 每次进程启动归零（不写缓存），`api` 跨重启持久（写缓存）。两者在 `transcript.ts` 中独立累加，共用同一 delta 计算逻辑。详见 `CLAUDE.md` Line 2 字段详解
+11. **ses 与 api 语义不同**: `ses` 每次进程启动归零（不写缓存），`api` 跨重启持久（写缓存）。两者在 `transcript.ts` 中独立累加，共用同一 delta 计算逻辑。详见 `references/ai-maintenance.md` Line 2 字段详解
 12. **`os.tmpdir()` 跨环境不一致**: Git Bash 的 `$TEMP` ≠ Node 的 `os.tmpdir()`。缓存实际在 `os.tmpdir()` 返回的路径下
 
 ## 配置
@@ -71,6 +72,7 @@ commands/             # setup / configure / update
 | 修改 `src/` 下任何文件 | bump 版本号：`package.json` + `plugin.json` + `marketplace.json` 三文件同步 |
 | 修改 `commands/` 下任何文件 | bump 版本号：同上三文件同步 |
 | 修改 `references/` 下任何文件 | bump 版本号：同上三文件同步 |
+| 字段语义/架构变更 | `references/ai-maintenance.md` |
 | 发现新 gotcha / bug | `CLAUDE.local.md` Gotchas |
 
 本文件三处副本须互相同步；marketplaces/ 下的副本为 git 提交入口。
