@@ -5,7 +5,8 @@ Claude Code 插件集合，通过 `git-subdir` 格式从 GitHub 分发。仓库�
 ## 关键约束
 
 - **marketplace.json 中所有 source 必须用 `git-subdir`**，不能写相对路径 `./plugins/xxx`
-- **修改 plugin 版本时**，`plugin.json` 和 `marketplace.json` 两处 version 必须同步
+- **修改 plugin 版本时**，三文件 version 必须同步：`package.json` + `plugin.json` + `marketplace.json`
+- **任何影响用户功能的变更**（src/、commands/、references/）都必须 bump 版本号，否则 `cc-statusline:update` 无法识别更新
 - **每次修改 marketplace.json 后**必须跑 `claude plugin validate .`
 - **skill-creator 的输出**通过 skills2ccPlugin 转换为 marketplace 插件后发布
 
@@ -30,7 +31,9 @@ git push
 ## 更新插件
 
 ```shell
-# 1. 改代码 + 改 plugin.json version + 改 marketplace.json version
+# 1. 改代码/commands/references + 改 package.json version + 改 plugin.json version + 改 marketplace.json version
+#    任何影响用户功能的变更都必须 bump（不只是 src/）
+#    bugfix → patch, feature → minor
 claude plugin validate .
 git add plugins/<name>/ .claude-plugin/marketplace.json
 git commit -m "Update <name> to v<new-version>"

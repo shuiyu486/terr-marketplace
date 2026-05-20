@@ -31,7 +31,7 @@ echo '{...}' | node dist/index.js  # 手动测试（见 references/architecture.
 4. **rate_limits 可选**: 有则渲染，无则跳过——不依赖外部快照
 5. **长驻进程 stdin 循环**: `index.ts` 使用 `readStdinLoop()` 长驻模式，进程启动一次循环读 stdin。消除每 ~300ms spawn Node.js 的 Windows Desktop Heap 开销
 6. **stdout 即时刷新**: 管道模式下 `process.stdout.write()` 不自动 flush，必须用 `fs.writeSync(1, msg + "\n")` 确保每行即时发送
-7. **版本自动迭代**: 修改 src/ 代码后自动 bump 版本号。bugfix → patch (1.1.1→1.1.2)，feature → minor (1.1.2→1.2.0)。三文件须同步: `package.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`。不 bump 则 `cc-statusline:update` 无法识别更新
+7. **版本自动迭代**: 任何影响用户功能的变更都必须 bump 版本号（包括 `src/`、`commands/`、`references/`）。bugfix → patch (1.1.1→1.1.2)，feature → minor (1.1.2→1.2.0)。三文件须同步: `package.json`, `.claude-plugin/plugin.json`, `marketplace.json`（在 `.claude-plugin/` 下）。不 bump 则 `cc-statusline:update` 无法识别更新
 8. **setup/update 构建检查**: `setup` 在写 settings.json 前检查 `dist/index.js` 是否存在，缺失则自动 `npm install && npm run build`；`update` 版本相同时也检查构建产物，缺失则进入 repair mode 重建
 
 ## 配置
@@ -65,6 +65,8 @@ commands/             # setup / configure / update
 | `package.json` scripts | `CLAUDE.local.md` 命令 |
 | 发布 `.claude-plugin/plugin.json` | `references/publish.md` + `marketplace.json` |
 | 修改 `src/` 下任何文件 | bump 版本号：`package.json` + `plugin.json` + `marketplace.json` 三文件同步 |
+| 修改 `commands/` 下任何文件 | bump 版本号：同上三文件同步 |
+| 修改 `references/` 下任何文件 | bump 版本号：同上三文件同步 |
 | 发现新 gotcha / bug | `CLAUDE.local.md` Gotchas |
 
 本文件三处副本须互相同步；marketplaces/ 下的副本为 git 提交入口。
