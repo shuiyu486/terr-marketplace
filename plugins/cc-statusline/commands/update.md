@@ -92,13 +92,40 @@ echo "CURRENT_VERSION=$CURRENT_VERSION"
 
 Compare `LATEST_VERSION` with `CURRENT_VERSION`:
 
-- If `LATEST_VERSION == CURRENT_VERSION`: tell the user **"Already up to date (v{version})."** and stop.
+- If `LATEST_VERSION == CURRENT_VERSION`: check if the build exists (see below). If build is intact, tell the user **"Already up to date (v{version})."** and stop. If build is missing, proceed to Step 6 (repair mode — skip copy, just rebuild).
 - If `LATEST_VERSION > CURRENT_VERSION`: proceed to Step 5.
-- If `CURRENT_VERSION` is "unknown" or comparison fails: proceed to Step 5 (repair mode).
+- If `CURRENT_VERSION` is "unknown" or comparison fails: proceed to Step 5 (full update — do not skip copy).
+
+**Build existence check (when versions match):**
+
+**Windows (PowerShell):**
+
+```powershell
+$cacheDir = Join-Path $claudeDir "plugins\cache\terr-marketplace\cc-statusline\$currentVersion"
+$distFile = Join-Path $cacheDir 'dist\index.js'
+if (Test-Path $distFile) {
+    Write-Output "BUILD_INTACT"
+} else {
+    Write-Output "BUILD_MISSING"
+}
+```
+
+**macOS / Linux:**
+
+```bash
+CACHE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/cache/terr-marketplace/cc-statusline/$CURRENT_VERSION"
+if [ -f "$CACHE_DIR/dist/index.js" ]; then
+    echo "BUILD_INTACT"
+else
+    echo "BUILD_MISSING"
+fi
+```
 
 ## Step 5: Copy to Cache
 
-Copy the plugin source from marketplace to the cache directory, excluding build artifacts:
+Copy the plugin source from marketplace to the cache directory, excluding build artifacts.
+
+**⚠️ Skip this entire step in repair mode** (version unchanged but build missing) — the source files already exist in cache, only the build is missing. Jump directly to Step 6.
 
 **Windows (PowerShell):**
 

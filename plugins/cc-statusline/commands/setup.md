@@ -5,7 +5,7 @@ allowed-tools: ["Bash", "Read", "Edit", "Write", "AskUserQuestion"]
 
 # cc-statusline Setup
 
-Configure Claude Code's status line to use cc-statusline. The plugin auto-builds on first run if needed, so this command only needs to find the path and write the config.
+Configure Claude Code's status line to use cc-statusline. After finding the plugin path, verify the build exists and build if needed, then write the config.
 
 ## Step 1: Find Plugin Path
 
@@ -14,19 +14,66 @@ Find the plugin cache directory — the plugin is installed under `~/.claude/plu
 **macOS / Linux:**
 
 ```bash
-ls -d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/*/cc-statusline/*/ 2>/dev/null | sort -V | tail -1
+PLUGIN_PATH=$(ls -d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/*/cc-statusline/*/ 2>/dev/null | sort -V | tail -1)
+echo "$PLUGIN_PATH"
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
 $claudeDir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }
-(Get-ChildItem (Join-Path $claudeDir 'plugins\cache\*\cc-statusline\*') -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^\d+(\.\d+)+$' } | Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1).FullName
+$pluginPath = (Get-ChildItem (Join-Path $claudeDir 'plugins\cache\*\cc-statusline\*') -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^\d+(\.\d+)+$' } | Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1).FullName
+Write-Output $pluginPath
 ```
 
 If no path is found, tell the user to install the plugin first: `/plugin install cc-statusline`.
 
-## Step 2: Write Configuration
+If a path is found, set the variable for later steps:
+
+- **Windows:** `$pluginPath` (already set by the PowerShell command above)
+- **macOS/Linux:** `$PLUGIN_PATH` (already set by the bash command above)
+
+## Step 2: Ensure Build Exists
+
+Check if `dist/index.js` exists in the plugin path. If not, build the plugin:
+
+**Windows (PowerShell):**
+
+```powershell
+$distFile = Join-Path $pluginPath 'dist\index.js'
+if (-not (Test-Path $distFile)) {
+    Write-Output "Build not found. Running npm install && npm run build..."
+    cd $pluginPath
+    npm install 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Output "ERROR: npm install failed. Check Node.js and network."
+        exit 1
+    }
+    npm run build 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Output "ERROR: npm run build failed."
+        exit 1
+    }
+    Write-Output "BUILD_OK"
+} else {
+    Write-Output "Build already exists."
+}
+```
+
+**macOS / Linux:**
+
+```bash
+if [ ! -f "$PLUGIN_PATH/dist/index.js" ]; then
+    echo "Build not found. Running npm install && npm run build..."
+    cd "$PLUGIN_PATH"
+    npm install && npm run build || { echo "ERROR: build failed. Check Node.js and network."; exit 1; }
+    echo "BUILD_OK"
+else
+    echo "Build already exists."
+fi
+```
+
+## Step 3: Write Configuration
 
 Merge the `statusLine` field into `~/.claude/settings.json`, preserving all existing settings.
 
@@ -99,4 +146,4 @@ cat ~/.claude/settings.json | grep -A2 statusLine
 
 Tell the user:
 
-> Setup complete! Restart Claude Code (exit and re-enter) to see the status line. The plugin auto-builds on first run if needed. If it doesn't appear, run `/cc-statusline:setup` again to verify.
+> Setup complete! Restart Claude Code (exit and re-enter) to see the status line. If the build was missing, it has been built automatically. If it doesn't appear, run `/cc-statusline:setup` again to verify.
