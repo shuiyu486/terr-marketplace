@@ -7,7 +7,7 @@
 ## 第一步：准备模板化的本地配置
 
 1. **读取排除规则** — 解析 `~/.configsyncignore`（如存在），构建 `$excludeRules`
-2. **读取本地文件** — 用 UTF-8 编码读取所有 5 个配置文件。**跳过文件级排除的文件**（`Test-FileExcluded` 返回 `$true` 的文件不参与后续步骤）。文件路径见 `paths.md`——CLAUDE.local.md 从 `Join-Path $PWD.Path "CLAUDE.local.md"` 读取（文件不存在则跳过）。
+2. **读取本地文件** — 用 UTF-8 编码读取所有 5 个配置文件 + 2 个参考文档。**跳过文件级排除的文件**（`Test-FileExcluded` 返回 `$true` 的文件不参与后续步骤）。文件路径见 `paths.md`——CLAUDE.local.md 从 `Join-Path $PWD.Path "CLAUDE.local.md"` 读取（文件不存在则跳过）。参考文档从 `Join-Path $PWD.Path "docs\<filename>"` 读取（文件不存在则跳过）。
 3. **检测系统特定值** — 自动识别：
    - nu.exe 路径（`Get-Command nu.exe` → `~\AppData\Local\Programs\nu\bin\nu.exe` → `${env:ProgramFiles}\nu\bin\nu.exe`）
    - Git usr/bin 路径（从 `git.exe` 推断 → `C:\Program Files\Git\usr\bin`）
@@ -17,11 +17,12 @@
    - Git usr/bin 路径 → `__GIT_USR_BIN__`
    - `load-env { http_proxy: ... }` → 注释掉
    - `.wezterm.lua`：`config.default_prog` 用操作系统检测包裹（如模板已有则保持）
+   - **参考文档**：无需模板化，直接拷贝原内容
 
 ## 第二步：展示差异并确认
 
 1. **获取远程基准** — 使用第零步的远程模板（`$configDir`，由 Step 0b 设置）
-2. **对比差异** — 将模板化后的本地内容与远程基准逐文件对比。**不包含文件级排除的文件**
+2. **对比差异** — 将模板化后的本地内容与远程基准逐文件对比。**不包含文件级排除的文件**。同时对比 `docs/` 下的参考文档（直接内容对比，无占位符展开）
 3. **无变更则终止** — 如果所有文件与远程一致，告知用户"本地配置与项目模板完全一致，无需推送"，不执行任何写入操作
 4. **展示变更清单** — 列出哪些文件有变更、变更内容概要。**单独列出被排除规则跳过的文件**
 5. **请求确认** — 向用户展示变更摘要并询问是否继续推送。**必须获得用户明确同意才能执行推送**（涉及远程仓库写入）
@@ -51,8 +52,14 @@ foreach ($f in $changedFiles) {
     [System.IO.File]::WriteAllText("$tmpDir\config\$f", $templatedContent, (New-Object System.Text.UTF8Encoding $false))
 }
 
+# 2b. 写入参考文档（如有变更）
+foreach ($f in $changedDocFiles) {
+    New-Item -ItemType Directory -Force "$tmpDir\docs" | Out-Null
+    [System.IO.File]::WriteAllText("$tmpDir\docs\$f", $docContent, (New-Object System.Text.UTF8Encoding $false))
+}
+
 # 3. 提交
-git -C $tmpDir add config/
+git -C $tmpDir add config/ docs/
 git -C $tmpDir commit -m "<生成的提交信息>"
 
 # 4. 推送（需用户已配置 git 凭据）

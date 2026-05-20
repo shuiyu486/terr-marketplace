@@ -11,8 +11,28 @@
 4. **备份本地配置** — 将现有配置文件备份到 `~\ccNovaTerm-backup\yyyyMMdd_HHmmss\`
 5. **替换占位符** — 将模板中的占位符替换为实际值。**内置保护规则**：env.nu 代理行自动保留本地版本。**用户排除规则**：对于字段级排除，替换占位符后从备份中恢复被排除的行
 6. **写入本地** — 写入本地配置路径，自动创建所需目录。**必须使用 UTF-8 编码**（`New-Object System.Text.UTF8Encoding $false`），`starship.toml` 尤其敏感。**跳过文件级排除的文件**（不覆盖）。文件路径见 `paths.md`——CLAUDE.local.md 写入 `Join-Path $PWD.Path "CLAUDE.local.md"`（路径不可写则跳过）。
-7. **运行验证** — 执行语法、Unicode 完整性和文件大小检查
-8. **报告结果** — 列出写入的文件、跳过的文件（含排除原因）、备份位置、下一步操作（重启 WezTerm 等）
+7. **同步参考文档** — 将远程 `docs/` 下的 `.md` 文档拷贝到本地项目目录 `docs/`：
+   ```powershell
+   $docFiles = @("config-sync-workflow.md", "compatibility-constraints.md")
+   $localDocsDir = Join-Path $PWD.Path "docs"
+   New-Item -ItemType Directory -Force $localDocsDir | Out-Null
+   foreach ($df in $docFiles) {
+       $tplDocPath = Join-Path $configDir "docs\$df"
+       if (Test-Path $tplDocPath) {
+           $docBytes = [System.IO.File]::ReadAllBytes($tplDocPath)
+           $docContent = [System.Text.Encoding]::UTF8.GetString($docBytes)
+           $localDocPath = Join-Path $localDocsDir $df
+           # 备份本地文档（如存在）
+           if (Test-Path $localDocPath) {
+               Copy-Item $localDocPath "$backupDir\docs-$df" -Force
+           }
+           [System.IO.File]::WriteAllText($localDocPath, $docContent, (New-Object System.Text.UTF8Encoding $false))
+       }
+   }
+   ```
+   文档是纯参考性质，无需占位符替换或排除规则处理。
+8. **运行验证** — 执行语法、Unicode 完整性、文件大小和文档完整性检查
+9. **报告结果** — 列出写入的文件（含文档）、跳过的文件（含排除原因）、备份位置、下一步操作（重启 WezTerm 等）
 
 ## 字段级排除的行级合并
 

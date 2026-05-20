@@ -14,7 +14,7 @@
         "path": "plugins/config-sync"
       },
       "description": "双向同步+对比终端配置文件。管理5个文件含CLAUDE.local.md。统一diff含hash预检。渐进式披露架构(7个reference文件)。内置代理保护+自定义排除规则。远程仓库为唯一模板源。",
-      "version": "1.4.0",
+      "version": "1.5.0",
       "author": { "name": "ccNovaTerm" },
       "repository": "https://github.com/shuiyu486/ccNovaTerm",
       "license": "MIT",

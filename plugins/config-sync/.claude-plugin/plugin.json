@@ -1,7 +1,7 @@
 {
   "name": "config-sync",
-  "version": "1.4.0",
-  "description": "Two-way sync and diff of terminal config files between local environment and ccNovaTerm project. Manages 5 config files including CLAUDE.local.md. Unified diff with hash-based pre-check for low-token comparison. Progressive disclosure architecture with 7 reference files. Auto-protects proxy settings; supports ~/.configsyncignore for custom exclusions.",
+  "version": "1.5.0",
+  "description": "Two-way sync and diff of terminal config files between local environment and ccNovaTerm project. Manages 5 config files + 2 reference docs (docs/*.md). Unified diff with hash-based pre-check for low-token comparison. Progressive disclosure architecture with 7 reference files. Auto-protects proxy settings; supports ~/.configsyncignore for custom exclusions.",
   "author": {
     "name": "ccNovaTerm"
   },

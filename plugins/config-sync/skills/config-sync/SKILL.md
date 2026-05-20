@@ -1,7 +1,7 @@
 ---
 name: config-sync
 description: |
-  Two-way sync, diff, and quick compatibility check of terminal configs (WezTerm, Nushell, Starship, Claude Code) between local environment and ccNovaTerm project. Manages 5 files with auto-fetch from remote git; auto-protects proxy settings. Triggers on: "同步到项目/本地", "sync/push/pull/apply configs", "对比/diff/compare/有什么不同/看看区别", "更新模板", "快速检查/quick check/兼容吗/check compatibility", or any mention of comparing/syncing configs against ccNovaTerm. Use proactively when users edit or discuss WezTerm/Nushell/Starship/Claude Code configs — suggest a quick check after editing managed files.
+  Two-way sync, diff, and quick compatibility check of terminal configs (WezTerm, Nushell, Starship, Claude Code) between local environment and ccNovaTerm project. Manages 5 config files + 2 reference docs with auto-fetch from remote git; auto-protects proxy settings. Triggers on: "同步到项目/本地", "sync/push/pull/apply configs", "对比/diff/compare/有什么不同/看看区别", "更新模板", "快速检查/quick check/兼容吗/check compatibility", or any mention of comparing/syncing configs against ccNovaTerm. Use proactively when users edit or discuss WezTerm/Nushell/Starship/Claude Code configs — suggest a quick check after editing managed files.
 compatibility: Windows (PowerShell 5.1+), primary template source is remote GitHub fetch (no local project auto-discovery)
 ---
 
@@ -72,6 +72,7 @@ New-Item -ItemType Directory -Force $cacheDir | Out-Null
 
 $wc = New-Object System.Net.WebClient
 $files = @(".wezterm.lua", "config.nu", "env.nu", "starship.toml", "CLAUDE.local.md")
+$docFiles = @("config-sync-workflow.md", "compatibility-constraints.md")
 $remoteOk = $true
 foreach ($f in $files) {
     $url = "$rawBase/$branch/config/$f"
@@ -81,6 +82,16 @@ foreach ($f in $files) {
     } catch {
         Write-Output "无法从远程获取 $f （$_）"
         $remoteOk = $false
+    }
+}
+foreach ($f in $docFiles) {
+    $url = "$rawBase/$branch/docs/$f"
+    try {
+        $bytes = $wc.DownloadData($url)
+        New-Item -ItemType Directory -Force "$cacheDir\docs" | Out-Null
+        [System.IO.File]::WriteAllBytes("$cacheDir\docs\$f", $bytes)
+    } catch {
+        Write-Output "无法从远程获取 docs/$f （$_）"
     }
 }
 $wc.Dispose()
@@ -108,6 +119,8 @@ $wc.Dispose()
 | `~\AppData\Roaming\nushell\env.nu` | `config/env.nu` | `__GIT_USR_BIN__` → Git usr/bin 目录 |
 | `~/.config/starship.toml` | `config/starship.toml` | 无 |
 | `${PWD}/CLAUDE.local.md` | `config/CLAUDE.local.md` | 无（文件不存在则跳过） |
+| `${PWD}/docs/config-sync-workflow.md` | `docs/config-sync-workflow.md` | 无（纯参考文档） |
+| `${PWD}/docs/compatibility-constraints.md` | `docs/compatibility-constraints.md` | 无（纯参考文档） |
 
 **占位符规则**：
 - `__NU_PATH__` — Windows 用 nu.exe 完整路径（双反斜杠），macOS 用 `'nu'`
@@ -153,7 +166,8 @@ config-sync 有两层排除规则：
 2. **TOML 格式** — 检查 `starship.toml` 含 schema reference
 3. **文件大小** — 确认所有写入文件 > 10 字节
 4. **Unicode 完整性** — 检查 `starship.toml` 是否含有预期的 Nerd Font 字符。如果文件中出现 `顐` `禲` `癩` 等 CJK 替代字符，说明编码已损坏
-5. **WezTerm 状态** — 运行 `wezterm cli list` 确认 WezTerm 在运行
+5. **文档完整性** — 检查 `docs/` 下的 `.md` 文件是否存在且 > 10 字节
+6. **WezTerm 状态** — 运行 `wezterm cli list` 确认 WezTerm 在运行
 6. **Lua 基本检查** — 检查 `.wezterm.lua` 有 `return config` 结尾
 
 如果验证失败，不要继续写入——先修复问题。

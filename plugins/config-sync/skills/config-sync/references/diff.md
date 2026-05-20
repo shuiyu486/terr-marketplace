@@ -16,7 +16,7 @@
 
 ## 第三步：Hash 级预检
 
-对 5 个文件计算本地和模板的 SHA256 hash。hash 一致直接跳过，只有 hash 不同的文件才展开占位符做内容对比：
+对 5 个配置文件 + 2 个参考文档计算本地和模板的 SHA256 hash。hash 一致直接跳过，只有 hash 不同的文件才展开占位符做内容对比：
 
 ```powershell
 # 路径映射（CLAUDE.local.md 由 $PWD 确定）
@@ -106,6 +106,32 @@ foreach ($fname in $fileMap.Keys) {
         }
     }
     $results += [PSCustomObject]@{ File=$fname; Status="⚠️ 有差异"; Detail=($diffLines -join "`n") }
+}
+
+# 参考文档对比（docs/ 下的 .md 文件，直接内容对比，无占位符展开）
+$docFiles = @("config-sync-workflow.md", "compatibility-constraints.md")
+$localDocsDir = Join-Path $PWD.Path "docs"
+foreach ($df in $docFiles) {
+    $tplDocPath = Join-Path $configDir "docs\$df"
+    $localDocPath = Join-Path $localDocsDir $df
+
+    if (-not (Test-Path $tplDocPath)) {
+        $results += [PSCustomObject]@{ File="docs/$df"; Status="❌ 模板缺失"; Detail="" }
+        continue
+    }
+    if (-not (Test-Path $localDocPath)) {
+        $results += [PSCustomObject]@{ File="docs/$df"; Status="➖ 仅模板有"; Detail="本地文件不存在" }
+        continue
+    }
+
+    $tplDocHash = (Get-FileHash $tplDocPath -Algorithm SHA256).Hash
+    $localDocHash = (Get-FileHash $localDocPath -Algorithm SHA256).Hash
+
+    if ($tplDocHash -eq $localDocHash) {
+        $results += [PSCustomObject]@{ File="docs/$df"; Status="✅ 一致"; Detail="" }
+    } else {
+        $results += [PSCustomObject]@{ File="docs/$df"; Status="⚠️ 有差异"; Detail="" }
+    }
 }
 ```
 

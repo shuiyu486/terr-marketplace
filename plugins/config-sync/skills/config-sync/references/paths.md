@@ -10,7 +10,20 @@
 | Starship | `$env:USERPROFILE\.config\starship.toml` |
 | CLAUDE.local.md | `Join-Path $PWD.Path "CLAUDE.local.md"`（当前工作目录，文件不存在则跳过） |
 
-CLAUDE.local.md 是唯一不位于用户 home 目录的文件，其本地路径由 `$PWD` 决定。如果当前目录下没有该文件，此文件不会参与同步。
+### 参考文档路径
+
+docs/ 下的 `.md` 文件是项目参考文档，同步到本地项目目录的 `docs/` 下，与远程仓库结构一致。
+
+| 文件 | Absolute Path |
+|------|--------------|
+| config-sync-workflow.md | `Join-Path $PWD.Path "docs\config-sync-workflow.md"` |
+| compatibility-constraints.md | `Join-Path $PWD.Path "docs\compatibility-constraints.md"` |
+
+- 本地路径中的 `$PWD.Path` 是当前工作目录（即 ccNovaTerm 项目根目录）
+- 文档文件不需要占位符替换、编码保护或排除规则处理
+- 文档获取失败不影响主流程，仅输出警告
+
+CLAUDE.local.md 和 docs/ 文档都不位于用户 home 目录，其本地路径由 `$PWD` 决定。
 
 ## ccNovaTerm Project Template Paths
 
