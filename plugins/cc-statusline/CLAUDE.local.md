@@ -33,6 +33,10 @@ echo '{...}' | node dist/index.js  # 手动测试（见 references/architecture.
 6. **stdout 即时刷新**: 管道模式下 `process.stdout.write()` 不自动 flush，必须用 `fs.writeSync(1, msg + "\n")` 确保每行即时发送
 7. **版本自动迭代**: 任何影响用户功能的变更都必须 bump 版本号（包括 `src/`、`commands/`、`references/`）。bugfix → patch (1.1.1→1.1.2)，feature → minor (1.1.2→1.2.0)。三文件须同步: `package.json`, `.claude-plugin/plugin.json`, `marketplace.json`（在 `.claude-plugin/` 下）。不 bump 则 `cc-statusline:update` 无法识别更新
 8. **setup/update 构建检查**: `setup` 在写 settings.json 前检查 `dist/index.js` 是否存在，缺失则自动 `npm install && npm run build`；`update` 版本相同时也检查构建产物，缺失则进入 repair mode 重建
+9. **`|| 0` 而非 `?? 0` 防护 NaN**: `input_tokens=0` 的流式中间态行缺少 `cache_creation_input_tokens`/`cache_read_input_tokens` 字段，`0 + undefined = NaN`。`??` 只拦截 null/undefined，`NaN ?? 0` = `NaN`，必须用 `||` 彻底防护。修复后须清理旧缓存避免 NaN 污染链
+10. **两个插件目录**: 开发目录 (`marketplaces/.../plugins/cc-statusline`) 和运行时目录 (`cache/.../cc-statusline/{version}`)。`settings.json` 的 `statusLine.command` 指向运行时目录。修改源码后须 `cp dist/` 同步到运行时目录才能生效
+11. **ses 与 api 语义不同**: `ses` 每次进程启动归零（不写缓存），`api` 跨重启持久（写缓存）。两者在 `transcript.ts` 中独立累加，共用同一 delta 计算逻辑。详见 `CLAUDE.md` Line 2 字段详解
+12. **`os.tmpdir()` 跨环境不一致**: Git Bash 的 `$TEMP` ≠ Node 的 `os.tmpdir()`。缓存实际在 `os.tmpdir()` 返回的路径下
 
 ## 配置
 

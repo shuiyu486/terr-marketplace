@@ -6,7 +6,7 @@
 
 ```
 Line 1: model │ effort │ ctx:inTok/ctxSize pct%        [始终显示]
-Line 2: in:inTok out:outTok │ ses:in/out │ api:total │ ts  [showTokensLine]
+Line 2: in:inTok out:outTok │ ses:sesIn/sesOut │ api:apiTotal │ ts  [showTokensLine]
 Line 3: usage: ████████░░ 75% (12h 50m)               [showUsageLimits, 有数据时]
 Line 4: tools: ◐ Read file.ts  │  ✓ Read ×3           [showToolActivity]
 Line 5: agent: ◷ explore: desc (2m 15s)               [showAgentTracking]
@@ -15,6 +15,18 @@ Line 7: path: /dir                                     [showPath]
 ```
 
 每行仅在配置启用 **且** 有数据时渲染。
+
+## Line 2 字段数据来源
+
+```
+in:inTok out:outTok │ ses:sesIn/sesOut │ api:apiTotal │ HH:MM:SS
+```
+
+| 标签 | 变量 | 数据来源 | 生命周期 |
+|------|------|---------|---------|
+| in/out | `data.context_window.total_{input,output}_tokens` | stdin 实时快照 | 实时 |
+| ses | `ctx.sesIn / ctx.sesOut` | transcript 增量解析，**不从缓存恢复** | 进程重启归零 |
+| api | `ctx.apiIn + ctx.apiOut` | transcript 增量解析，**从缓存恢复** | 跨重启持久
 
 ## ANSI 256 色约定
 

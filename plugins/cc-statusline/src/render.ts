@@ -49,9 +49,9 @@ export function render(
   // Line 2: tokens / session / api
   if (cfg.showTokensLine) {
     const outTok = fmtW(data.context_window.total_output_tokens);
-    const sesIn = fmtW(ctx.sesApiIn);
-    const sesOut = fmtW(ctx.sesApiOut);
-    const apiTotal = fmtW(ctx.sesApiIn + ctx.sesApiOut);
+    const sesIn = fmtW(ctx.sesIn);
+    const sesOut = fmtW(ctx.sesOut);
+    const apiTotal = fmtW(ctx.apiIn + ctx.apiOut);
     const ts = color(now(), 244);
     const line2 = `${color("in", 74)}:${color(inTok, 252)} ${color("out", 74)}:${color(outTok, 252)} │ ${color("ses", 138)}:${color(sesIn, 115)}/${color(sesOut, 115)} │ ${color("api", 172)}:${color(apiTotal, 172)} │ ${ts}`;
     lines.push(line2);

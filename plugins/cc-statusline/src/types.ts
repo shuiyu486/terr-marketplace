@@ -95,8 +95,8 @@ export interface SessionCacheV2 {
   lastOut: number;
   lastCacheCreate: number;
   lastCacheRead: number;
-  sesApiIn: number;
-  sesApiOut: number;
+  apiIn: number;
+  apiOut: number;
   tools: ToolEvent[];
   agents: AgentEvent[];
   todos: TodoItem[];
@@ -105,8 +105,10 @@ export interface SessionCacheV2 {
 }
 
 export interface ParseResult {
-  sesApiIn: number;
-  sesApiOut: number;
+  sesIn: number;
+  sesOut: number;
+  apiIn: number;
+  apiOut: number;
   tools: ToolEvent[];
   agents: AgentEvent[];
   todos: TodoItem[];

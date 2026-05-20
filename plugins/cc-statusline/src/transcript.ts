@@ -28,8 +28,8 @@ function newCacheV2(): SessionCacheV2 {
     lastOut: 0,
     lastCacheCreate: 0,
     lastCacheRead: 0,
-    sesApiIn: 0,
-    sesApiOut: 0,
+    apiIn: 0,
+    apiOut: 0,
     tools: [],
     agents: [],
     todos: [],
@@ -47,7 +47,15 @@ function readCache(pid: number): SessionCacheV2 {
     // Try v2 JSON first
     if (raw.startsWith("{")) {
       const parsed = JSON.parse(raw);
-      if (parsed.version === 2) return parsed as SessionCacheV2;
+      if (parsed.version === 2) {
+        // Migrate old field names
+        const cache = parsed as SessionCacheV2;
+        if (cache.apiIn === undefined && (parsed as any).sesApiIn !== undefined) {
+          cache.apiIn = (parsed as any).sesApiIn || 0;
+          cache.apiOut = (parsed as any).sesApiOut || 0;
+        }
+        return cache;
+      }
     }
 
     // CSV fallback (v1)
@@ -59,8 +67,8 @@ function readCache(pid: number): SessionCacheV2 {
       cache.lastOut = parseInt(parts[2], 10);
       cache.lastCacheCreate = parseInt(parts[3], 10);
       cache.lastCacheRead = parseInt(parts[4], 10);
-      cache.sesApiIn = parseInt(parts[5], 10);
-      cache.sesApiOut = parseInt(parts[6], 10);
+      cache.apiIn = parseInt(parts[5], 10);
+      cache.apiOut = parseInt(parts[6], 10);
       return cache;
     }
   } catch {
@@ -124,8 +132,10 @@ function findClaudePid(): number {
 export function parseTranscript(transcriptPath: string): ParseResult {
   if (!transcriptPath) {
     return {
-      sesApiIn: 0,
-      sesApiOut: 0,
+      sesIn: 0,
+      sesOut: 0,
+      apiIn: 0,
+      apiOut: 0,
       tools: [],
       agents: [],
       todos: [],
@@ -138,12 +148,15 @@ export function parseTranscript(transcriptPath: string): ParseResult {
   const cache = readCache(pid);
 
   const startLine = cache.lineNum;
-  let sesApiIn = cache.sesApiIn;
-  let sesApiOut = cache.sesApiOut;
-  let lastIn = cache.lastIn;
-  let lastOut = cache.lastOut;
-  let lastCacheCreate = cache.lastCacheCreate;
-  let lastCacheRead = cache.lastCacheRead;
+  let apiIn = cache.apiIn || 0;
+  let apiOut = cache.apiOut || 0;
+  let lastIn = cache.lastIn || 0;
+  let lastOut = cache.lastOut || 0;
+  let lastCacheCreate = cache.lastCacheCreate || 0;
+  let lastCacheRead = cache.lastCacheRead || 0;
+  // ses resets every process start
+  let sesIn = 0;
+  let sesOut = 0;
 
   const tools = cache.tools;
   const agents = cache.agents;
@@ -160,8 +173,10 @@ export function parseTranscript(transcriptPath: string): ParseResult {
     lines = content.split("\n");
   } catch {
     return {
-      sesApiIn,
-      sesApiOut,
+      sesIn,
+      sesOut,
+      apiIn,
+      apiOut,
       tools,
       agents,
       todos: todoState.items,
@@ -202,20 +217,22 @@ export function parseTranscript(transcriptPath: string): ParseResult {
         continue;
       }
 
-      const apiIn =
-        u.input_tokens +
-        u.cache_creation_input_tokens +
-        u.cache_read_input_tokens +
-        (u.server_tool_use_input_tokens ?? 0);
-      const apiOut = u.output_tokens;
+      const deltaIn =
+        (u.input_tokens || 0) +
+        (u.cache_creation_input_tokens || 0) +
+        (u.cache_read_input_tokens || 0) +
+        (u.server_tool_use_input_tokens || 0);
+      const deltaOut = u.output_tokens || 0;
 
-      sesApiIn += apiIn;
-      sesApiOut += apiOut;
+      apiIn += deltaIn;
+      apiOut += deltaOut;
+      sesIn += deltaIn;
+      sesOut += deltaOut;
 
-      lastIn = u.input_tokens;
-      lastOut = u.output_tokens;
-      lastCacheCreate = u.cache_creation_input_tokens;
-      lastCacheRead = u.cache_read_input_tokens;
+      lastIn = u.input_tokens || 0;
+      lastOut = u.output_tokens || 0;
+      lastCacheCreate = u.cache_creation_input_tokens || 0;
+      lastCacheRead = u.cache_read_input_tokens || 0;
     }
   }
 
@@ -226,8 +243,8 @@ export function parseTranscript(transcriptPath: string): ParseResult {
     lastOut,
     lastCacheCreate,
     lastCacheRead,
-    sesApiIn,
-    sesApiOut,
+    apiIn,
+    apiOut,
     tools,
     agents,
     todos: todoState.items,
@@ -237,8 +254,10 @@ export function parseTranscript(transcriptPath: string): ParseResult {
   writeCache(pid, newCache);
 
   return {
-    sesApiIn,
-    sesApiOut,
+    sesIn,
+    sesOut,
+    apiIn,
+    apiOut,
     tools,
     agents,
     todos: todoState.items,
