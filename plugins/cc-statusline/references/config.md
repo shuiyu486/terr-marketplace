@@ -14,6 +14,8 @@
   "showTokensLine": true,
   "showPath": true,
   "showToolActivity": true,
+  "showRunningTools": true,
+  "showCompletedTools": true,
   "showAgentTracking": true,
   "showTodoProgress": true,
   "showUsageLimits": true,
@@ -29,7 +31,9 @@
 | showEffort | boolean | true | 显示 effort 级别 |
 | showTokensLine | boolean | true | 显示 token 统计行 |
 | showPath | boolean | true | 显示当前路径 |
-| showToolActivity | boolean | true | 显示工具活动行 |
+| showToolActivity | boolean | true | 工具活动行总开关 |
+| showRunningTools | boolean | true | 显示运行中工具 (◐ 图标) |
+| showCompletedTools | boolean | true | 显示已完成工具 (✓ 计数) |
 | showAgentTracking | boolean | true | 显示代理追踪行 |
 | showTodoProgress | boolean | true | 显示待办进度 |
 | showUsageLimits | boolean | true | 显示使用限制 (需 rate_limits) |

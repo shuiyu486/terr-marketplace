@@ -25,6 +25,8 @@ If no config file exists, these are the defaults:
   "ctxWarnThreshold": 70,
   "ctxDangerThreshold": 90,
   "showToolActivity": true,
+  "showRunningTools": true,
+  "showCompletedTools": true,
   "showAgentTracking": true,
   "showTodoProgress": true,
   "showUsageLimits": true
@@ -38,12 +40,14 @@ Use AskUserQuestion to ask the user which options they want to change. Present t
 1. **Show effort level** — Display the effort level (max/xhigh/high/medium/low) on line 1. Default: true
 2. **Show token statistics** — Display the second line with in/out/ses/api token counts and timestamp. Default: true
 3. **Show current path** — Display the current working directory on line 3. Default: true
-4. **Show tool activity** — Display running and completed tools (Read, Edit, Grep, etc.). Default: true
-5. **Show agent tracking** — Display subagent status (Task/Agent type, description, elapsed time). Default: true
-6. **Show todo progress** — Display current in-progress task and completion count. Default: true
-7. **Show usage limits** — Display 5-hour rate limit usage bar and reset time (only when available). Default: true
-8. **Context warning threshold** — Percentage at which context turns yellow. Default: 70
-9. **Context danger threshold** — Percentage at which context turns red. Default: 90
+4. **Show tool activity (master switch)** — Master toggle for the entire tools line. When off, no tool info is displayed regardless of sub-toggles. Default: true
+5. **Show running tools** — Display currently running tools (◐ icon). Requires master switch on. Default: true
+6. **Show completed tools** — Display completed tool counts (✓ name ×N). Requires master switch on. Default: true
+7. **Show agent tracking** — Display subagent status (Task/Agent type, description, elapsed time). Default: true
+8. **Show todo progress** — Display current in-progress task and completion count. Default: true
+9. **Show usage limits** — Display 5-hour rate limit usage bar and reset time (only when available). Default: true
+10. **Context warning threshold** — Percentage at which context turns yellow. Default: 70
+11. **Context danger threshold** — Percentage at which context turns red. Default: 90
 
 ## Write Config
 
@@ -61,15 +65,17 @@ const config = {
   showTokensLine: process.argv[2] === 'true',
   showPath: process.argv[3] === 'true',
   showToolActivity: process.argv[4] === 'true',
-  showAgentTracking: process.argv[5] === 'true',
-  showTodoProgress: process.argv[6] === 'true',
-  showUsageLimits: process.argv[7] === 'true',
-  ctxWarnThreshold: parseInt(process.argv[8], 10),
-  ctxDangerThreshold: parseInt(process.argv[9], 10)
+  showRunningTools: process.argv[5] === 'true',
+  showCompletedTools: process.argv[6] === 'true',
+  showAgentTracking: process.argv[7] === 'true',
+  showTodoProgress: process.argv[8] === 'true',
+  showUsageLimits: process.argv[9] === 'true',
+  ctxWarnThreshold: parseInt(process.argv[10], 10),
+  ctxDangerThreshold: parseInt(process.argv[11], 10)
 };
 fs.writeFileSync(p, JSON.stringify(config, null, 2));
 console.log('Config saved to', p);
-" "<showEffort>" "<showTokensLine>" "<showPath>" "<showToolActivity>" "<showAgentTracking>" "<showTodoProgress>" "<showUsageLimits>" "<ctxWarn>" "<ctxDanger>"
+" "<showEffort>" "<showTokensLine>" "<showPath>" "<showToolActivity>" "<showRunningTools>" "<showCompletedTools>" "<showAgentTracking>" "<showTodoProgress>" "<showUsageLimits>" "<ctxWarn>" "<ctxDanger>"
 ```
 
 **Windows (PowerShell):**
@@ -82,6 +88,8 @@ $config = @{
     showTokensLine = $showTokensLine
     showPath = $showPath
     showToolActivity = $showToolActivity
+    showRunningTools = $showRunningTools
+    showCompletedTools = $showCompletedTools
     showAgentTracking = $showAgentTracking
     showTodoProgress = $showTodoProgress
     showUsageLimits = $showUsageLimits

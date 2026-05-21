@@ -95,6 +95,8 @@ export interface SessionCacheV2 {
   lastOut: number;
   lastCacheCreate: number;
   lastCacheRead: number;
+  sesIn: number;
+  sesOut: number;
   apiIn: number;
   apiOut: number;
   tools: ToolEvent[];
@@ -123,6 +125,8 @@ export interface Config {
   ctxWarnThreshold: number;
   ctxDangerThreshold: number;
   showToolActivity: boolean;
+  showRunningTools: boolean;
+  showCompletedTools: boolean;
   showAgentTracking: boolean;
   showTodoProgress: boolean;
   showUsageLimits: boolean;

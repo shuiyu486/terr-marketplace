@@ -28,6 +28,8 @@ function newCacheV2(): SessionCacheV2 {
     lastOut: 0,
     lastCacheCreate: 0,
     lastCacheRead: 0,
+    sesIn: 0,
+    sesOut: 0,
     apiIn: 0,
     apiOut: 0,
     tools: [],
@@ -103,13 +105,12 @@ export function parseTranscript(transcriptPath: string): ParseResult {
   const startLine = cache.lineNum;
   let apiIn = cache.apiIn || 0;
   let apiOut = cache.apiOut || 0;
+  let sesIn = cache.sesIn || 0;
+  let sesOut = cache.sesOut || 0;
   let lastIn = cache.lastIn || 0;
   let lastOut = cache.lastOut || 0;
   let lastCacheCreate = cache.lastCacheCreate || 0;
   let lastCacheRead = cache.lastCacheRead || 0;
-  // ses resets every process start
-  let sesIn = 0;
-  let sesOut = 0;
 
   const tools = cache.tools;
   const agents = cache.agents;
@@ -196,6 +197,8 @@ export function parseTranscript(transcriptPath: string): ParseResult {
     lastOut,
     lastCacheCreate,
     lastCacheRead,
+    sesIn,
+    sesOut,
     apiIn,
     apiOut,
     tools,

@@ -18,7 +18,7 @@
 - **Target 提取**: Read/Write/Edit→file_path, Grep/Glob→pattern, Bash→command[0:30], 其他→input JSON[0:30]
 - **去重**: 按 tool_use_id
 - **限制**: 保留最近 20 条
-- **渲染**: 最多 2 个 running (◐), 最多 4 种 completed 类型 (✓ name ×count)
+- **渲染**: 由 `showToolActivity`(总开关) / `showRunningTools` / `showCompletedTools` 控制。最多 2 个 running (◐), 最多 4 种 completed 类型 (✓ name ×count)。运行中和已完成可独立开关。
 - **示例**: `◐ Edit: auth.ts  │  ✓ Read ×3  │  ✓ Grep ×2`
 
 ## Agent Tracking (`features/agents.ts`)

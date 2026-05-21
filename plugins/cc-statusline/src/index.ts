@@ -15,6 +15,8 @@ const DEFAULT_CONFIG: Config = {
   ctxWarnThreshold: 70,
   ctxDangerThreshold: 90,
   showToolActivity: true,
+  showRunningTools: true,
+  showCompletedTools: true,
   showAgentTracking: true,
   showTodoProgress: true,
   showUsageLimits: true,

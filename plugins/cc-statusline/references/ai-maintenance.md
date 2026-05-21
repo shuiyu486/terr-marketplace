@@ -107,6 +107,8 @@ workspace.current_dir / cwd           → todos 显示
   "ctxWarnThreshold": 70,
   "ctxDangerThreshold": 90,
   "showToolActivity": true,
+  "showRunningTools": true,
+  "showCompletedTools": true,
   "showAgentTracking": true,
   "showTodoProgress": true,
   "showUsageLimits": true
@@ -173,6 +175,7 @@ echo '{...}' | node dist/index.js  # 手动测试
 
 ## 版本历史
 
+- **1.3.0** — 拆分 `showToolActivity` 为总开关 + 两个子开关（`showRunningTools`/`showCompletedTools`），可独立控制运行中/已完成工具显示
 - **1.2.3** — 修复 ses 重启不归零：缓存键从 Claude PID 改为 transcript UUID，删除 `findClaudePid()` 进程树遍历
 - **1.2.2** — ses/api 分离完整实现：dist 编译同步，render 使用 `ctx.sesIn/sesOut` + `ctx.apiIn/apiOut`
 - **1.2.1** — 修复 NaN 污染：`??` → `||` 防护缺失字段；拆分 ses/api 为独立计数器（ses 进程启动归零，api 缓存持久）

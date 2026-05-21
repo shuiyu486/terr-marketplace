@@ -53,23 +53,27 @@ export function renderTools(events: ToolEvent[], cfg: Config): string | null {
 
   const parts: string[] = [];
 
-  const running = events.filter((e) => e.status === "running");
-  for (let i = 0; i < Math.min(running.length, MAX_RUNNING_SHOWN); i++) {
-    const t = running[i];
-    parts.push(`${color("◐", 108)} ${color(t.name, 117)}${t.target ? ` ${color(t.target, 252)}` : ""}`);
+  if (cfg.showRunningTools) {
+    const running = events.filter((e) => e.status === "running");
+    for (let i = 0; i < Math.min(running.length, MAX_RUNNING_SHOWN); i++) {
+      const t = running[i];
+      parts.push(`${color("◐", 108)} ${color(t.name, 117)}${t.target ? ` ${color(t.target, 252)}` : ""}`);
+    }
   }
 
-  const completed = events.filter((e) => e.status === "completed");
-  const counts: Record<string, number> = {};
-  for (const t of completed) {
-    counts[t.name] = (counts[t.name] ?? 0) + 1;
-  }
-  const sorted = Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, MAX_COMPLETED_TYPES);
+  if (cfg.showCompletedTools) {
+    const completed = events.filter((e) => e.status === "completed");
+    const counts: Record<string, number> = {};
+    for (const t of completed) {
+      counts[t.name] = (counts[t.name] ?? 0) + 1;
+    }
+    const sorted = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, MAX_COMPLETED_TYPES);
 
-  for (const [name, count] of sorted) {
-    parts.push(`${color("✓", 108)} ${color(name, 117)} ${color(`×${count}`, 244)}`);
+    for (const [name, count] of sorted) {
+      parts.push(`${color("✓", 108)} ${color(name, 117)} ${color(`×${count}`, 244)}`);
+    }
   }
 
   return parts.length > 0 ? parts.join("  │  ") : null;

@@ -36,7 +36,7 @@ echo '{...}' | node dist/index.js  # 手动测试（见 references/architecture.
 8. **setup/update 构建检查**: `setup` 在写 settings.json 前检查 `dist/index.js` 是否存在，缺失则自动 `npm install && npm run build`；`update` 版本相同时也检查构建产物，缺失则进入 repair mode 重建
 9. **`|| 0` 而非 `?? 0` 防护 NaN**: `input_tokens=0` 的流式中间态行缺少 `cache_creation_input_tokens`/`cache_read_input_tokens` 字段，`0 + undefined = NaN`。`??` 只拦截 null/undefined，`NaN ?? 0` = `NaN`，必须用 `||` 彻底防护。修复后须清理旧缓存避免 NaN 污染链
 10. **两个插件目录**: 开发目录 (`marketplaces/.../plugins/cc-statusline`) 和运行时目录 (`cache/.../cc-statusline/{version}`)。`settings.json` 的 `statusLine.command` 指向运行时目录。修改源码后须 `cp dist/` 同步到运行时目录才能生效
-11. **ses 与 api 语义不同**: `ses` 每次解析循环归零（局部变量，不写缓存），`api` 跨重启持久（写缓存）。两者在 `transcript.ts` 中独立累加，共用同一 delta 计算逻辑。详见 `references/ai-maintenance.md` Line 2 字段详解
+11. **ses 与 api 语义不同**: `ses` 按 session 累加（写缓存，同 transcript 内跨 parseTranscript 调用持久），`api` 同 transcript 内持久累加。两者在 `transcript.ts` 中独立累加，共用同一 delta 计算逻辑。新 transcript UUID（Claude Code 重启）→ 新缓存文件 → ses 自然归零。详见 `references/ai-maintenance.md` Line 2 字段详解
 12. **缓存按 transcript 路径索引**: `cachePath()` 使用 transcript 文件名（UUID）作为缓存键，而非 Claude PID。同一 transcript 跨重启复用同一缓存，`lineNum` 持久化避免重新解析历史行。旧 PID 键缓存文件（`ses-{pid}.txt`）可安全清理
 13. **`os.tmpdir()` 跨环境不一致**: Git Bash 的 `$TEMP` ≠ Node 的 `os.tmpdir()`。缓存实际在 `os.tmpdir()` 返回的路径下
 
