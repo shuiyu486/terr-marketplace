@@ -190,6 +190,35 @@ export function parseTranscript(transcriptPath: string): ParseResult {
     }
   }
 
+  // Defensive verification: re-scan transcript for tool_results of stuck
+  // running agents. Guards against a race where two concurrent parse instances
+  // read the same cache, and the later write overwrites a completed->running
+  // transition with a stale "running" value.
+  const stuckIds = new Set(
+    agents.filter((a) => a.status === "running").map((a) => a.id)
+  );
+  if (stuckIds.size > 0) {
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i].trim();
+      if (!l) continue;
+      try {
+        const m = JSON.parse(l);
+        const c = m?.message?.content;
+        if (Array.isArray(c)) {
+          for (const block of c) {
+            if (block.type === "tool_result" && stuckIds.has(block.tool_use_id)) {
+              const agent = agents.find((a) => a.id === block.tool_use_id);
+              if (agent) agent.status = "completed";
+              stuckIds.delete(block.tool_use_id);
+              if (stuckIds.size === 0) break;
+            }
+          }
+        }
+      } catch { /* skip malformed JSON lines */ }
+      if (stuckIds.size === 0) break;
+    }
+  }
+
   const newCache: SessionCacheV2 = {
     version: 2,
     lineNum: lines.length,
