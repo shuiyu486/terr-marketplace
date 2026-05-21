@@ -1,5 +1,5 @@
 {
   "name": "cc-statusline",
-  "version": "1.3.4",
+  "version": "1.3.5",
   "description": "A feature-rich status line for Claude Code — model, effort, context, token stats, session cost, path, tool activity, agent tracking, todo progress, and usage limits"
 }

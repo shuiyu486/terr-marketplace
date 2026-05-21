@@ -8,7 +8,26 @@ import { extractTodoEvent } from "./features/todos";
 import type { TodoState } from "./features/todos";
 
 const CACHE_DIR = path.join(os.tmpdir(), "cc-statusline-cache");
-const sessionTokenTotals = new Map<string, { sesIn: number; sesOut: number }>();
+const sessionTokenTotals = new Map<string, { sessionKey: string; sesIn: number; sesOut: number }>();
+
+function sessionMarker(lines: string[]): string | null {
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    try {
+      const msg = JSON.parse(line);
+      if (msg?.attachment?.hookEvent === "SessionStart") {
+        return msg.uuid || msg.timestamp || null;
+      }
+    } catch { /* skip malformed JSON lines */ }
+  }
+  return null;
+}
+
+function currentSessionKey(lines?: string[]): string {
+  const marker = lines ? sessionMarker(lines) : null;
+  return marker ? `session:${marker}` : `ppid:${process.ppid || "unknown"}`;
+}
 
 function ensureCacheDir(): void {
   if (!fs.existsSync(CACHE_DIR)) {
@@ -104,11 +123,8 @@ export function parseTranscript(transcriptPath: string): ParseResult {
   const cache = readCache(transcriptPath);
 
   const startLine = cache.lineNum;
-  const sessionTotals = sessionTokenTotals.get(transcriptPath) || { sesIn: 0, sesOut: 0 };
   let apiIn = cache.apiIn || 0;
   let apiOut = cache.apiOut || 0;
-  let sesIn = sessionTotals.sesIn;
-  let sesOut = sessionTotals.sesOut;
   let lastIn = cache.lastIn || 0;
   let lastOut = cache.lastOut || 0;
   let lastCacheCreate = cache.lastCacheCreate || 0;
@@ -128,9 +144,13 @@ export function parseTranscript(transcriptPath: string): ParseResult {
     const content = fs.readFileSync(transcriptPath, "utf8");
     lines = content.split("\n");
   } catch {
+    const sessionKey = currentSessionKey();
+    const sessionTotals = cache.sessionKey === sessionKey
+      ? { sesIn: cache.sesIn || 0, sesOut: cache.sesOut || 0 }
+      : { sesIn: 0, sesOut: 0 };
     return {
-      sesIn,
-      sesOut,
+      sesIn: sessionTotals.sesIn,
+      sesOut: sessionTotals.sesOut,
       apiIn,
       apiOut,
       tools,
@@ -140,6 +160,17 @@ export function parseTranscript(transcriptPath: string): ParseResult {
       todoTotal: todoState.total,
     };
   }
+
+  const sessionKey = currentSessionKey(lines);
+  const cachedSessionTotals = cache.sessionKey === sessionKey
+    ? { sesIn: cache.sesIn || 0, sesOut: cache.sesOut || 0 }
+    : { sesIn: 0, sesOut: 0 };
+  const memorySessionTotals = sessionTokenTotals.get(transcriptPath);
+  const sessionTotals = memorySessionTotals?.sessionKey === sessionKey
+    ? memorySessionTotals
+    : cachedSessionTotals;
+  let sesIn = sessionTotals.sesIn;
+  let sesOut = sessionTotals.sesOut;
 
   for (let i = startLine; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -221,17 +252,18 @@ export function parseTranscript(transcriptPath: string): ParseResult {
     }
   }
 
-  sessionTokenTotals.set(transcriptPath, { sesIn, sesOut });
+  sessionTokenTotals.set(transcriptPath, { sessionKey, sesIn, sesOut });
 
   const newCache: SessionCacheV2 = {
     version: 2,
+    sessionKey,
     lineNum: lines.length,
     lastIn,
     lastOut,
     lastCacheCreate,
     lastCacheRead,
-    sesIn: 0,
-    sesOut: 0,
+    sesIn,
+    sesOut,
     apiIn,
     apiOut,
     tools,

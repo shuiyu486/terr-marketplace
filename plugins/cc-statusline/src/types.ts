@@ -90,6 +90,7 @@ export interface TodoItem {
 
 export interface SessionCacheV2 {
   version: 2;
+  sessionKey?: string;
   lineNum: number;
   lastIn: number;
   lastOut: number;

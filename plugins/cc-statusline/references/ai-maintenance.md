@@ -42,12 +42,12 @@ in:41.7w out:0.8w │ ses:3.4w/1.2w │ api:4.6w │ 18:30:45
 | 标签 | 含义 | 数据来源 | 生命周期 |
 |------|------|---------|---------|
 | **in** / **out** | 当前上下文窗口中的 token 数 | `StatusLineData.context_window.total_input_tokens` / `total_output_tokens`（stdin 实时快照） | 实时变化 |
-| **ses** | **当前 Claude Code 进程**的 API token 增量累计 | JSONL transcript 增量解析 + 进程内存 Map（`ParseResult.sesIn/sesOut`，不从磁盘缓存恢复） | Claude Code 重启归零 |
+| **ses** | **当前 Claude Code session** 的 API token 增量累计 | JSONL transcript 增量解析 + 进程内存 Map/同 session 缓存（`ParseResult.sesIn/sesOut`） | Claude Code 重启或 SessionStart 变化后归零 |
 | **api** | **transcript 历史累计** API token 消耗 | JSONL transcript 增量解析 + 缓存恢复（`ParseResult.apiIn/apiOut`） | 跨重启持久（按 transcript UUID 索引） |
 
 **关键区别**：
 - `in/out` = Claude 运行时告知的**上下文窗口快照**（实时）
-- `ses` = 当前 Claude Code 进程内解析到的新 API token 增量累计（进程内存，不从磁盘缓存恢复），同 transcript 跨重启复用时因 `lineNum` 持久而显示 0
+- `ses` = 当前 Claude Code session 内解析到的新 API token 增量累计（优先按 transcript 中最新 SessionStart 标记恢复；缺失时按父进程恢复），同 transcript 跨重启复用时不会恢复旧 `ses`
 - `api` = transcript 历史累计 API 消耗，按 transcript UUID 缓存，跨重启持久保留
 - `in` ≠ `ses`（来源不同、含义不同、数值通常不同）
 
@@ -74,8 +74,8 @@ workspace.current_dir / cwd           → todos 显示
 1. `readCache(transcriptPath)` — 从 `os.tmpdir()/cc-statusline-cache/ses-{transcript-UUID}.txt` 读取 `SessionCacheV2`
 2. 从 `cache.lineNum` 开始增量遍历 transcript JSONL 新行
 3. **先去重再累加**：4 字段（`input_tokens`, `output_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens`）完全相同则 `continue` 跳过
-4. 累加 delta 值到 `apiIn/apiOut`（持久）和 `sesIn/sesOut`（进程内存）
-5. `writeCache(transcriptPath, newCache)` 写入缓存（仅 api 值；`sesIn/sesOut` 不从缓存恢复）
+4. 累加 delta 值到 `apiIn/apiOut`（跨重启持久）和 `sesIn/sesOut`（当前 Claude Code session）
+5. `writeCache(transcriptPath, newCache)` 写入缓存（`apiIn/apiOut` 按 transcript 持久；`sesIn/sesOut` 仅在 `sessionKey` 匹配时恢复）
 
 ### SessionCacheV2 字段
 
@@ -83,15 +83,17 @@ workspace.current_dir / cwd           → todos 显示
 |------|------|
 | `lineNum` | 已解析到的 JSONL 行号（增量起点） |
 | `lastIn/lastOut/lastCacheCreate/lastCacheRead` | 上一次非重复 usage 的 4 字段快照（去重用） |
+| `sessionKey` | 当前 Claude Code session 标识（优先 latest SessionStart 标记，缺失时使用父进程，用于判断 `ses` 是否可恢复） |
 | `apiIn/apiOut` | 会话历史累计 API token（跨重启持久） |
+| `sesIn/sesOut` | 当前 Claude Code session 内 API token（仅 `sessionKey` 匹配时恢复） |
 | `tools/agents/todos` | 特性数据（最多 20/10 条） |
 
-**注意**：`sesIn/sesOut` **不从磁盘缓存恢复**——只保存在当前 Node.js 进程的内存 Map 中，Claude Code 重启后归零。
+**注意**：`sesIn/sesOut` 会写入缓存以兼容短生命周期 statusline 进程，但只有 `sessionKey` 匹配当前 Claude Code session 时才恢复；SessionStart 标记或父进程变化后，`ses` 归零。
 
 ### 缓存生命周期
 
 - 以 transcript 文件名（UUID）为键
-- 同 transcript 跨 Claude Code 重启复用同一缓存 → `lineNum` 持久、进程内存清空 → 旧行跳过 → `ses` 归零
+- 同 transcript 跨 Claude Code 重启复用同一缓存 → `lineNum` 持久、SessionStart 标记或父进程导致 `sessionKey` 变化 → 旧 `ses` 不恢复 → `ses` 归零
 - `api` 按 transcript 持久累积，跨重启保留
 - 旧 PID 键缓存文件（`ses-{pid}.txt`）可安全清理
 
