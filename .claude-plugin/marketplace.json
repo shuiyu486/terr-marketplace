@@ -87,6 +87,20 @@
       "repository": "https://github.com/shuiyu486/terr-marketplace",
       "license": "MIT",
       "keywords": ["statusline", "claude-code", "token-tracking", "ansi", "terminal"]
+    },
+    {
+      "name": "plugin-fork-sync",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/shuiyu486/terr-marketplace.git",
+        "path": "plugins/plugin-fork-sync"
+      },
+      "description": "Safely check upstream updates for Claude Code marketplace plugins that were forked or customized from official plugins, then prepare a reviewable merge plan without overwriting local modifications.",
+      "version": "0.1.0",
+      "author": { "name": "terrapin" },
+      "repository": "https://github.com/shuiyu486/terr-marketplace",
+      "license": "MIT",
+      "keywords": ["claude-code", "plugins", "marketplace", "fork", "upstream", "sync", "merge"]
     }
   ]
 }
