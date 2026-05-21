@@ -7,7 +7,7 @@
 ```
 Line 1: model │ effort │ ctx:inTok/ctxSize pct%        [始终显示]
 Line 2: in:inTok out:outTok │ ses:sesIn/sesOut │ api:apiTotal │ ts  [showTokensLine]
-Line 3: usage: ████████░░ 75% (12h 50m)               [showUsageLimits, 有数据时]
+Line 3: usage: 5h ███░░░░░░░ 30% (4h 40m) │ 7d █░░░░░░░░░ 5% (5d 12h)  [showUsageLimits, 有数据时]
 Line 4: tools: ◐ Read file.ts  │  ✓ Read ×3           [showToolActivity, showRunningTools/showCompletedTools]
 Line 5: agent: ◷ explore: desc (2m 15s)               [showAgentTracking]
 Line 6: todo: ▸ Fix bug (2/5)                          [showTodoProgress]

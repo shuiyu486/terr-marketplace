@@ -1,6 +1,7 @@
 import { readStdinLoop } from "./stdin";
 import { parseTranscript } from "./transcript";
 import { render } from "./render";
+import { maybeProbeCodexLimits, withCodexLimitFallback } from "./features/codexLimits";
 import type { Config } from "./types";
 import * as fs from "fs";
 import * as path from "path";
@@ -43,8 +44,9 @@ function flush(msg: string): void {
 
 readStdinLoop((data) => {
   try {
+    if (cfg.showUsageLimits) maybeProbeCodexLimits(data);
     const ctx = parseTranscript(data.transcript_path);
-    const output = render(data, ctx, cfg);
+    const output = render(withCodexLimitFallback(data), ctx, cfg);
     flush(output);
   } catch {
     // Skip failed updates — a single corrupt frame shouldn't kill the daemon

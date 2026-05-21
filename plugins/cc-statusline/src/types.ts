@@ -20,11 +20,11 @@ export interface StatusLineData {
   rate_limits?: {
     five_hour?: {
       used_percentage: number;
-      resets_at: string;
+      resets_at: string | number;
     };
     seven_day?: {
       used_percentage: number;
-      resets_at: string;
+      resets_at: string | number;
     };
   };
 }

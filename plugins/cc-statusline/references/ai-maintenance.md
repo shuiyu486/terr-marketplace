@@ -25,7 +25,7 @@ Claude Code 终端渲染 ANSI
 |----|---------|---------|------|
 | 1 | `model │ ctx:inTok/ctxSize pct%` | stdin `StatusLineData` | 模型名、上下文窗口使用率 |
 | 2 | `in:X out:Y │ ses:A/B │ api:Z │ HH:MM:SS` | 混合（见下） | token 统计行 |
-| 3 | `usage: ████░░ 50% (2h 30m)` | stdin `rate_limits` | 5 小时速率限制（可选） |
+| 3 | `usage: 5h ███░░░░░░░ 30% (4h 40m) │ 7d █░░░░░░░░░ 5% (5d 12h)` | stdin `rate_limits` 或 Codex headers fallback | 5 小时与 7 天速率限制（可选） |
 | 4 | `tools: ◐ Read file.ts │ ✓ Bash ×3` | JSONL 解析 | 工具活动（最近 20 条） |
 | 5 | `agent: ◷ code-reviewer: 审查 PR` | JSONL 解析 | Agent 追踪（最近 10 条） |
 | 6 | `todo: ▸ 实现登录 (3/7)` | JSONL 解析 | Todo 进度 |
@@ -61,7 +61,8 @@ context_window.{total_input_,        assistant message 中的
   → in / out 显示                    → ses / api 显示
                                     （逐行累加，去重，缓存）
 rate_limits.{five_hour,seven_day}    tool_use / tool_result
-  → usage 行显示                      → tools / agents 显示
+  或 X-Codex-* headers fallback        → tools / agents 显示
+  → usage 行显示
                                     TodoWrite/TaskCreate/TaskUpdate
 workspace.current_dir / cwd           → todos 显示
   → path 行显示

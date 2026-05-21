@@ -23,7 +23,8 @@ cc-statusline/
 │       ├── tools.ts              # Tool Activity：extract + render
 │       ├── agents.ts             # Agent Tracking：extract + render
 │       ├── todos.ts              # Todo Progress：extract + render
-│       └── limits.ts             # Usage Limits：render only（数据来自 stdin）
+│       ├── limits.ts             # Usage Limits：渲染 5h/7d 窗口
+│       └── codexLimits.ts        # Codex headers fallback：低频探测并缓存 X-Codex-*
 ├── references/                   # 按需加载的参考文档
 ├── dist/                         # 编译输出 (gitignore)
 ├── package.json                  # 零运行时依赖
@@ -47,6 +48,7 @@ stdin JSON (每 ~300ms)
   ├── StatusLineData
   │     ├── .model, .effort, .context_window → render.ts line 1
   │     ├── .rate_limits? → limits.ts render
+  │     ├── missing .rate_limits + local proxy env → codexLimits.ts low-frequency header probe
   │     └── .transcript_path
   │           │
   │           └── parseTranscript(path)
@@ -77,7 +79,7 @@ stdin JSON (每 ~300ms)
 - `tools.ts`: 解析 `tool_use`/`tool_result`，提取 name+target，保留最近 20 条
 - `agents.ts`: 解析 `Task`/`Agent` 的 `tool_use`，追踪运行状态+耗时
 - `todos.ts`: 解析 `TodoWrite`/`TaskCreate`/`TaskUpdate`，维护 TodoState
-- `limits.ts`: 纯渲染，无提取阶段
+- `limits.ts`: 纯渲染；`codexLimits.ts` 在 stdin 缺少 `rate_limits` 时低频探测本地代理并缓存 `X-Codex-*` headers
 
 ### stdin.ts — 500ms 超时 + 长驻循环
 

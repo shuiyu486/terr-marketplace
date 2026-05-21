@@ -43,11 +43,11 @@
 
 ## Usage Limits (`features/limits.ts`)
 
-- **数据源**: stdin JSON `rate_limits.five_hour`（可选，有则渲染）
-- **无提取阶段** — 纯渲染
-- **渲染**: 10 字符进度条 (█ 已用 / ░ 剩余) + 百分比 + 重置倒计时
+- **数据源**: 优先使用 stdin JSON `rate_limits.five_hour`；缺失时 `features/codexLimits.ts` 低频探测本地 Anthropic-compatible 代理的 `X-Codex-*` headers 并缓存
+- **无 transcript 提取阶段** — stdin/headers 转换后渲染
+- **渲染**: 同一行显示 5h 与可选 7d 窗口；每个窗口包含 10 字符进度条 (█ 已用 / ░ 剩余) + 百分比 + 重置倒计时
 - **颜色**: <75% 绿(108), 75-89% 黄(215), ≥90% 红(167)+粗
-- **示例**: `████████░░ 75% (12h 50m)`
+- **示例**: `usage: 5h ███░░░░░░░ 30% (4h 40m) │ 7d █░░░░░░░░░ 5% (5d 12h)`
 
 ## 添加新功能
 

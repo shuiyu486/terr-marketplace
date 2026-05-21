@@ -10,7 +10,7 @@ A feature-rich status line for Claude Code.
 - **Tool activity** — watch Claude read, edit, and search files as it happens
 - **Agent tracking** — see which subagents are running and what they're doing
 - **Todo progress** — track task completion in real-time
-- **Usage limits** — display rate limit usage bar and reset countdown (when available)
+- **Usage limits** — display 5-hour and 7-day usage bars with reset countdowns (Claude `rate_limits` or Codex header fallback)
 - Token statistics: input, output, session API, total API
 - Session cost tracking via transcript parsing
 - Current working directory
