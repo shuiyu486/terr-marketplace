@@ -24,7 +24,7 @@ in:inTok out:outTok │ ses:sesIn/sesOut │ api:apiTotal │ HH:MM:SS
 
 | 标签 | 变量 | 数据来源 | 生命周期 |
 |------|------|---------|---------|
-| in/out | `data.context_window.total_{input,output}_tokens` | stdin 实时快照 | 实时 |
+| in/out | `data.context_window.total_{input,output}_tokens` 经 `stableContextWindow()` 过滤短暂 0 输入帧 | stdin 实时快照 + 进程内 last-known-good | 实时；流式输出期间若收到 0/0 空帧则保持上一帧有效值 |
 | ses | `ctx.sesIn / ctx.sesOut` | transcript 增量解析，**不从缓存恢复** | 进程重启归零 |
 | api | `ctx.apiIn + ctx.apiOut` | transcript 增量解析，**从缓存恢复** | 跨重启持久
 

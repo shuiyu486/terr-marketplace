@@ -8,7 +8,7 @@ import type { Config, StatusLineData } from "../types";
 const DEFAULT_PROBE_INTERVAL_MINUTES = 3;
 const MIN_PROBE_INTERVAL_MINUTES = 1;
 const MAX_PROBE_INTERVAL_MINUTES = 10;
-const CACHE_MAX_AGE_MS = 60 * 60 * 1000;
+const FALLBACK_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const CACHE_PATH = path.join(os.tmpdir(), "cc-statusline-codex-limits.json");
 const SETTINGS_PATH = path.join(os.homedir(), ".claude", "settings.json");
 
@@ -24,7 +24,7 @@ let lastProbeAt = 0;
 let probing = false;
 
 export function withCodexLimitFallback(data: StatusLineData): StatusLineData {
-  if (!cached || Date.now() - cached.ts > CACHE_MAX_AGE_MS) return data;
+  if (!cached || Date.now() - cached.ts > FALLBACK_CACHE_MAX_AGE_MS) return data;
   if (!isLocalProxyUrl(claudeEnv().ANTHROPIC_BASE_URL)) return data;
   return { ...data, rate_limits: cached.rate_limits };
 }

@@ -29,16 +29,17 @@ echo '{...}' | node dist/index.js  # 手动测试（见 references/architecture.
 1. **特性提取顺序**: `extractToolEvent/extractAgentEvent/extractTodoEvent` 必须在 token 去重 `continue` **之前**执行，否则 tool_use/tool_result 事件会丢失（`transcript.ts` 循环中）
 2. **colors.ts 独立**: 避免 `render.ts ↔ features/*.ts` 循环依赖
 3. **缓存 JSON v2**: 写入 `SessionCacheV2`（`version: 2`），读取兼容旧 CSV 格式
-4. **rate_limits 可选**: 优先渲染 stdin `rate_limits`；本地代理环境下允许 `codexLimits.ts` 按 `codexProbeIntervalMinutes`（默认 3，范围 1-10 分钟）探测 `X-Codex-*` headers 并缓存，避免每 300ms 消耗额度，也避免旧 stdin 值长期不刷新
-5. **长驻进程 stdin 循环**: `index.ts` 使用 `readStdinLoop()` 长驻模式，进程启动一次循环读 stdin。消除每 ~300ms spawn Node.js 的 Windows Desktop Heap 开销
-6. **stdout 即时刷新**: 管道模式下 `process.stdout.write()` 不自动 flush，必须用 `fs.writeSync(1, msg + "\n")` 确保每行即时发送
-7. **版本自动迭代**: 任何影响用户功能的变更都必须 bump 版本号（包括 `src/`、`commands/`、`references/`）。bugfix → patch (1.1.1→1.1.2)，feature → minor (1.1.2→1.2.0)。四文件须同步: `package.json`, `package-lock.json`, `.claude-plugin/plugin.json`, 根 `.claude-plugin/marketplace.json`。不 bump 则 `cc-statusline:update` 无法识别更新
-8. **setup/update 构建检查**: `setup` 在写 settings.json 前检查 `dist/index.js` 是否存在，缺失则自动 `npm install && npm run build`；`update` 版本相同时也检查构建产物，缺失则进入 repair mode 重建
-9. **`|| 0` 而非 `?? 0` 防护 NaN**: `input_tokens=0` 的流式中间态行缺少 `cache_creation_input_tokens`/`cache_read_input_tokens` 字段，`0 + undefined = NaN`。`??` 只拦截 null/undefined，`NaN ?? 0` = `NaN`，必须用 `||` 彻底防护。修复后须清理旧缓存避免 NaN 污染链
-10. **两个插件目录**: 开发目录 (`marketplaces/.../plugins/cc-statusline`) 和运行时目录 (`cache/.../cc-statusline/{version}`)。`settings.json` 的 `statusLine.command` 指向运行时目录。修改源码后须 `cp dist/` 同步到运行时目录才能生效
-11. **ses 与 api 语义不同**: `ses` 按当前 Claude Code session 累加（写缓存，`sessionKey` 匹配时跨短生命周期 Node 进程恢复），`api` 按 transcript 历史持久累加。两者在 `transcript.ts` 中独立累加，共用同一 delta 计算逻辑。Claude Code 重启或 SessionStart 标记变化 → `sessionKey` 变化 → ses 归零。详见 `references/ai-maintenance.md` Line 2 字段详解
-12. **缓存按 transcript 路径索引**: `cachePath()` 使用 transcript 文件名（UUID）作为缓存键，而非 Claude PID。同一 transcript 跨重启复用同一缓存，`lineNum` 持久化避免重新解析历史行。旧 PID 键缓存文件（`ses-{pid}.txt`）可安全清理
-13. **`os.tmpdir()` 跨环境不一致**: Git Bash 的 `$TEMP` ≠ Node 的 `os.tmpdir()`。缓存实际在 `os.tmpdir()` 返回的路径下
+4. **rate_limits 可选**: 优先渲染 stdin `rate_limits`；本地代理环境下允许 `codexLimits.ts` 按 `codexProbeIntervalMinutes`（默认 3，范围 1-10 分钟）探测 `X-Codex-*` headers 并缓存，24 小时内可兜底显示旧缓存，避免每 300ms 消耗额度，也避免刷新前整行消失
+5. **ctx 短暂 0 帧兜底**: `render.ts` 的 `stableContextWindow()` 会保留上一帧有效 `context_window`，当流式输出期间 stdin 临时给出 `0/0` 时继续显示 last-known-good，避免 `ctx:0w/100w` 闪烁
+6. **长驻进程 stdin 循环**: `index.ts` 使用 `readStdinLoop()` 长驻模式，进程启动一次循环读 stdin。消除每 ~300ms spawn Node.js 的 Windows Desktop Heap 开销
+7. **stdout 即时刷新**: 管道模式下 `process.stdout.write()` 不自动 flush，必须用 `fs.writeSync(1, msg + "\n")` 确保每行即时发送
+8. **版本自动迭代**: 任何影响用户功能的变更都必须 bump 版本号（包括 `src/`、`commands/`、`references/`）。bugfix → patch (1.1.1→1.1.2)，feature → minor (1.1.2→1.2.0)。四文件须同步: `package.json`, `package-lock.json`, `.claude-plugin/plugin.json`, 根 `.claude-plugin/marketplace.json`。不 bump 则 `cc-statusline:update` 无法识别更新
+9. **setup/update 构建检查**: `setup` 在写 settings.json 前检查 `dist/index.js` 是否存在，缺失则自动 `npm install && npm run build`；`update` 版本相同时也检查构建产物，缺失则进入 repair mode 重建
+10. **`|| 0` 而非 `?? 0` 防护 NaN**: `input_tokens=0` 的流式中间态行缺少 `cache_creation_input_tokens`/`cache_read_input_tokens` 字段，`0 + undefined = NaN`。`??` 只拦截 null/undefined，`NaN ?? 0` = `NaN`，必须用 `||` 彻底防护。修复后须清理旧缓存避免 NaN 污染链
+11. **两个插件目录**: 开发目录 (`marketplaces/.../plugins/cc-statusline`) 和运行时目录 (`cache/.../cc-statusline/{version}`)。`settings.json` 的 `statusLine.command` 指向运行时目录。修改源码后须 `cp dist/` 同步到运行时目录才能生效
+12. **ses 与 api 语义不同**: `ses` 按当前 Claude Code session 累加（写缓存，`sessionKey` 匹配时跨短生命周期 Node 进程恢复），`api` 按 transcript 历史持久累加。两者在 `transcript.ts` 中独立累加，共用同一 delta 计算逻辑。Claude Code 重启或 SessionStart 标记变化 → `sessionKey` 变化 → ses 归零。详见 `references/ai-maintenance.md` Line 2 字段详解
+13. **缓存按 transcript 路径索引**: `cachePath()` 使用 transcript 文件名（UUID）作为缓存键，而非 Claude PID。同一 transcript 跨重启复用同一缓存，`lineNum` 持久化避免重新解析历史行。旧 PID 键缓存文件（`ses-{pid}.txt`）可安全清理
+14. **`os.tmpdir()` 跨环境不一致**: Git Bash 的 `$TEMP` ≠ Node 的 `os.tmpdir()`。缓存实际在 `os.tmpdir()` 返回的路径下
 
 ## 配置
 

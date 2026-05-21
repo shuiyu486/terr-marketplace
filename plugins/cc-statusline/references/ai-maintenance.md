@@ -23,7 +23,7 @@ Claude Code 终端渲染 ANSI
 
 | 行 | 显示内容 | 数据来源 | 说明 |
 |----|---------|---------|------|
-| 1 | `model │ ctx:inTok/ctxSize pct%` | stdin `StatusLineData` | 模型名、上下文窗口使用率 |
+| 1 | `model │ ctx:inTok/ctxSize pct%` | stdin `StatusLineData` + last-known-good | 模型名、上下文窗口使用率；短暂 0 输入帧会沿用上一帧有效值 |
 | 2 | `in:X out:Y │ ses:A/B │ api:Z │ HH:MM:SS` | 混合（见下） | token 统计行 |
 | 3 | `usage: 5h ███░░░░░░░ 30% (4h 40m) │ 7d █░░░░░░░░░ 5% (5d 12h)` | stdin `rate_limits` 或 Codex headers fallback | 5 小时与 7 天速率限制（可选） |
 | 4 | `tools: ◐ Read file.ts │ ✓ Bash ×3` | JSONL 解析 | 工具活动（最近 20 条） |
@@ -41,7 +41,7 @@ in:41.7w out:0.8w │ ses:3.4w/1.2w │ api:4.6w │ 18:30:45
 
 | 标签 | 含义 | 数据来源 | 生命周期 |
 |------|------|---------|---------|
-| **in** / **out** | 当前上下文窗口中的 token 数 | `StatusLineData.context_window.total_input_tokens` / `total_output_tokens`（stdin 实时快照） | 实时变化 |
+| **in** / **out** | 当前上下文窗口中的 token 数 | `StatusLineData.context_window.total_input_tokens` / `total_output_tokens` 经 `stableContextWindow()` 过滤短暂 0 输入帧 | 实时变化；流式输出期间遇到临时 0/0 帧时保持上一帧有效值 |
 | **ses** | **当前 Claude Code session** 的 API token 增量累计 | JSONL transcript 增量解析 + 进程内存 Map/同 session 缓存（`ParseResult.sesIn/sesOut`） | Claude Code 重启或 SessionStart 变化后归零 |
 | **api** | **transcript 历史累计** API token 消耗 | JSONL transcript 增量解析 + 缓存恢复（`ParseResult.apiIn/apiOut`） | 跨重启持久（按 transcript UUID 索引） |
 

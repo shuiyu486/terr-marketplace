@@ -6,6 +6,25 @@ import { renderAgents } from "./features/agents";
 import { renderTodos } from "./features/todos";
 import { renderLimits } from "./features/limits";
 
+type ContextWindow = StatusLineData["context_window"];
+
+let lastContextWindow: ContextWindow | null = null;
+
+function stableContextWindow(current: ContextWindow): ContextWindow {
+  if (current.total_input_tokens > 0 || current.used_percentage > 0) {
+    lastContextWindow = current;
+    return current;
+  }
+
+  if (!lastContextWindow) return current;
+  if (current.context_window_size !== lastContextWindow.context_window_size) return current;
+
+  return {
+    ...lastContextWindow,
+    total_output_tokens: current.total_output_tokens || lastContextWindow.total_output_tokens,
+  };
+}
+
 function ctxColor(pct: number, cfg: Config): string {
   if (pct > cfg.ctxDangerThreshold) return color(`${pct}%`, 168, true);
   if (pct > cfg.ctxWarnThreshold) return color(`${pct}%`, 215, true);
@@ -33,12 +52,13 @@ export function render(
   ctx: ParseResult,
   cfg: Config,
 ): string {
+  const contextWindow = stableContextWindow(data.context_window);
   const model = color(data.model.display_name, 111);
   const effort = cfg.showEffort ? ` ${effortColor(data.effort.level)}` : "";
-  const pct = Math.round(data.context_window.used_percentage);
+  const pct = Math.round(contextWindow.used_percentage);
   const ctxInfo = ctxColor(pct, cfg);
-  const inTok = fmtW(data.context_window.total_input_tokens);
-  const ctxSize = fmtW(data.context_window.context_window_size);
+  const inTok = fmtW(contextWindow.total_input_tokens);
+  const ctxSize = fmtW(contextWindow.context_window_size);
 
   const lines: string[] = [];
 
@@ -48,7 +68,7 @@ export function render(
 
   // Line 2: tokens / session / api
   if (cfg.showTokensLine) {
-    const outTok = fmtW(data.context_window.total_output_tokens);
+    const outTok = fmtW(contextWindow.total_output_tokens);
     const sesIn = fmtW(ctx.sesIn);
     const sesOut = fmtW(ctx.sesOut);
     const apiTotal = fmtW(ctx.apiIn + ctx.apiOut);
