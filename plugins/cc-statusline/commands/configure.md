@@ -33,21 +33,60 @@ If no config file exists, these are the defaults:
 }
 ```
 
+## Show Current State
+
+Summarize the current config to the user. For each toggle, show its state with a symbol (✓ enabled, ✗ disabled):
+
+```
+当前配置:
+  ✓ Effort 级别    ✓ Token 统计    ✓ 当前路径
+  ✓ Tool 主开关    ✓ Running tools    ✓ Completed tools
+  ✓ Agent 追踪    ✓ Todo 进度    ✓ 用量限制
+  上下文阈值: 警告 70% / 危险 90%
+```
+
 ## Ask the User
 
-Use AskUserQuestion to ask the user which options they want to change. Present these options:
+Use AskUserQuestion. The first question uses **toggle semantics**: the user checks items whose state they want to **flip** (on→off or off→on). Items the user leaves unchecked keep their current state. This avoids the "re-check everything" problem since AskUserQuestion multiSelect does not support pre-selected checkboxes (`additionalProperties: false` on options).
 
-1. **Show effort level** — Display the effort level (max/xhigh/high/medium/low) on line 1. Default: true
-2. **Show token statistics** — Display the second line with in/out/ses/api token counts and timestamp. Default: true
-3. **Show current path** — Display the current working directory on line 3. Default: true
-4. **Show tool activity (master switch)** — Master toggle for the entire tools line. When off, no tool info is displayed regardless of sub-toggles. Default: true
-5. **Show running tools** — Display currently running tools (◐ icon). Requires master switch on. Default: true
-6. **Show completed tools** — Display completed tool counts (✓ name ×N). Requires master switch on. Default: true
-7. **Show agent tracking** — Display subagent status (Task/Agent type, description, elapsed time). Default: true
-8. **Show todo progress** — Display current in-progress task and completion count. Default: true
-9. **Show usage limits** — Display 5-hour rate limit usage bar and reset time (only when available). Default: true
-10. **Context warning threshold** — Percentage at which context turns yellow. Default: 70
-11. **Context danger threshold** — Percentage at which context turns red. Default: 90
+**Question 1** (multiSelect): split across 3 sub-questions (max 4 options each per API limit):
+
+Sub-question 1a "显示基础 — 选择要切换开关的功能": Effort 级别, Token 统计, 当前路径, Tool 主开关
+Sub-question 1b "工具与追踪 — 选择要切换开关的功能": Running tools, Completed tools, Agent 追踪
+Sub-question 1c "其他 — 选择要切换开关的功能": Todo 进度, 用量限制
+
+For each option, describe current state AND what checking it will do. Format: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
+
+9 toggle options with descriptions:
+
+1. label: "Effort 级别", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
+2. label: "Token 统计", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
+3. label: "当前路径", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
+4. label: "Tool 主开关", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
+5. label: "Running tools", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
+6. label: "Completed tools", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
+7. label: "Agent 追踪", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
+8. label: "Todo 进度", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
+9. label: "用量限制", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
+
+**IMPORTANT**: The `[开启/关闭]` placeholders above must be filled in with the user's ACTUAL current config values. If showEffort is true, write "当前: 开启。勾选 = 切换为关闭".
+
+**Question 2** (single select): "上下文窗口告警阈值"
+
+Present threshold preset options. Mark the preset closest to current values as "(Recommended)":
+
+1. label: "警告 50% / 危险 75%", description: "敏感 — 上下文到一半就告警"
+2. label: "警告 60% / 危险 80%", description: "中等"
+3. label: "警告 70% / 危险 90%", description: "较不敏感（默认）"
+4. label: "保持当前不变", description: "当前: 警告 {WARN}% / 危险 {DANGER}%"
+
+## Apply Answers
+
+After the user answers:
+
+1. **Question 1**: For each item in the user's selected array, flip that feature's boolean value from the current config. Items NOT selected keep their current value.
+2. **Question 2**: If the user picked a preset (1-3), use those threshold values. If the user picked "保持当前不变" (4), keep the current threshold values.
+3. Write the final config using the Write Config section below.
 
 ## Write Config
 
