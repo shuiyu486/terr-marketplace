@@ -1,0 +1,10 @@
+{
+  "name": "plugin-fork-sync",
+  "version": "0.1.0",
+  "description": "Safely check upstream updates for Claude Code marketplace plugins that were forked or customized from official plugins, then prepare a reviewable merge plan without overwriting local modifications.",
+  "author": {
+    "name": "terrapin"
+  },
+  "license": "MIT",
+  "keywords": ["claude-code", "plugins", "marketplace", "fork", "upstream", "sync", "merge"]
+}

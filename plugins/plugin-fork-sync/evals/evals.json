@@ -1,0 +1,23 @@
+{
+  "skill_name": "plugin-fork-sync",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "看看官方 skill-creator 有没有更新：原身插件是 https://github.com/anthropics/claude-plugins-official/tree/main/plugins/skill-creator，我自己的魔改插件是 C:\\Users\\terrapin\\.claude\\plugins\\marketplaces\\terr-marketplace\\plugins\\hookify。先不要改文件，只给我同步风险报告。",
+      "expected_output": "应触发 plugin-fork-sync，先识别上游、本地插件和同步意图；不写入目标目录；如果没有明确 baseRef，应说明无法安全自动合并，并输出上游变化、本地魔改、冲突风险和下一步建议。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "我有个 Claude Code marketplace 插件是从官方插件 fork 后改的，但我不记得当时基于哪个 commit。你帮我建立一个插件根目录 PLUGIN_FORK_SYNC.md 的建议内容，里面要记录上游插件地址、上次同步 commit、自身插件 git 仓库、魔改了哪些文件，以及是否允许同步后 push。不要直接写入。",
+      "expected_output": "应说明 PLUGIN_FORK_SYNC.md 作为同步账本的用途，给出包含 Upstream、Local plugin、Local modifications、Sync policy 的示例；明确 lastSyncedCommit 缺失时需要用户确认或只能进入审阅模式；不得假设未知 commit；应把 push 策略作为显式字段而不是默认直接推送。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "官方插件更新了，我想把安全的改动移植到 terr-marketplace 的 hookify。hookify 根目录 PLUGIN_FORK_SYNC.md 里已经记了上游地址、lastSyncedCommit、自身 repo、pushRemote/pushBranch，还有 README 和 plugin.json 是本地魔改文件。请先用 hash 快速筛选文件，再生成文件级同步计划，告诉我哪些能自动合并，哪些要人工看。",
+      "expected_output": "应优先读取 PLUGIN_FORK_SYNC.md；用 hash-first 思路缩小 diff 范围；把 README 和 .claude-plugin/plugin.json 视为本地保留或人工确认文件；按文件级分类输出仅上游变更、仅本地变更、双方变更和高风险冲突；只生成计划，不直接应用补丁或 push。",
+      "files": []
+    }
+  ]
+}
