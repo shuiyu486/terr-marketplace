@@ -29,7 +29,7 @@ echo '{...}' | node dist/index.js  # 手动测试（见 references/architecture.
 1. **特性提取顺序**: `extractToolEvent/extractAgentEvent/extractTodoEvent` 必须在 token 去重 `continue` **之前**执行，否则 tool_use/tool_result 事件会丢失（`transcript.ts` 循环中）
 2. **colors.ts 独立**: 避免 `render.ts ↔ features/*.ts` 循环依赖
 3. **缓存 JSON v2**: 写入 `SessionCacheV2`（`version: 2`），读取兼容旧 CSV 格式
-4. **rate_limits 可选**: 优先渲染 stdin `rate_limits`；缺失时允许 `codexLimits.ts` 低频探测本地代理 `X-Codex-*` headers 并缓存，避免每 300ms 消耗额度
+4. **rate_limits 可选**: 优先渲染 stdin `rate_limits`；本地代理环境下允许 `codexLimits.ts` 按 `codexProbeIntervalMinutes`（默认 3，范围 1-10 分钟）探测 `X-Codex-*` headers 并缓存，避免每 300ms 消耗额度，也避免旧 stdin 值长期不刷新
 5. **长驻进程 stdin 循环**: `index.ts` 使用 `readStdinLoop()` 长驻模式，进程启动一次循环读 stdin。消除每 ~300ms spawn Node.js 的 Windows Desktop Heap 开销
 6. **stdout 即时刷新**: 管道模式下 `process.stdout.write()` 不自动 flush，必须用 `fs.writeSync(1, msg + "\n")` 确保每行即时发送
 7. **版本自动迭代**: 任何影响用户功能的变更都必须 bump 版本号（包括 `src/`、`commands/`、`references/`）。bugfix → patch (1.1.1→1.1.2)，feature → minor (1.1.2→1.2.0)。四文件须同步: `package.json`, `package-lock.json`, `.claude-plugin/plugin.json`, 根 `.claude-plugin/marketplace.json`。不 bump 则 `cc-statusline:update` 无法识别更新

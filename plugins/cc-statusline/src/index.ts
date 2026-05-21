@@ -21,6 +21,7 @@ const DEFAULT_CONFIG: Config = {
   showAgentTracking: true,
   showTodoProgress: true,
   showUsageLimits: true,
+  codexProbeIntervalMinutes: 3,
 };
 
 function loadConfig(): Config {
@@ -44,7 +45,7 @@ function flush(msg: string): void {
 
 readStdinLoop((data) => {
   try {
-    if (cfg.showUsageLimits) maybeProbeCodexLimits(data);
+    if (cfg.showUsageLimits) maybeProbeCodexLimits(data, cfg);
     const ctx = parseTranscript(data.transcript_path);
     const output = render(withCodexLimitFallback(data), ctx, cfg);
     flush(output);

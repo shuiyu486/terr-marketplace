@@ -48,7 +48,7 @@ stdin JSON (每 ~300ms)
   ├── StatusLineData
   │     ├── .model, .effort, .context_window → render.ts line 1
   │     ├── .rate_limits? → limits.ts render
-  │     ├── missing .rate_limits + local proxy env → codexLimits.ts low-frequency header probe
+  │     ├── local proxy env → codexLimits.ts interval header probe/cache
   │     └── .transcript_path
   │           │
   │           └── parseTranscript(path)
@@ -79,7 +79,7 @@ stdin JSON (每 ~300ms)
 - `tools.ts`: 解析 `tool_use`/`tool_result`，提取 name+target，保留最近 20 条
 - `agents.ts`: 解析 `Task`/`Agent` 的 `tool_use`，追踪运行状态+耗时
 - `todos.ts`: 解析 `TodoWrite`/`TaskCreate`/`TaskUpdate`，维护 TodoState
-- `limits.ts`: 纯渲染；`codexLimits.ts` 在 stdin 缺少 `rate_limits` 时低频探测本地代理并缓存 `X-Codex-*` headers
+- `limits.ts`: 纯渲染；`codexLimits.ts` 在本地代理环境下按配置间隔探测并缓存 `X-Codex-*` headers，可覆盖陈旧的 stdin 用量数据
 
 ### stdin.ts — 500ms 超时 + 长驻循环
 

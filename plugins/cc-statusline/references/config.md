@@ -19,6 +19,7 @@
   "showAgentTracking": true,
   "showTodoProgress": true,
   "showUsageLimits": true,
+  "codexProbeIntervalMinutes": 3,
   "ctxWarnThreshold": 70,
   "ctxDangerThreshold": 90
 }
@@ -36,7 +37,8 @@
 | showCompletedTools | boolean | true | 显示已完成工具 (✓ 计数) |
 | showAgentTracking | boolean | true | 显示代理追踪行 |
 | showTodoProgress | boolean | true | 显示待办进度 |
-| showUsageLimits | boolean | true | 显示使用限制 (需 rate_limits) |
+| showUsageLimits | boolean | true | 显示使用限制；优先使用 stdin rate_limits，本地代理环境下用 Codex headers fallback 刷新 |
+| codexProbeIntervalMinutes | number | 3 | Codex headers fallback 探测间隔，支持 1-10 分钟，超出范围会自动夹取 |
 | ctxWarnThreshold | number | 70 | 上下文黄色阈值 |
 | ctxDangerThreshold | number | 90 | 上下文红色阈值 |
 

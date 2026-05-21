@@ -29,7 +29,8 @@ If no config file exists, these are the defaults:
   "showCompletedTools": true,
   "showAgentTracking": true,
   "showTodoProgress": true,
-  "showUsageLimits": true
+  "showUsageLimits": true,
+  "codexProbeIntervalMinutes": 3
 }
 ```
 
@@ -43,6 +44,7 @@ Summarize the current config to the user. For each toggle, show its state with a
   ✓ Tool 主开关    ✓ Running tools    ✓ Completed tools
   ✓ Agent 追踪    ✓ Todo 进度    ✓ 用量限制
   上下文阈值: 警告 70% / 危险 90%
+  Codex 用量刷新: 3 分钟
 ```
 
 ## Ask the User
@@ -80,13 +82,25 @@ Present threshold preset options. Mark the preset closest to current values as "
 3. label: "警告 70% / 危险 90%", description: "较不敏感（默认）"
 4. label: "保持当前不变", description: "当前: 警告 {WARN}% / 危险 {DANGER}%"
 
+Because Question 1 is split into three sub-questions and AskUserQuestion supports at most 4 questions per call, ask Question 3 in a second AskUserQuestion call after the first answers are collected.
+
+**Question 3** (single select): "Codex 用量刷新间隔"
+
+Present interval preset options. Mark the current or closest value as "(Recommended)":
+
+1. label: "1 分钟", description: "刷新更快，请求更频繁"
+2. label: "3 分钟", description: "默认值，刷新及时且请求较少"
+3. label: "5 分钟", description: "较省请求"
+4. label: "保持当前", description: "当前: {MINUTES} 分钟；配置支持 1-10 分钟，手动写入时会自动夹取范围"
+
 ## Apply Answers
 
 After the user answers:
 
 1. **Question 1**: For each item in the user's selected array, flip that feature's boolean value from the current config. Items NOT selected keep their current value.
 2. **Question 2**: If the user picked a preset (1-3), use those threshold values. If the user picked "保持当前不变" (4), keep the current threshold values.
-3. Write the final config using the Write Config section below.
+3. **Question 3**: If the user picked an interval preset (1-3), set `codexProbeIntervalMinutes` to 1, 3, or 5. If the user picked "保持当前" (4), keep the current value. Clamp any manually provided value to 1-10.
+4. Write the final config using the Write Config section below.
 
 ## Write Config
 
@@ -109,12 +123,13 @@ const config = {
   showAgentTracking: process.argv[7] === 'true',
   showTodoProgress: process.argv[8] === 'true',
   showUsageLimits: process.argv[9] === 'true',
-  ctxWarnThreshold: parseInt(process.argv[10], 10),
-  ctxDangerThreshold: parseInt(process.argv[11], 10)
+  codexProbeIntervalMinutes: Math.min(10, Math.max(1, parseInt(process.argv[10], 10) || 3)),
+  ctxWarnThreshold: parseInt(process.argv[11], 10),
+  ctxDangerThreshold: parseInt(process.argv[12], 10)
 };
 fs.writeFileSync(p, JSON.stringify(config, null, 2));
 console.log('Config saved to', p);
-" "<showEffort>" "<showTokensLine>" "<showPath>" "<showToolActivity>" "<showRunningTools>" "<showCompletedTools>" "<showAgentTracking>" "<showTodoProgress>" "<showUsageLimits>" "<ctxWarn>" "<ctxDanger>"
+" "<showEffort>" "<showTokensLine>" "<showPath>" "<showToolActivity>" "<showRunningTools>" "<showCompletedTools>" "<showAgentTracking>" "<showTodoProgress>" "<showUsageLimits>" "<codexProbeIntervalMinutes>" "<ctxWarn>" "<ctxDanger>"
 ```
 
 **Windows (PowerShell):**
@@ -132,6 +147,7 @@ $config = @{
     showAgentTracking = $showAgentTracking
     showTodoProgress = $showTodoProgress
     showUsageLimits = $showUsageLimits
+    codexProbeIntervalMinutes = [Math]::Min(10, [Math]::Max(1, [int]$codexProbeIntervalMinutes))
     ctxWarnThreshold = $ctxWarn
     ctxDangerThreshold = $ctxDanger
 }

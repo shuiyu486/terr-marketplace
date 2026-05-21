@@ -114,11 +114,12 @@ workspace.current_dir / cwd           → todos 显示
   "showCompletedTools": true,
   "showAgentTracking": true,
   "showTodoProgress": true,
-  "showUsageLimits": true
+  "showUsageLimits": true,
+  "codexProbeIntervalMinutes": 3
 }
 ```
 
-所有字段可选，缺失时使用 `DEFAULT_CONFIG`（index.ts:11-21）。
+所有字段可选，缺失时使用 `DEFAULT_CONFIG`（index.ts:11-24）。`codexProbeIntervalMinutes` 控制本地 Codex headers fallback 刷新间隔，默认 3 分钟，运行时夹取到 1-10 分钟。
 
 ## 关键 Gotchas
 

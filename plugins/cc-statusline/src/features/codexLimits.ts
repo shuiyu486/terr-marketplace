@@ -3,9 +3,11 @@ import * as http from "http";
 import * as https from "https";
 import * as os from "os";
 import * as path from "path";
-import type { StatusLineData } from "../types";
+import type { Config, StatusLineData } from "../types";
 
-const PROBE_INTERVAL_MS = 5 * 60 * 1000;
+const DEFAULT_PROBE_INTERVAL_MINUTES = 3;
+const MIN_PROBE_INTERVAL_MINUTES = 1;
+const MAX_PROBE_INTERVAL_MINUTES = 10;
 const CACHE_MAX_AGE_MS = 60 * 60 * 1000;
 const CACHE_PATH = path.join(os.tmpdir(), "cc-statusline-codex-limits.json");
 const SETTINGS_PATH = path.join(os.homedir(), ".claude", "settings.json");
@@ -22,20 +24,20 @@ let lastProbeAt = 0;
 let probing = false;
 
 export function withCodexLimitFallback(data: StatusLineData): StatusLineData {
-  if (data.rate_limits?.five_hour) return data;
   if (!cached || Date.now() - cached.ts > CACHE_MAX_AGE_MS) return data;
+  if (!isLocalProxyUrl(claudeEnv().ANTHROPIC_BASE_URL)) return data;
   return { ...data, rate_limits: cached.rate_limits };
 }
 
-export function maybeProbeCodexLimits(data: StatusLineData): void {
-  if (data.rate_limits?.five_hour || probing) return;
-  if (Date.now() - lastProbeAt < PROBE_INTERVAL_MS) return;
+export function maybeProbeCodexLimits(data: StatusLineData, cfg: Config): void {
+  if (probing) return;
+  if (Date.now() - lastProbeAt < probeIntervalMs(cfg)) return;
 
   const env = claudeEnv();
   const baseUrl = env.ANTHROPIC_BASE_URL;
   const token = env.ANTHROPIC_AUTH_TOKEN || env.ANTHROPIC_API_KEY;
   const model = env.ANTHROPIC_DEFAULT_SONNET_MODEL || data.model?.display_name;
-  if (!baseUrl || !token || !model) return;
+  if (!baseUrl || !token || !model || !isLocalProxyUrl(baseUrl)) return;
 
   lastProbeAt = Date.now();
   probing = true;
@@ -58,6 +60,26 @@ function loadCache(): CachedLimits | null {
     return parsed;
   } catch {
     return null;
+  }
+}
+
+function probeIntervalMs(cfg: Config): number {
+  const minutes = Number.isFinite(cfg.codexProbeIntervalMinutes)
+    ? cfg.codexProbeIntervalMinutes
+    : DEFAULT_PROBE_INTERVAL_MINUTES;
+  return Math.min(
+    MAX_PROBE_INTERVAL_MINUTES,
+    Math.max(MIN_PROBE_INTERVAL_MINUTES, minutes),
+  ) * 60 * 1000;
+}
+
+function isLocalProxyUrl(baseUrl: string | undefined): boolean {
+  if (!baseUrl) return false;
+  try {
+    const host = new URL(baseUrl).hostname.toLowerCase();
+    return host === "127.0.0.1" || host === "localhost" || host === "::1";
+  } catch {
+    return false;
   }
 }
 

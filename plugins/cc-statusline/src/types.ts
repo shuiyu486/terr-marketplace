@@ -131,4 +131,5 @@ export interface Config {
   showAgentTracking: boolean;
   showTodoProgress: boolean;
   showUsageLimits: boolean;
+  codexProbeIntervalMinutes: number;
 }

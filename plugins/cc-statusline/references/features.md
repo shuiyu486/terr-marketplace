@@ -43,7 +43,7 @@
 
 ## Usage Limits (`features/limits.ts`)
 
-- **数据源**: 优先使用 stdin JSON `rate_limits.five_hour`；缺失时 `features/codexLimits.ts` 低频探测本地 Anthropic-compatible 代理的 `X-Codex-*` headers 并缓存
+- **数据源**: 优先使用 stdin JSON `rate_limits.five_hour`；本地代理环境下 `features/codexLimits.ts` 会按 `codexProbeIntervalMinutes`（默认 3 分钟，范围 1-10）定时探测 `X-Codex-*` headers 并缓存，避免 stdin 旧值长期不刷新
 - **无 transcript 提取阶段** — stdin/headers 转换后渲染
 - **渲染**: 同一行显示 5h 与可选 7d 窗口；每个窗口包含 10 字符进度条 (█ 已用 / ░ 剩余) + 百分比 + 重置倒计时
 - **颜色**: <75% 绿(108), 75-89% 黄(215), ≥90% 红(167)+粗
