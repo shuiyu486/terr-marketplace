@@ -70,7 +70,7 @@ stdin JSON (每 ~300ms)
 - **去重**: 4 字段相同 (input/output/cache_create/cache_read) 的 usage 行跳过
 - **关键**: 特性提取在 token 去重 `continue` **之前**执行，否则 tool_use 事件会丢失
 - **NaN 防护**: `input_tokens=0` 的行缺少 `cache_creation_input_tokens`/`cache_read_input_tokens` 字段，必须用 `|| 0` 而非 `?? 0`（`NaN ?? 0` = `NaN`）
-- **ses vs api**: `apiIn/apiOut` 从缓存恢复（跨重启持久），`sesIn/sesOut` 每次从 0 开始（局部变量，不写缓存）。两者共用同一 delta 计算，独立累加
+- **ses vs api**: `apiIn/apiOut` 从缓存恢复（跨重启持久），`sesIn/sesOut` 从进程内存恢复（当前 Claude Code 进程内累计，重启归零，不从磁盘缓存恢复）。两者共用同一 delta 计算，独立累加
 
 ### features/ — 每功能独立提取+渲染
 

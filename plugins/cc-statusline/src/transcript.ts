@@ -8,6 +8,7 @@ import { extractTodoEvent } from "./features/todos";
 import type { TodoState } from "./features/todos";
 
 const CACHE_DIR = path.join(os.tmpdir(), "cc-statusline-cache");
+const sessionTokenTotals = new Map<string, { sesIn: number; sesOut: number }>();
 
 function ensureCacheDir(): void {
   if (!fs.existsSync(CACHE_DIR)) {
@@ -103,10 +104,11 @@ export function parseTranscript(transcriptPath: string): ParseResult {
   const cache = readCache(transcriptPath);
 
   const startLine = cache.lineNum;
+  const sessionTotals = sessionTokenTotals.get(transcriptPath) || { sesIn: 0, sesOut: 0 };
   let apiIn = cache.apiIn || 0;
   let apiOut = cache.apiOut || 0;
-  let sesIn = cache.sesIn || 0;
-  let sesOut = cache.sesOut || 0;
+  let sesIn = sessionTotals.sesIn;
+  let sesOut = sessionTotals.sesOut;
   let lastIn = cache.lastIn || 0;
   let lastOut = cache.lastOut || 0;
   let lastCacheCreate = cache.lastCacheCreate || 0;
@@ -219,6 +221,8 @@ export function parseTranscript(transcriptPath: string): ParseResult {
     }
   }
 
+  sessionTokenTotals.set(transcriptPath, { sesIn, sesOut });
+
   const newCache: SessionCacheV2 = {
     version: 2,
     lineNum: lines.length,
@@ -226,8 +230,8 @@ export function parseTranscript(transcriptPath: string): ParseResult {
     lastOut,
     lastCacheCreate,
     lastCacheRead,
-    sesIn,
-    sesOut,
+    sesIn: 0,
+    sesOut: 0,
     apiIn,
     apiOut,
     tools,
