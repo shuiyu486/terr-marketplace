@@ -75,6 +75,20 @@
       "keywords": ["hooks", "safety", "rules", "stop", "pretooluse", "posttooluse"]
     },
     {
+      "name": "hook-terr",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/shuiyu486/terr-marketplace.git",
+        "path": "plugins/hook-terr"
+      },
+      "description": "Personal workflow hook runtime with configurable Stop notifications and extensible hook rules.",
+      "version": "1.0.0",
+      "author": { "name": "terrapin" },
+      "repository": "https://github.com/shuiyu486/terr-marketplace",
+      "license": "MIT",
+      "keywords": ["hooks", "workflow", "notifications", "windows", "guardrails"]
+    },
+    {
       "name": "cc-statusline",
       "source": {
         "source": "git-subdir",

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "description": "Sample custom command preset. Review before enabling because it executes a local command.",
+  "settings": {
+    "notifications": {
+      "custom_command": {
+        "enabled": false,
+        "detached": true,
+        "timeoutMs": 1000,
+        "command": "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show('{{message}}', '{{title}}') | Out-Null"
+      }
+    },
+    "events": {
+      "Stop": { "notifications": ["custom_command"] }
+    }
+  }
+}

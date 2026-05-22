@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "enabled": true,
+  "notifications": {
+    "windows_toast": {
+      "enabled": true,
+      "silent": true,
+      "timeoutMs": 1500
+    },
+    "beep": {
+      "enabled": true,
+      "timeoutMs": 800
+    },
+    "popup": {
+      "enabled": false,
+      "title": "Claude Code 提醒",
+      "icon": "info",
+      "timeoutMs": 1500
+    },
+    "custom_command": {
+      "enabled": false,
+      "command": "",
+      "timeoutMs": 1000,
+      "detached": true
+    }
+  },
+  "events": {
+    "Stop": {
+      "enabled": true,
+      "notifications": ["beep", "windows_toast"]
+    },
+    "PreToolUse": {
+      "enabled": true
+    },
+    "PostToolUse": {
+      "enabled": true
+    },
+    "UserPromptSubmit": {
+      "enabled": true
+    }
+  }
+}

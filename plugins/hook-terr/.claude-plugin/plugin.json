@@ -1,0 +1,11 @@
+{
+  "name": "hook-terr",
+  "version": "1.0.0",
+  "description": "Personal workflow hook runtime with configurable Stop notifications, Windows toast, sound, popup, and extensible hook rules.",
+  "author": {
+    "name": "terrapin"
+  },
+  "repository": "https://github.com/shuiyu486/terr-marketplace",
+  "license": "MIT",
+  "keywords": ["hooks", "workflow", "notifications", "windows", "guardrails"]
+}

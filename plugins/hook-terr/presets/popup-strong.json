@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "description": "Strong Windows reminder preset: beep plus structured popup.",
+  "settings": {
+    "notifications": {
+      "beep": { "enabled": true, "timeoutMs": 800 },
+      "windows_toast": { "enabled": false },
+      "popup": {
+        "enabled": true,
+        "title": "Claude Code 提醒",
+        "icon": "warning",
+        "timeoutMs": 1500
+      }
+    },
+    "events": {
+      "Stop": { "notifications": ["beep", "popup"] }
+    }
+  }
+}

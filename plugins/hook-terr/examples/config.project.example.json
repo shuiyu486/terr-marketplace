@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "notifications": {
+    "popup": {
+      "enabled": true,
+      "title": "项目提醒",
+      "icon": "info"
+    }
+  },
+  "events": {
+    "Stop": { "notifications": ["popup"] }
+  }
+}

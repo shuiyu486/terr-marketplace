@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "id": "stop-notify",
+  "enabled": true,
+  "event": "Stop",
+  "priority": 100,
+  "decision": "warn",
+  "when": [],
+  "message": {
+    "system": true,
+    "text": "准备结束本轮回复前，请检查是否需要提醒用户：任务完成、需要用户协助、授权、登录、选择方案或手动运行命令时，应触发合适通知。"
+  },
+  "notify": {
+    "enabled": true,
+    "channels": ["beep", "windows_toast"],
+    "title": "Claude Code 提醒",
+    "text": "任务可能已完成或需要你协助。"
+  }
+}
