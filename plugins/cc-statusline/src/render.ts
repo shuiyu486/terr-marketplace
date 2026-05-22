@@ -10,19 +10,21 @@ type ContextWindow = StatusLineData["context_window"];
 
 let lastContextWindow: ContextWindow | null = null;
 
+function hasContextUsage(current: ContextWindow): boolean {
+  return current.context_window_size > 0 && (
+    current.total_input_tokens > 0 ||
+    current.total_output_tokens > 0 ||
+    current.used_percentage > 0
+  );
+}
+
 function stableContextWindow(current: ContextWindow): ContextWindow {
-  if (current.total_input_tokens > 0 || current.used_percentage > 0) {
+  if (hasContextUsage(current)) {
     lastContextWindow = current;
     return current;
   }
 
-  if (!lastContextWindow) return current;
-  if (current.context_window_size !== lastContextWindow.context_window_size) return current;
-
-  return {
-    ...lastContextWindow,
-    total_output_tokens: current.total_output_tokens || lastContextWindow.total_output_tokens,
-  };
+  return lastContextWindow ?? current;
 }
 
 function ctxColor(pct: number, cfg: Config): string {
