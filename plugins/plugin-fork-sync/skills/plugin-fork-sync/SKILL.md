@@ -1,7 +1,7 @@
 ---
 name: plugin-fork-sync
 description: Command-only helper for `/plugin-fork-sync`.
-compatibility: Claude Code on Windows or Unix; uses bundled references for first-run and update-run workflows; never pushes or overwrites plugin files without explicit user approval.
+compatibility: Claude Code on Windows or Unix; uses bundled references for first-run and update-run workflows; never overwrites plugin files without explicit user approval; after the user confirms a sync/apply action, commit and push the sync changes automatically when the repository state is safe.
 ---
 
 # Plugin Fork Sync — 手动魔改插件同步
@@ -32,17 +32,17 @@ PLUGIN_FORK_SYNC.md
 1. 本地魔改插件目录。
 2. 上游插件仓库 URL、分支/commit、插件子路径。
 3. 本地 marketplace 仓库 URL 和插件子路径。
-4. 用户意图：只计划、生成账本、应用低风险更新、提交、push。
+4. 用户意图：只计划、生成账本、应用低风险更新；用户确认执行同步/应用后，commit 和 push 默认自动进行。
 
 缺少本地目录或上游来源时，先询问用户。不要猜测未提供的 URL。
 
 ## 共同安全原则
 
 - 保护本地魔改优先于追新；不要用上游目录直接覆盖目标插件。
-- 默认只读分析；只有用户明确要求应用补丁或修改本地文件时才写入。
+- 默认只读分析；只有用户明确要求应用补丁、修改本地文件或确认执行同步时才写入。
 - 优先使用 hash-first：先比较文件列表和 hash，再读取必要文件内容。
-- 所有 push、PR、删除、reset、clean、强制 checkout 等共享或破坏性操作都必须先确认。
-- `PLUGIN_FORK_SYNC.md` 是本地维护账本，不来自上游；除非用户要求更新账本，否则不要把它纳入上游同步补丁。
+- 用户确认执行同步/应用后，commit 和 push 视为已授权；执行前仍要检查工作区只包含本次同步相关改动，并展示目标 remote/branch。删除、reset、clean、强制 checkout 等破坏性操作仍必须单独确认。
+- `PLUGIN_FORK_SYNC.md` 是本地维护账本，不来自上游；除非用户要求更新账本，否则不要把它纳入上游同步补丁。它不是提交历史记录，不要记录已完成同步的叙事原因；这类历史原因应放进 commit message。
 
 ## 默认报告语言
 
@@ -55,4 +55,4 @@ PLUGIN_FORK_SYNC.md
 - 本地 marketplace：`~/.claude/plugins/marketplaces/terr-marketplace`
 - 本地 marketplace 远程：`https://github.com/shuiyu486/terr-marketplace`
 
-本地插件名可解析为 `~/.claude/plugins/marketplaces/terr-marketplace/plugins/<plugin-name>`。仍然要确认用户是只检查、生成账本、应用更新，还是提交/push。
+本地插件名可解析为 `~/.claude/plugins/marketplaces/terr-marketplace/plugins/<plugin-name>`。仍然要确认用户是只检查、生成账本，还是应用更新；一旦用户确认应用同步，后续 commit/push 按默认自动流程执行。

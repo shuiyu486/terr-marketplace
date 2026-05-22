@@ -9,7 +9,7 @@
 - 本地魔改插件目录。
 - 上游插件仓库 URL、分支或 commit、插件子路径。
 - 本地 marketplace 仓库 URL 和插件子路径。
-- 用户要“只生成计划”“生成账本”“应用低风险更新”“提交/push”中的哪一种。
+- 用户要“只生成计划”“生成账本”“应用低风险更新”中的哪一种；用户确认执行同步/应用后，默认自动提交并 push 本次同步相关改动。
 
 如果缺少上游来源或本地目标路径，先询问用户。不要猜测 URL。
 
@@ -49,10 +49,10 @@
 ## Sync policy
 - compareStrategy: hash-first
 - autoApply: low-risk-only
-- pushAfterSync: ask
+- pushAfterSync: after-confirmed-sync
 ```
 
-`Local modifications` 应优先从 hash 差异、README 说明、plugin.json metadata、用户描述中提取。不要为了填满清单而猜测。
+`Local modifications` 应优先从 hash 差异、README 说明、plugin.json metadata、用户描述中提取。账本是维护清单，不是提交历史记录；只记录仍需长期维护的 fork 差异。如果某个文件已经与上游完全一致，不要把它写入账本，也不要保留它曾经同步或回归上游的原因；这类历史原因应放进 commit message。不要为了填满清单而猜测。
 
 ## 首次同步报告
 
@@ -87,4 +87,4 @@
 
 ## 写入规则
 
-只有用户明确同意时，才创建 `PLUGIN_FORK_SYNC.md`。写入后不要自动 commit/push，除非用户明确要求。
+只有用户明确同意时，才创建 `PLUGIN_FORK_SYNC.md`。如果用户确认执行首次同步/写入账本，写入后默认自动 commit 并 push 本次同步相关改动；如果工作区不干净、remote/branch 不明确或存在冲突，则停止在提交前并报告原因。

@@ -19,7 +19,7 @@ allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "AskUserQuestion", "Pow
 3. 由 skill 判断目标插件根目录是否存在 `PLUGIN_FORK_SYNC.md`：
    - 不存在：按首次同步流程执行，并帮助生成账本。
    - 存在：按已有账本更新流程执行。
-4. 默认只输出计划；只有用户明确要求应用、提交或 push 时，才写入或推送。
+4. 默认先输出计划；用户确认执行同步/应用更新后，自动提交并 push 本次同步相关改动，不再单独追问 commit/push。若工作区不干净、remote/branch 不明确或存在冲突，则停止并说明需要用户处理。
 
 ## 参数示例
 
