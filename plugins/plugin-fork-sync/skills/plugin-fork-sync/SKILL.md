@@ -1,7 +1,6 @@
 ---
 name: plugin-fork-sync
-description: |
-  Command-only support skill for the `/plugin-fork-sync` slash command. Do not use this skill automatically from ordinary conversation, even when the user mentions plugin sync, upstream updates, forked plugins, or marketplace maintenance. Use only after the user explicitly runs `/plugin-fork-sync` or a command file instructs you to load `plugin-fork-sync:plugin-fork-sync`.
+description: Command-only helper for `/plugin-fork-sync`.
 compatibility: Claude Code on Windows or Unix; uses bundled references for first-run and update-run workflows; never pushes or overwrites plugin files without explicit user approval.
 ---
 
@@ -49,13 +48,11 @@ PLUGIN_FORK_SYNC.md
 
 默认使用中文报告，包含：结论、输入与基线、差异摘要、文件级同步计划、待用户确认事项。
 
-## 当前用户常用示例
+## 固定默认值
 
-当用户没有给更多参数但提到当前测试场景时，可使用这些已知值：
+如果用户只提供需要同步的本地插件名和上游插件 URL，可使用这些默认值推导路径：
 
-- 上游插件：`https://github.com/anthropics/claude-plugins-official/tree/main/plugins/skill-creator`
-- 本地魔改插件：`~/.claude/plugins/marketplaces/terr-marketplace/plugins/hookify`
 - 本地 marketplace：`~/.claude/plugins/marketplaces/terr-marketplace`
 - 本地 marketplace 远程：`https://github.com/shuiyu486/terr-marketplace`
 
-仍然要确认用户是只检查、生成账本、应用更新，还是提交/push。
+本地插件名可解析为 `~/.claude/plugins/marketplaces/terr-marketplace/plugins/<plugin-name>`。仍然要确认用户是只检查、生成账本、应用更新，还是提交/push。
