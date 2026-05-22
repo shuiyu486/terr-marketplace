@@ -1,104 +1,80 @@
-# Architecture
+# Architecture：数据流、缓存、stdin
 
-修改 `src/` 下任一文件时，先阅读本文件了解数据流。
-
-## 项目结构
-
-```
-cc-statusline/
-├── .claude-plugin/plugin.json    # 插件元数据
-├── commands/
-│   ├── setup.md                  # /cc-statusline:setup
-│   ├── configure.md              # /cc-statusline:configure
-│   └── update.md                 # /cc-statusline:update
-├── src/
-│   ├── types.ts                  # 所有接口：StatusLineData, ParseResult, Config, SessionCacheV2
-│   ├── colors.ts                 # ANSI 256 色工具 (color, fg, RESET, BOLD)
-│   ├── stdin.ts                  # 500ms 超时 stdin JSON 读取
-│   ├── format.ts                 # fmtW 万格式化（>=1w→X.XXw）
-│   ├── render.ts                 # 主渲染入口，协调各功能行
-│   ├── transcript.ts             # JSONL 解析 + SessionCacheV2 缓存 + 特性提取
-│   ├── index.ts                  # 主入口：长驻循环 readStdinLoop → config → transcript → render → flush
-│   └── features/
-│       ├── tools.ts              # Tool Activity：extract + render
-│       ├── agents.ts             # Agent Tracking：extract + render
-│       ├── todos.ts              # Todo Progress：extract + render
-│       ├── limits.ts             # Usage Limits：渲染 5h/7d 窗口
-│       └── codexLimits.ts        # Codex headers fallback：低频探测并缓存 X-Codex-*
-├── references/                   # 按需加载的参考文档
-├── dist/                         # 编译输出 (gitignore)
-├── package.json                  # 零运行时依赖
-└── tsconfig.json                 # ES2020 + commonjs + strict
-```
+修改 `src/transcript.ts`、`src/stdin.ts`、`src/index.ts` 的数据流部分时阅读本文件。
 
 ## 数据流
 
-```
-stdin JSON (每 ~300ms)
-  │
-  │  ┌─────────────────────────────────────┐
-  │  │ 长驻模式: 进程启动一次，循环读取     │
-  │  │ readStdinLoop(handler)              │
-  │  │   ├── data 事件 → 累积 buffer           │
-  │  │   ├── 切分连续顶层 JSON → async handler() │
-  │  │   ├── fs.writeSync(1, ...) 即时刷新      │
-  │  │   └── end/error → 等待 pending 后退出    │
-  │  └─────────────────────────────────────┘
-  │
-  ├── StatusLineData
-  │     ├── .model, .effort, .context_window → render.ts stableContextWindow → line 1
-  │     ├── .rate_limits? → limits.ts render
-  │     ├── local proxy env → codexLimits.ts interval header probe/cache
-  │     └── .transcript_path
-  │           │
-  │           └── parseTranscript(path)
-  │                 │ 读取 JSONL + 缓存 SessionCacheV2
-  │                 │ 遍历新行 → extractToolEvent / extractAgentEvent / extractTodoEvent
-  │                 │ token 累积 + 去重
-  │                 │ 写回 JSON 缓存
-  │                 └──→ ParseResult { tools, agents, todos, ... }
-  │
-  └── render(data, parseResult, cfg) → fs.writeSync(1, ANSI + "\n") → stdout
+```text
+stdin StatusLineData
+  ├─ model / effort / context_window / workspace → render.ts
+  ├─ rate_limits? → limits render；缺失时可由 codexLimits fallback 补齐
+  └─ transcript_path
+       → parseTranscript(path)
+          → 读取 cache
+          → 从 cache.lineNum 增量解析 JSONL
+          → extractToolEvent / extractAgentEvent / extractTodoEvent
+          → usage 去重 + token 累加
+          → 写回 SessionCacheV2
 ```
 
-## 核心复杂度
+`index.ts` 的主路径：
+1. `loadConfig()` 合并用户配置与 `DEFAULT_CONFIG`
+2. `createCodexLimitsService(cfg)` 创建 usage fallback 服务
+3. `readStdinLoop(async data => ...)` 长驻读取完整 JSON frame
+4. `ensureFresh(data, { maxWaitMs: 3000 })` 可选补齐 `rate_limits`
+5. `parseTranscript(data.transcript_path)` 得到 `ParseResult`
+6. `render(...)` 生成 ANSI 字符串
+7. `fs.writeSync(1, msg + "\n")` 即时输出
 
-### transcript.ts — 缓存 + 增量解析 + 去重 + 特性提取
+## SessionCacheV2
 
-- **缓存位置**: `os.tmpdir()/cc-statusline-cache/ses-{transcript-UUID}.txt`
-- **缓存格式**: JSON v2 (`SessionCacheV2`)，包含 sessionKey + apiIn/apiOut + sesIn/sesOut + tools + agents + todos；读取兼容旧 CSV
-- **缓存键**: transcript 文件名（UUID），同 transcript 跨重启复用，`lineNum` 持久跳过旧行
-- **增量解析**: 从 cache.lineNum 开始
-- **去重**: 4 字段相同 (input/output/cache_create/cache_read) 的 usage 行跳过
-- **关键**: 特性提取在 token 去重 `continue` **之前**执行，否则 tool_use 事件会丢失
-- **NaN 防护**: `input_tokens=0` 的行缺少 `cache_creation_input_tokens`/`cache_read_input_tokens` 字段，必须用 `|| 0` 而非 `?? 0`（`NaN ?? 0` = `NaN`）
-- **ses vs api**: `apiIn/apiOut` 从缓存恢复（跨重启持久），`sesIn/sesOut` 在 `sessionKey` 匹配当前 Claude Code session 时从缓存/进程内存恢复（SessionStart 标记或父进程变化则归零）。两者共用同一 delta 计算，独立累加
+缓存位置：`os.tmpdir()/cc-statusline-cache/ses-{transcript-UUID}.txt`
 
-### features/ — 每功能独立提取+渲染
+| 字段 | 用途 |
+|------|------|
+| `version` | JSON cache 版本，当前为 `2` |
+| `sessionKey` | 当前 Claude Code session 标识，优先取 transcript 中最近的 SessionStart |
+| `lineNum` | 已解析到的 JSONL 行号 |
+| `lastIn/lastOut/lastCacheCreate/lastCacheRead` | usage 去重快照 |
+| `sesIn/sesOut` | 当前 session 累计 API token，`sessionKey` 匹配时复用 |
+| `apiIn/apiOut` | transcript 历史累计 API token |
+| `tools/agents/todos` | feature 状态缓存 |
+| `todoCompleted/todoTotal` | todo 统计缓存 |
 
-- `tools.ts`: 解析 `tool_use`/`tool_result`，提取 name+target，保留最近 20 条
-- `agents.ts`: 解析 `Task`/`Agent` 的 `tool_use`，追踪运行状态+耗时
-- `todos.ts`: 解析 `TodoWrite`/`TaskCreate`/`TaskUpdate`，维护 TodoState
-- `render.ts`: `stableContextWindow()` 保留上一帧有效上下文，过滤流式输出期间临时 0 输入帧
-- `limits.ts`: 纯渲染；`codexLimits.ts` 提供 `getSnapshot()`/`ensureFresh()` 服务，在本地代理环境下读取缓存快照、复用 in-flight probe，并按配置间隔探测 `X-Codex-*` headers；首次无缓存时入口最多等待 3000ms
+读取兼容旧 CSV；写入始终使用 JSON v2。
 
-### stdin.ts — 500ms 超时 + 长驻循环
+## token 累加顺序
 
-- **`readStdin()`** (one-shot, 保留兼容): 单次读取，500ms 超时，用于手动测试
-- **`readStdinLoop()`** (长驻模式, 主用): 进程启动一次，stdin 每收到一个完整 JSON 对象按顺序调用 handler，stdin 关闭时等待 pending handler 完成后退出
-  - 消除 Windows 上每 ~300ms spawn Node.js 进程的开销（Desktop Heap 碎片化的主因）
-  - buffer + drain() 模式: 按顶层 `{}`/`[]` 边界切分连续 JSON，支持 `{}{} ` 或换行分隔的多帧输入
-  - 支持 async handler，避免一次性 stdin 调用时打断首次 Usage limit probe
-- 失败静默退出 (process.exit(0))
+解析每条 JSONL message 时：
+1. 先运行 `extractToolEvent` / `extractAgentEvent` / `extractTodoEvent`
+2. 再判断 `msg.type === "assistant" && msg.message?.usage`
+3. 如果 4 个 usage 字段与上次完全相同，跳过 token 累加
+4. 使用 `|| 0` 计算 delta，包含 `server_tool_use_input_tokens`
+5. 同时累加到 `api*` 和 `ses*`
 
-### colors.ts
+不能把 feature extraction 放到 token 去重之后，否则重复 usage 行中的 `tool_use` / `tool_result` 会丢失。
 
-- 独立于 render.ts 以避免 `render.ts ↔ features/*.ts` 循环依赖
-- 导出 `color()`, `fg()`, `RESET`, `BOLD`
+## ses vs api
 
-## 兼容性约束
+- `ses`：当前 Claude Code session 内累计；`sessionKey` 相同则从 cache / memory map 继续，SessionStart 变化则归零。
+- `api`：当前 transcript 历史累计；按 transcript UUID cache 持久。
+- 两者共用同一 delta 计算，但生命周期不同。
 
-- Node.js 18+ (ES2020 target)
-- Windows 10/11 + macOS
-- Claude Code v2.1+ (stdin JSON + transcript_path)
-- ANSI 256 色终端
+## stdin 长驻循环
+
+- `readStdinLoop(handler)` 是主用路径：累积 chunk，完整 JSON parse 成功后调用 async handler。
+- end/error 前必须等待 pending handler，避免一次性 stdin 调用在 Codex probe 完成前退出。
+- `readStdin()` 仅用于兼容和手动测试。
+- handler 内异常应吞掉单帧错误，不能杀死长驻进程。
+
+## Codex usage fallback
+
+`features/codexLimits.ts` 只在这些条件下探测：
+- stdin 没有可用 `rate_limits.five_hour`
+- `ANTHROPIC_BASE_URL` 指向 `localhost` / `127.0.0.1` / `::1`
+- 有可用 token 和 model
+
+服务要求：
+- `codexProbeIntervalMinutes` 限频，默认 3 分钟，范围 1–10 分钟。
+- `inflight` promise 必须复用，避免并发探测。
+- 24 小时内旧缓存可作为 fallback snapshot。

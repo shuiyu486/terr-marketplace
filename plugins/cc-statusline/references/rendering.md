@@ -1,72 +1,63 @@
 # 渲染规则
 
-修改 `src/render.ts` 或颜色相关逻辑时阅读本文件。
+修改 `src/render.ts`、颜色、行格式或 token 显示文案时阅读本文件。
 
 ## 行格式
 
-```
-Line 1: model │ effort │ ctx:inTok/ctxSize pct%        [始终显示]
-Line 2: in:inTok out:outTok │ ses:sesIn/sesOut │ api:apiTotal │ ts  [showTokensLine]
-Line 3: usage: 5h ███░░░░░░░ 30% (4h 40m) │ 7d █░░░░░░░░░ 5% (5d 12h)  [showUsageLimits, 有数据时]
-Line 4: tools: ◐ Read file.ts  │  ✓ Read ×3           [showToolActivity, showRunningTools/showCompletedTools]
-Line 5: agent: ◷ explore: desc (2m 15s)               [showAgentTracking]
-Line 6: todo: ▸ Fix bug (2/5)                          [showTodoProgress]
-Line 7: path: /dir                                     [showPath]
-```
-
-每行仅在配置启用 **且** 有数据时渲染。
-
-## Line 2 字段数据来源
-
-```
-in:inTok out:outTok │ ses:sesIn/sesOut │ api:apiTotal │ HH:MM:SS
+```text
+Line 1: model │ effort │ ctx:inTok/ctxSize pct%                          [始终显示]
+Line 2: in:inTok out:outTok │ ses:sesIn/sesOut │ api:apiTotal │ ts        [showTokensLine]
+Line 3: usage: 5h ███░░░░░░░ 30% (4h 40m) │ 7d █░░░░░░░░░ 5% (5d 12h)    [showUsageLimits, 有数据]
+Line 4: tools: ◐ Read file.ts │ ✓ Read ×3                                [showToolActivity]
+Line 5: agent: ◷ explore: desc (2m 15s)                                  [showAgentTracking]
+Line 6: todo: ▸ Fix bug (2/5)                                             [showTodoProgress]
+Line 7: path: /dir                                                        [showPath]
 ```
 
-| 标签 | 变量 | 数据来源 | 生命周期 |
-|------|------|---------|---------|
-| in/out | `data.context_window.total_{input,output}_tokens` 经 `stableContextWindow()` 过滤短暂无效上下文帧 | stdin 实时快照 + 进程内 last-known-good | 实时；流式输出期间若收到 `0/0 0%` 或 `context_window_size=0` 空帧则保持上一帧有效值 |
-| ses | `ctx.sesIn / ctx.sesOut` | transcript 增量解析，**不从缓存恢复** | 进程重启归零 |
-| api | `ctx.apiIn + ctx.apiOut` | transcript 增量解析，**从缓存恢复** | 跨重启持久
+每行仅在配置启用且有数据时渲染。
+
+## Line 2 数据来源
+
+| 标签 | 变量 | 来源 | 生命周期 |
+|------|------|------|----------|
+| `in/out` | `data.context_window.total_*_tokens` | stdin 实时快照 | 实时变化 |
+| `ses` | `ctx.sesIn / ctx.sesOut` | transcript 增量解析 + sessionKey cache | 当前 Claude Code session |
+| `api` | `ctx.apiIn + ctx.apiOut` | transcript 增量解析 + transcript cache | 当前 transcript 历史累计 |
+
+`ses` 不是单次 parse delta；SessionStart 不变时可跨短生命周期进程恢复。`api` 不按 session 归零。
+
+## Context 兜底
+
+流式输出期间 stdin 可能短暂给出 `context_window` 的 `0/0` 帧。渲染层应保留上一帧有效 context，避免显示 `ctx:0w/100w` 闪烁。
 
 ## ANSI 256 色约定
 
 | 场景 | 色号 | 说明 |
 |------|------|------|
-| context > 90% | 168 + 粗体 | 红（危险） |
-| context > 70% | 215 + 粗体 | 黄（警告） |
-| context else | 108 | 绿（正常） |
-| effort max | 168 + 粗体 | |
-| effort xhigh | 167 + 粗体 | |
-| effort high | 215 + 粗体 | |
-| effort medium | 108 | |
-| effort low | 115 | |
+| context > danger threshold | 168 + bold | 红色危险 |
+| context > warn threshold | 215 + bold | 黄色警告 |
+| context normal | 108 | 绿色正常 |
+| effort max/xhigh/high | 168/167/215 + bold | 高 effort 强调 |
+| effort medium/low | 108/115 | 普通 effort |
 | model name | 111 | 浅紫 |
-| label (in/out/ctx/etc) | 74 | 灰蓝 |
+| label | 74 | 灰蓝 |
 | numeric value | 252 | 浅灰 |
-| session label | 138 | |
 | session value | 115 | |
 | api total | 172 | |
 | timestamp | 244 | |
 | path | 115 | |
-| usage bar filled | 108/215/167 | 按 % |
-| usage bar empty | 244 | |
-| running icon (◐◷) | 108 | |
-| completed icon (✓) | 244 | |
+| usage filled | 108/215/167 | 按百分比 |
+| usage empty | 244 | |
+| running icon | 108 | |
+| completed icon | 244 | |
 | agent type label | 141 | |
-| todo icon (▸) | 172 | |
+| todo icon | 172 | |
 | todo subject | 252 | |
 
-## 颜色工具 (src/colors.ts)
+## 颜色工具
 
-```typescript
-color(text: string, code: number, bold?: boolean): string  // 包装 ANSI 转义
-fg(code: number): string    // 仅前景色
-RESET: string               // "\x1b[0m"
-BOLD: string                // "\x1b[1m"
-```
+`src/colors.ts` 独立导出 `color()`、`fg()`、`RESET`、`BOLD`。保持独立是为了避免 `render.ts` 和 `features/*.ts` 循环依赖。
 
-`color()` 内部处理 bold + reset，是最常用的接口。独立模块避免 `render.ts ↔ features/*.ts` 循环依赖。
+## 数字格式化
 
-## 数字格式化 (src/format.ts)
-
-`fmtW(n)`: >=10w→X.XXw, >=1w→X.XXw, >=1k→X.XXw, else→原始数字
+`src/format.ts` 的 `fmtW(n)` 负责把 token 数压缩为适合状态栏的短格式；修改格式时同步更新本文件的示例行。

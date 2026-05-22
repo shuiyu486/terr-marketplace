@@ -1,62 +1,69 @@
 # Features 模块
 
-修改 `src/features/*.ts` 时阅读本文件。每个功能遵循统一模式：`extract*` 提取 + `render*` 渲染。
+修改 `src/features/*.ts` 或新增状态栏功能时阅读本文件。
 
 ## 统一模式
 
-| 导出 | 职责 |
+| 类型 | 职责 |
 |------|------|
-| `extractXxx(state, msg)` | 从一条 JSONL message 提取事件，可变更新 state |
-| `renderXxx(state, cfg)` | 返回 ANSI 字符串片段，无数据返回 `null` |
+| `extractXxx(state, msg)` | 从单条 JSONL message 提取事件，可变更新 state |
+| `renderXxx(state, cfg)` | 返回 ANSI 字符串片段；无数据返回 `null` |
+| service 型 feature | 不渲染行，向主流程补齐数据，例如 `codexLimits.ts` |
 
-`extract` 函数由 `transcript.ts` 的 parse 循环调用（在 token 去重之前）。`render` 函数由 `render.ts` 条件调用。
+`extract*` 由 `transcript.ts` parse 循环调用，且必须在 token 去重前执行。`render*` 由 `render.ts` 按配置条件调用。
 
 ## Tool Activity (`features/tools.ts`)
 
-- **数据源**: JSONL 中 `tool_use` (type=assistant) + `tool_result` 块
-- **提取**: tool_use → 创建 "running" ToolEvent；tool_result → 标记 "completed"
-- **Target 提取**: Read/Write/Edit→file_path, Grep/Glob→pattern, Bash→command[0:30], 其他→input JSON[0:30]
-- **去重**: 按 tool_use_id
-- **限制**: 保留最近 20 条
-- **渲染**: 由 `showToolActivity`(总开关) / `showRunningTools` / `showCompletedTools` 控制。最多 2 个 running (◐), 最多 4 种 completed 类型 (✓ name ×count)。运行中和已完成可独立开关。
-- **示例**: `◐ Edit: auth.ts  │  ✓ Read ×3  │  ✓ Grep ×2`
+- 数据源：assistant content 中的 `tool_use` 和 `tool_result`
+- `tool_use` 创建 running；`tool_result` 标记 completed
+- target 提取：Read/Write/Edit→`file_path`，Grep/Glob→`pattern`，Bash→`command[0:30]`，其它→input JSON 摘要
+- 按 `tool_use_id` 去重，保留最近 20 条
+- 渲染受 `showToolActivity`、`showRunningTools`、`showCompletedTools` 控制
+
+示例：`◐ Edit: auth.ts │ ✓ Read ×3 │ ✓ Grep ×2`
 
 ## Agent Tracking (`features/agents.ts`)
 
-- **数据源**: JSONL 中 `tool_use` name="Task"|"Agent" + tool_result
-- **提取**: tool_use → "running" AgentEvent；tool_result → "completed"
-- **字段**: subagent_type, model, description[0:40], startTime
-- **去重**: 按 tool_use_id
-- **限制**: 保留最近 10 条
-- **渲染**: 最多 3 条 (mix running+completed)，elapsed 格式 `Xm Ys`
-- **示例**: `◷ explore: Finding auth code (2m 15s)`
+- 数据源：`tool_use` name 为 `Task` 或 `Agent`，以及对应 `tool_result`
+- 字段：`subagent_type`、`model`、`description`、`startTime`
+- 按 `tool_use_id` 去重，保留最近 10 条
+- 渲染最多 3 条 running/completed，耗时格式 `Xm Ys`
+
+示例：`◷ explore: Finding auth code (2m 15s)`
 
 ## Todo Progress (`features/todos.ts`)
 
-- **数据源**: JSONL 中 `tool_use` name="TodoWrite"|"TaskCreate"|"TaskUpdate"
-- **TodoWrite**: 完全替换 todo 列表
-- **TaskCreate**: 追加新条目
-- **TaskUpdate**: 更新 status（支持 id 匹配）
-- **状态规范化**: in_progress/running→in_progress, completed/complete/done→completed
-- **渲染**: 第一个 in_progress 的 "▸ subject (completed/total)"；全部完成时 "✓ All tasks complete"
-- **示例**: `▸ Fix authentication bug (2/5)`
+- 数据源：`TodoWrite`、`TaskCreate`、`TaskUpdate`
+- `TodoWrite` 完全替换 todo 列表
+- `TaskCreate` 追加条目
+- `TaskUpdate` 按 id 更新状态
+- 状态规范化：`in_progress/running → in_progress`，`completed/complete/done → completed`
+- 渲染第一个 in_progress；全部完成时显示完成态
 
-## Usage Limits (`features/limits.ts`)
+示例：`▸ Fix authentication bug (2/5)`
 
-- **数据源**: 优先使用 stdin JSON `rate_limits.five_hour`；本地代理环境下 `features/codexLimits.ts` 的服务会读取缓存快照，并按 `codexProbeIntervalMinutes`（默认 3 分钟，范围 1-10）探测 `X-Codex-*` headers
-- **首次 fallback**: 无 stdin `rate_limits` 且无可用缓存时，入口最多等待 3000ms 完成一次 `max_tokens: 1` probe；失败或超时则静默跳过 usage 行
-- **缓存**: 成功 probe 写入 `os.tmpdir()/cc-statusline-codex-limits.json`，缓存最长可兜底显示 24 小时，避免刷新前或短暂探测失败时整行消失
-- **无 transcript 提取阶段** — stdin/headers 转换后渲染
-- **渲染**: 同一行显示 5h 与可选 7d 窗口；每个窗口包含 10 字符进度条 (█ 已用 / ░ 剩余) + 百分比 + 重置倒计时
-- **颜色**: <75% 绿(108), 75-89% 黄(215), ≥90% 红(167)+粗
-- **示例**: `usage: 5h ███░░░░░░░ 30% (4h 40m) │ 7d █░░░░░░░░░ 5% (5d 12h)`
+## Usage Limits Render (`features/limits.ts`)
+
+- 数据源：最终传入 render 的 `data.rate_limits`
+- 无 extract 阶段，只负责渲染 usage 行
+- 支持 five_hour，存在 seven_day 时一起显示
+- 颜色阈值：<75% 绿，75–89% 黄，≥90% 红+粗体
+
+## Codex Limits Fallback (`features/codexLimits.ts`)
+
+这是 service 型 feature，不直接渲染。它在 stdin 缺少 `rate_limits` 时，尝试从本地代理返回的 `X-Codex-*` headers 构造 `rate_limits`。
+
+关键约束：
+- 只允许本地代理 URL，避免对任意远程端点发探测请求。
+- `codexProbeIntervalMinutes` 控制探测间隔，运行时限制在 1–10 分钟。
+- `inflight` promise 必须复用，避免多帧并发探测。
+- 首次可等待最多 3000ms；已有缓存时先显示 snapshot。
+- 缓存最长可兜底 24 小时。
 
 ## 添加新功能
 
-1. 创建 `src/features/new-feature.ts`
-2. 导出 `extractNewFeature(state, msg)` + `renderNewFeature(state, cfg)`
-3. 在 `transcript.ts` 的 parse 循环中调用 extract
-4. 在 `render.ts` 中添加条件渲染
-5. 在 `types.ts` 扩展 `ParseResult` / `SessionCacheV2`
-6. 在 `index.ts` 的 `DEFAULT_CONFIG` 添加开关
-7. 更新 `references/features.md` 和 `references/config.md`
+1. 新增 `src/features/<name>.ts`
+2. 如需解析 transcript，导出 `extract<Name>` 并在 `transcript.ts` token 去重前调用
+3. 如需渲染，导出 `render<Name>` 并在 `render.ts` 按配置调用
+4. 必要时扩展 `types.ts` 的 `ParseResult` / `SessionCacheV2` / `Config`
+5. 同步 `references/features.md`，涉及配置或渲染时同步对应 reference

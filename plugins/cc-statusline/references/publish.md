@@ -1,38 +1,50 @@
-# 发布流程 (Maintainer)
+# 发布与副本同步
 
-> 这是 **维护者** 发布新版本的流程。**终端用户** 使用 `/cc-statusline:update` 一键更新，无需执行以下步骤。
+维护者修改用户可见行为、`src/`、`commands/`、`references/` 或插件元数据时阅读本文件。终端用户只需使用 `/cc-statusline:update`。
 
-源码位于 terr-marketplace 仓库子目录 `plugins/cc-statusline/`。
+## 版本 bump 规则
 
-## 发布步骤
+- bugfix / 文档修正 / reference 路由优化：patch
+- 新功能或用户可见配置项：minor
+- 破坏性变更：major
 
-1. 更新 `plugins/cc-statusline/package.json` 和 `plugins/cc-statusline/package-lock.json` 中的 `version`
-2. 更新 `plugins/cc-statusline/.claude-plugin/plugin.json` 中的 `version`
-3. 同步更新根 `.claude-plugin/marketplace.json` 中 cc-statusline 条目的 `version`
-4. 提交并推送：
+版本必须同步到四处：
+1. `plugins/cc-statusline/package.json`
+2. `plugins/cc-statusline/package-lock.json`
+3. `plugins/cc-statusline/.claude-plugin/plugin.json`
+4. terr-marketplace 根 `.claude-plugin/marketplace.json` 中的 cc-statusline 条目
+
+不 bump 版本时，`/cc-statusline:update` 可能无法识别更新。
+
+## 验证
 
 ```bash
-cd ~/.claude/plugins/marketplaces/terr-marketplace
+npm run build
+echo '{...}' | node dist/index.js
+claude plugin validate <terr-marketplace-root>
+```
+
+手动测试 JSON 示例见 `references/architecture.md`。
+
+## 发布提交
+
+在 terr-marketplace 仓库根目录提交：
+
+```bash
 git add plugins/cc-statusline/ .claude-plugin/marketplace.json
 git commit -m "sync: cc-statusline v<version> — <变更说明>"
-git pull --rebase && git push
+git pull --rebase
+git push
 ```
 
-5. 用户端执行 `/plugin install cc-statusline` 即可更新
+不要跳过 hooks；失败时修复原因后重新提交。
 
-## 修改后验证
+## 副本同步原则
 
-1. `npm run build` 编译无错
-2. 手动测试: `echo '{...}' | node dist/index.js` 检查 ANSI 输出
-3. `claude plugin validate ~/.claude/plugins/marketplaces/terr-marketplace` 检查结构
+cc-statusline 可能同时存在开发副本、marketplace 副本和运行时 cache 副本。文档不要写死某个机器上的绝对路径。
 
-## 参考文件同步
-
-修改 `references/*.md` 时，需同步到两个位置:
-```bash
-# terr-marketplace → 工作目录
-cp -r ~/.claude/plugins/marketplaces/terr-marketplace/plugins/cc-statusline/references "C:/AI/m_projects/cc-statusline/"
-
-# 工作目录 → terr-marketplace
-cp -r "C:/AI/m_projects/cc-statusline/references/"* ~/.claude/plugins/marketplaces/terr-marketplace/plugins/cc-statusline/references/
-```
+同步规则：
+- 修改任一 `CLAUDE.local.md` 或 `references/*.md` 后，把同名文件同步到其它 cc-statusline 源码副本。
+- marketplace 副本通常是发布入口；运行时 cache 副本只用于 Claude Code 实际执行。
+- 修改源码后，除 build 外还要确保运行时 cache 使用的新 `dist/`，否则 settings.json 仍可能指向旧代码。
+- 若不确定有哪些副本，搜索 `plugins/**/cc-statusline` 或检查 Claude Code 插件 marketplace/cache 目录，不把搜索结果写回文档。
