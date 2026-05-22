@@ -1,6 +1,6 @@
 ---
-description: One-click update cc-statusline — pull latest from remote, build, and relink settings.json
-allowed-tools: ["Bash", "Read", "Edit", "Write"]
+description: One-click update cc-statusline — pull latest from remote, build, relink settings.json, and restart statusline
+allowed-tools: ["Bash", "PowerShell", "Read", "Edit", "Write"]
 ---
 
 # cc-statusline Update
@@ -213,7 +213,38 @@ fs.writeFileSync('$SETTINGS', JSON.stringify(s, null, 2));
 "
 ```
 
-## Step 8: Clean Old Versions
+## Step 8: Restart Running Statusline
+
+Stop existing cc-statusline Node processes so the next Claude Code status-line refresh loads the updated build. Match only Node processes whose command line points at `plugins/cache/terr-marketplace/cc-statusline/*/dist/index.js`.
+
+**Windows (PowerShell):**
+
+```powershell
+$cacheRootForMatch = (Join-Path $claudeDir 'plugins\cache\terr-marketplace\cc-statusline') -replace '\\','/'
+$escapedRoot = [regex]::Escape($cacheRootForMatch)
+$pattern = "$escapedRoot/.+/dist/index\.js"
+$stopped = 0
+Get-CimInstance Win32_Process | Where-Object {
+    $_.Name -eq 'node.exe' -and (($_.CommandLine -replace '\\','/') -match $pattern)
+} | ForEach-Object {
+    Stop-Process -Id $_.ProcessId -Force -Confirm:$false
+    $stopped++
+}
+Write-Output "STATUSLINE_RESTARTED=$stopped"
+```
+
+**macOS / Linux:**
+
+```bash
+CACHE_ROOT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/cache/terr-marketplace/cc-statusline"
+STOPPED=0
+while IFS= read -r pid; do
+    kill "$pid" 2>/dev/null && STOPPED=$((STOPPED + 1))
+done < <(ps -eo pid=,args= | awk -v root="$CACHE_ROOT" '$0 ~ /node/ && index($0, root) && $0 ~ /\/dist\/index\.js/ { print $1 }')
+echo "STATUSLINE_RESTARTED=$STOPPED"
+```
+
+## Step 9: Clean Old Versions
 
 Remove outdated cached versions, keeping only the current one:
 
@@ -238,7 +269,7 @@ done
 echo "OLD_CLEANED"
 ```
 
-## Step 9: Verify
+## Step 10: Verify
 
 Read `settings.json` and confirm the path points to the new version:
 
@@ -248,6 +279,6 @@ cat ~/.claude/settings.json | grep -A2 statusLine
 
 Tell the user:
 
-> **Updated to v{LATEST_VERSION}!** The status line now runs from the latest build. If it was already running, the new version takes effect on the next status line refresh (~300ms). No restart needed.
+> **Updated to v{LATEST_VERSION}!** The status line now runs from the latest build. Existing cc-statusline processes were stopped, so Claude Code will start the updated status line on the next refresh.
 > 
 > Previous version was v{CURRENT_VERSION}. Old cached versions have been cleaned up.

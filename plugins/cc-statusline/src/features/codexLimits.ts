@@ -47,12 +47,13 @@ export function createCodexLimitsService(cfg: Config): CodexLimitsService {
     opts: { maxWaitMs: number },
   ): Promise<RateLimits | null> {
     const snapshot = getSnapshot(data);
+    const promise = startProbe(data);
+
     if (snapshot) {
-      if (!data.rate_limits?.five_hour) refreshInBackground(data);
-      return snapshot;
+      if (!promise || opts.maxWaitMs <= 0) return snapshot;
+      return (await waitFor(promise, opts.maxWaitMs)) ?? snapshot;
     }
 
-    const promise = startProbe(data);
     if (!promise) return null;
     if (opts.maxWaitMs <= 0) return null;
 

@@ -33,7 +33,15 @@ Then run the setup command:
 /cc-statusline:update
 ```
 
-One-click update: pulls the latest from remote marketplace, builds, and relinks. No git push/commit needed.
+One-click update: pulls the latest from remote marketplace, builds, relinks, and restarts the running status line. No git push/commit needed.
+
+## Restart
+
+```
+/cc-statusline:restart
+```
+
+Restart the running status line without changing configuration or rebuilding.
 
 ## Configuration
 
