@@ -1,6 +1,6 @@
 {
   "name": "plugin-fork-sync",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Manual slash-command tool for syncing customized Claude Code marketplace plugins with upstream plugins. Provides first-run PLUGIN_FORK_SYNC.md initialization and existing-ledger update workflows with on-demand references.",
   "author": {
     "name": "terrapin"

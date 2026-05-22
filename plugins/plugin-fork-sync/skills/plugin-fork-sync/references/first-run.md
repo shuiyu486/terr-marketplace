@@ -26,66 +26,82 @@
 
 ## 生成 PLUGIN_FORK_SYNC.md
 
-在目标插件根目录创建 `PLUGIN_FORK_SYNC.md`，并把它作为插件所在 git 仓库的正式文件纳入本次同步提交。账本内容要适合跨机器使用：优先写仓库 URL、上游子路径、repo-relative 路径和 plugin-relative 路径，不要写死当前电脑的绝对路径。
+在目标插件根目录创建中文 `PLUGIN_FORK_SYNC.md`，并把它作为插件所在 git 仓库的正式文件纳入本次同步提交。账本内容要适合跨机器使用：优先写仓库 URL、上游子路径、repo-relative 路径和 plugin-relative 路径，不要写死当前电脑的绝对路径。
 
 建议内容：
 
 ```markdown
-# Plugin Fork Sync
+# <插件名> fork 同步账本
 
-## Upstream
-- repo: <upstream-repo-url>
-- path: <upstream-plugin-path>
-- branch: <branch>
-- lastSyncedCommit: <commit-or-needs-confirmation>
+## 上游来源
+- 仓库：<upstream-repo-url>
+- 路径：<upstream-plugin-path>
+- 分支：<branch>
+- 最近同步基线：<commit-or-needs-confirmation>
 
-## Local plugin
-- repo: <local-marketplace-repo-url>
-- path: plugins/<plugin-name>
-- pushRemote: origin
-- pushBranch: main
+## 本地插件
+- 仓库：<local-marketplace-repo-url>
+- 路径：plugins/<plugin-name>
+- 推送 remote：origin
+- 推送分支：main
 
-## Local modifications
-- <relative-path> — <why this file is local/customized>
+## 需要保留的本地魔改
+- `<relative-path>` — <为什么这个文件需要长期保留本地差异>
 
-## Sync policy
-- compareStrategy: hash-first
-- autoApply: low-risk-only
-- pushAfterSync: after-confirmed-sync
+## 跟随上游的内容
+- 未在“需要保留的本地魔改”中列出的文件默认跟随上游。
+- 已经回归上游或与上游一致的文件不要写入本地魔改清单；回归原因写进 commit message。
+
+## 同步策略
+- 对比策略：hash-first
+- 自动应用：仅低风险变更
+- 推送策略：用户确认同步后自动提交并推送
 ```
 
-`Local modifications` 应优先从 hash 差异、README 说明、plugin.json metadata、用户描述中提取。账本是维护清单，不是提交历史记录；只记录仍需长期维护的 fork 差异。如果某个文件已经与上游完全一致，不要把它写入账本，也不要保留它曾经同步或回归上游的原因；这类历史原因应放进 commit message。文件路径用 plugin-relative 形式，例如 `hooks/pretooluse.py`，不要使用本机绝对路径。不要为了填满清单而猜测。
+`需要保留的本地魔改` 应优先从 hash 差异、README 说明、plugin.json metadata、用户描述中提取。账本是维护清单，不是提交历史记录；只记录仍需长期维护的 fork 差异。如果某个文件已经与上游完全一致，不要把它写入账本，也不要保留它曾经同步或回归上游的原因；这类历史原因应放进 commit message。文件路径用 plugin-relative 形式，例如 `hooks/pretooluse.py`，不要使用本机绝对路径。不要为了填满清单而猜测。
 
 ## 首次同步报告
 
-输出结构：
+输出结构要便于阅读，优先使用醒目标记、短结论和表格：
 
 ```markdown
-## 结论
-- 当前模式：首次同步/无账本
-- 是否能安全自动移植：否/部分
-- 建议下一步：确认账本、再执行更新
+## 重点结论
+- 🚨 高风险：<如果有无法自动处理的冲突，放在这里；没有则写“无”。>
+- ⚠️ 需确认：<最需要用户判断的一件事，例如基线 commit 或本地魔改归属。>
+- ✅ 可自动同步：<明确可低风险应用的内容；没有则写“暂无”。>
+- ℹ️ 当前模式：首次同步 / 无账本。
 
 ## 已识别来源
-- 上游：repo/path/ref
-- 本地：repo/path
+| 类型 | 位置 |
+| --- | --- |
+| 上游 | `<repo>/<path>@<ref>` |
+| 本地 | `<repo-relative-path>` |
 
-## 差异摘要
-- 仅本地存在：...
-- 上游存在但本地不同：...
-- 可能是本地魔改：...
+## 差异总览
+| 分类 | 数量 | 重点文件 |
+| --- | ---: | --- |
+| 仅本地存在 | <n> | `<file>`、`<file>` |
+| 上游存在但本地不同 | <n> | `<file>`、`<file>` |
+| 疑似本地魔改 | <n> | `<file>`、`<file>` |
+
+## 文件级判断
+| 文件 | 差异类型 | 风险 | 建议 | 原因 |
+| --- | --- | --- | --- | --- |
+| `<path>` | 仅本地/仅上游/双方不同 | 🚨/⚠️/✅ | 保留/跟随上游/人工确认 | <一句话原因> |
 
 ## 建议写入的 PLUGIN_FORK_SYNC.md
 ```markdown
 ...
 ```
 
-## 待确认
-- [ ] lastSyncedCommit 是否正确
-- [ ] Local modifications 是否完整
-- [ ] 是否写入 PLUGIN_FORK_SYNC.md
-- [ ] 是否继续应用低风险更新
+## 待用户确认
+- [ ] 最近同步基线是否正确。
+- [ ] “需要保留的本地魔改”是否完整。
+- [ ] 是否写入中文 `PLUGIN_FORK_SYNC.md`。
+- [ ] 是否继续应用低风险更新。
 ```
+
+如果差异很多，只展示重点差异和统计；不要把大量 diff 直接塞进报告正文。
 
 ## 写入规则
 

@@ -96,7 +96,7 @@
         "path": "plugins/plugin-fork-sync"
       },
       "description": "Manual slash-command tool for syncing customized Claude Code marketplace plugins with upstream plugins. Provides first-run PLUGIN_FORK_SYNC.md initialization and existing-ledger update workflows with on-demand references.",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "author": { "name": "terrapin" },
       "repository": "https://github.com/shuiyu486/terr-marketplace",
       "license": "MIT",
