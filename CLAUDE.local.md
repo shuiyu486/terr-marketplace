@@ -1,79 +1,41 @@
-# CLAUDE.local.md — terr-marketplace
+# CLAUDE.local.md — terr-marketplace 管理入口
 
-Claude Code 插件集合，通过 `git-subdir` 格式从 GitHub 分发。仓库：`shuiyu486/terr-marketplace`。
+本目录用于维护、迭代 `shuiyu486/terr-marketplace` 的 Claude Code 插件市场，但当前目录不一定是 marketplace git 仓库。
 
-## 关键约束
+## 重要原则
 
-- **marketplace.json 中所有 source 必须用 `git-subdir`**，不能写相对路径 `./plugins/xxx`
-- **修改 plugin 版本时**，三文件 version 必须同步：`package.json` + `plugin.json` + `marketplace.json`
-- **任何影响用户功能的变更**（src/、commands/、references/）都必须 bump 版本号，否则 `cc-statusline:update` 无法识别更新
-- **每次修改 marketplace.json 后**必须跑 `claude plugin validate .`
-- **skill-creator 的输出**通过 skills2ccPlugin 转换为 marketplace 插件后发布
+- 不要在当前目录 clone `terr-marketplace`，除非用户明确要求。
+- 真正修改 marketplace 或插件时，优先在本地 marketplace 仓库根目录操作。
+- 详细维护规则在 `marketplace-manager.md`。
+- 不要默认整篇读取 `marketplace-manager.md`；只在任务命中下方路由时读取相关 section。
+- 如果当前目录没有 `marketplace-manager.md`，到本地 marketplace 仓库根目录查找。
 
-## PowerShell 陷阱
+## 仓库定位
 
-- 写文件用 `[System.IO.File]::WriteAllText($p, $c, (New-Object System.Text.UTF8Encoding $false))`
-- **禁止** `Set-Content -Encoding UTF8`（带 BOM）和裸 `Set-Content`/`Get-Content`（默认 GBK）
-- **禁止** 用 `ConvertTo-Json` 生成 plugin.json（撇号转义、Depth 截断）
+本地 marketplace 仓库通常位于：
 
-## 添加插件
+- Windows: `~\.claude\plugins\marketplaces\terr-marketplace`
+- macOS/Linux: `~/.claude/plugins/marketplaces/terr-marketplace`
 
-```shell
-# 1. 创建 plugins/<name>/.claude-plugin/plugin.json（手工 JSON，不用 ConvertTo-Json）
-# 2. 复制 skill 到 plugins/<name>/skills/<name>/
-# 3. 追加 git-subdir 条目到 .claude-plugin/marketplace.json 的 plugins 数组
-claude plugin validate .
-git add plugins/<name>/ .claude-plugin/marketplace.json
-git commit -m "Add <name> plugin v<version>"
-git push
-```
+当前机器的实际路径以用户说明或文件系统为准。
 
-## 更新插件
+## 按需加载路由
 
-```shell
-# 1. 改代码/commands/references + 改 package.json version + 改 plugin.json version + 改 marketplace.json version
-#    任何影响用户功能的变更都必须 bump（不只是 src/）
-#    bugfix → patch, feature → minor
-claude plugin validate .
-git add plugins/<name>/ .claude-plugin/marketplace.json
-git commit -m "Update <name> to v<new-version>"
-git push
-```
+处理以下任务时，先用 `Grep` 在 `marketplace-manager.md` 中定位对应标题，再只读取该 section 附近内容。
 
-## plugin.json 模板
+| 任务类型 | 读取 section |
+|---|---|
+| 判断当前目录、找 marketplace 仓库、确认不要 clone | `## 仓库定位与工作目录` |
+| 添加新插件、从 skill 转插件、注册 marketplace | `## 添加插件流程` |
+| 修改已有插件、发布新版本、更新 marketplace 条目 | `## 更新插件流程` |
+| 判断是否需要 bump version、同步哪些 version 文件 | `## 版本同步规则` |
+| 修改 `.claude-plugin/marketplace.json`、source/path/metadata | `## marketplace.json 规则` |
+| 在 Windows / PowerShell 下写 JSON、处理编码 | `## PowerShell 与 JSON 陷阱` |
+| `claude plugin validate .` 失败 | `## validate 失败排查` |
+| 准备 commit / push / PR 前检查 | `## 发布前检查清单` |
 
-```json
-{
-  "name": "<name>",
-  "version": "1.0.0",
-  "description": "<描述>",
-  "author": { "name": "<作者>" },
-  "repository": "https://github.com/<owner>/<repo>",
-  "license": "MIT",
-  "keywords": ["<kw>"]
-}
-```
+## 默认操作边界
 
-## marketplace.json 条目模板（git-subdir）
-
-```json
-{
-  "name": "<name>",
-  "source": {
-    "source": "git-subdir",
-    "url": "https://github.com/shuiyu486/terr-marketplace.git",
-    "path": "plugins/<name>"
-  },
-  "description": "<描述>",
-  "version": "1.0.0",
-  "author": { "name": "<作者>" },
-  "license": "MIT",
-  "keywords": ["<kw>"]
-}
-```
-
-## validate 失败排查
-
-- JSON 中有 `'` → PS 5.1 `ConvertTo-Json` 过度转义，重写 JSON
-- 逗号错位 → 确认新条目在 `plugins` 数组内、前有逗号、最后无逗号
-- 用 `Get-Content <file> | ConvertFrom-Json` 单独测每个 JSON
+- 用户只是询问概念、路径、是否需要同步时，不读取 `marketplace-manager.md`。
+- 用户要求实际修改 marketplace、插件、版本、发布配置时，按路由读取相关 section。
+- 不要把插件级历史 bug 写入本文件；插件细节放在插件目录自己的记忆或 references 中。
