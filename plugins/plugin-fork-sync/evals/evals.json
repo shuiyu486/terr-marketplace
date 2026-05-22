@@ -10,13 +10,13 @@
     {
       "id": 2,
       "prompt": "/plugin-fork-sync C:\\Users\\terrapin\\.claude\\plugins\\marketplaces\\terr-marketplace\\plugins\\hookify https://github.com/anthropics/claude-plugins-official/tree/main/plugins/skill-creator --init。hookify 还没有 PLUGIN_FORK_SYNC.md，先不要写文件，给我首次同步报告和建议账本内容。",
-      "expected_output": "应走 first-run 流程；说明无账本时不能精确自动合并；用 hash-first 思路缩小差异范围；生成建议 PLUGIN_FORK_SYNC.md 内容；不直接写入或 push。",
+      "expected_output": "应走 first-run 流程；说明无账本时不能精确自动合并；用 hash-first 思路缩小差异范围；必须按首次同步报告模板输出重点结论、已识别来源、差异总览、文件级判断表格、建议 PLUGIN_FORK_SYNC.md 和待用户确认；不直接写入或 push。",
       "files": []
     },
     {
       "id": 3,
       "prompt": "/plugin-fork-sync C:\\Users\\terrapin\\.claude\\plugins\\marketplaces\\terr-marketplace\\plugins\\hookify --update。hookify 根目录已有 PLUGIN_FORK_SYNC.md，里面记了上游地址、lastSyncedCommit、自身 repo、pushRemote/pushBranch，还有 README 和 plugin.json 是本地魔改文件。请按账本更新，先只生成文件级同步计划。",
-      "expected_output": "应走 update-run 流程；优先读取 PLUGIN_FORK_SYNC.md；按 base/upstream/local 三方快照与 hash-first 分类；把本地魔改文件高亮为保留或人工确认；只生成计划，不直接应用补丁或 push。",
+      "expected_output": "应走 update-run 流程；优先读取 PLUGIN_FORK_SYNC.md；按 base/upstream/local 三方快照与 hash-first 分类；必须按更新报告模板输出重点结论、账本摘要、上游变化摘要、文件级同步计划表格和待用户确认；把本地魔改文件高亮为保留或人工确认；只生成计划，不直接应用补丁或 push。",
       "files": []
     }
   ]

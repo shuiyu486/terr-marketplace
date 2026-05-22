@@ -55,10 +55,10 @@
         "path": "plugins/skill-creator"
       },
       "description": "创建、修改、修复和优化 Claude Code skills。支持 skill 全生命周期：从零创建、迭代改进、运行 evals、基准测试、盲比评估、描述触发优化、打包发布。",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": { "name": "Anthropic" },
       "repository": "https://github.com/anthropics/claude-plugins-official",
-      "license": "MIT",
+      "license": "Apache-2.0",
       "keywords": ["skill", "creator", "eval", "benchmark", "improve", "fix", "repair", "optimize", "package"]
     },
     {
@@ -96,7 +96,7 @@
         "path": "plugins/plugin-fork-sync"
       },
       "description": "Manual slash-command tool for syncing customized Claude Code marketplace plugins with upstream plugins. Provides first-run PLUGIN_FORK_SYNC.md initialization and existing-ledger update workflows with on-demand references.",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "author": { "name": "terrapin" },
       "repository": "https://github.com/shuiyu486/terr-marketplace",
       "license": "MIT",
