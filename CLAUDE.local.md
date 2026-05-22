@@ -6,9 +6,9 @@
 
 - 不要在当前目录 clone `terr-marketplace`，除非用户明确要求。
 - 真正修改 marketplace 或插件时，优先在本地 marketplace 仓库根目录操作。
-- 详细维护规则在 `marketplace-manager.md`。
-- 不要默认整篇读取 `marketplace-manager.md`；只在任务命中下方路由时读取相关 section。
-- 如果当前目录没有 `marketplace-manager.md`，到本地 marketplace 仓库根目录查找。
+- 本文件是唯一自动加载入口；详细规则按下方路由读取 `references/marketplace/*.md`。
+- 只读取当前任务命中的一个 reference 文件；不要预读整套 references。
+- 如果当前目录缺少对应 reference 文件，到本地 marketplace 仓库根目录查找。
 
 ## 仓库定位
 
@@ -21,21 +21,20 @@
 
 ## 按需加载路由
 
-处理以下任务时，先用 `Grep` 在 `marketplace-manager.md` 中定位对应标题，再只读取该 section 附近内容。
+| 任务意图 | 读取文件 | 不读取时 |
+|---|---|---|
+| 需要确认实际工作目录、仓库位置、是否应该在当前目录操作 git | `references/marketplace/workspace.md` | 只是讨论同步方案、文件设计或普通概念 |
+| 准备实际添加/更新插件，或即将编辑插件版本、`.claude-plugin/marketplace.json` 条目 | `references/marketplace/plugin-lifecycle.md` | 只是询问是否可行、查看列表、解释现有文件，不会修改或发布 |
+| 需要写 JSON、处理 PowerShell 编码、排查 `claude plugin validate .`、提交/推送/发布前检查 | `references/marketplace/validation-release.md` | 不涉及 JSON 写入、验证失败、提交、推送或发布 |
 
-| 任务类型 | 读取 section |
-|---|---|
-| 判断当前目录、找 marketplace 仓库、确认不要 clone | `## 仓库定位与工作目录` |
-| 添加新插件、从 skill 转插件、注册 marketplace | `## 添加插件流程` |
-| 修改已有插件、发布新版本、更新 marketplace 条目 | `## 更新插件流程` |
-| 判断是否需要 bump version、同步哪些 version 文件 | `## 版本同步规则` |
-| 修改 `.claude-plugin/marketplace.json`、source/path/metadata | `## marketplace.json 规则` |
-| 在 Windows / PowerShell 下写 JSON、处理编码 | `## PowerShell 与 JSON 陷阱` |
-| `claude plugin validate .` 失败 | `## validate 失败排查` |
-| 准备 commit / push / PR 前检查 | `## 发布前检查清单` |
+## 同步规则
+
+- 本文件需要在当前工作目录与本地 marketplace 仓库根目录保持同步。
+- 修改任一处 `CLAUDE.local.md` 后，同步另一处。
+- 远程仓库中的 `CLAUDE.local.md` 通过 marketplace 仓库提交和推送同步。
 
 ## 默认操作边界
 
-- 用户只是询问概念、路径、是否需要同步时，不读取 `marketplace-manager.md`。
-- 用户要求实际修改 marketplace、插件、版本、发布配置时，按路由读取相关 section。
+- 用户只是询问概念、路径、是否需要同步时，不读取 reference 文件。
+- 用户要求实际修改 marketplace、插件、版本、发布配置时，按路由读取对应文件。
 - 不要把插件级历史 bug 写入本文件；插件细节放在插件目录自己的记忆或 references 中。
