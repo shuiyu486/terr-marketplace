@@ -80,12 +80,13 @@ export async function readStdin(): Promise<StatusLineData | null> {
  * stdin ends or errors — the single Node.js process handles every
  * status-line update, eliminating per-cycle spawn overhead on Windows.
  */
-export function readStdinLoop(handler: (data: StatusLineData) => void): void {
+export function readStdinLoop(handler: (data: StatusLineData) => void | Promise<void>): void {
   if (process.stdin.isTTY) {
     process.exit(0);
   }
 
   let buffer = "";
+  let pending = Promise.resolve();
 
   process.stdin.setEncoding("utf8");
 
@@ -96,26 +97,73 @@ export function readStdinLoop(handler: (data: StatusLineData) => void): void {
 
   process.stdin.on("end", () => {
     drain(); // last attempt with any remaining bytes
-    process.exit(0);
+    pending.finally(() => process.exit(0));
   });
 
   process.stdin.on("error", () => {
-    process.exit(0);
+    pending.finally(() => process.exit(0));
   });
 
   function drain() {
     while (true) {
-      const trimmed = buffer.trim();
-      if (!trimmed) break;
+      const frame = takeJsonFrame(buffer);
+      if (!frame) break;
 
+      buffer = frame.rest;
       try {
-        const data = JSON.parse(trimmed) as StatusLineData;
-        buffer = "";
-        handler(data);
-      } catch {
-        // Incomplete JSON — wait for the next chunk
-        break;
+        const data = JSON.parse(frame.raw) as StatusLineData;
+        pending = pending
+          .then(() => handler(data))
+          .catch(() => {});
+      } catch {}
+    }
+  }
+}
+
+function takeJsonFrame(input: string): { raw: string; rest: string } | null {
+  const trimmedStart = input.search(/\S/);
+  if (trimmedStart === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  let start = -1;
+
+  for (let i = trimmedStart; i < input.length; i++) {
+    const ch = input[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === "\"") {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === "\"") {
+      inString = true;
+      continue;
+    }
+
+    if (ch === "{" || ch === "[") {
+      if (depth === 0) start = i;
+      depth++;
+      continue;
+    }
+
+    if (ch === "}" || ch === "]") {
+      depth--;
+      if (depth === 0 && start !== -1) {
+        return {
+          raw: input.slice(start, i + 1),
+          rest: input.slice(i + 1),
+        };
       }
     }
   }
+
+  return null;
 }

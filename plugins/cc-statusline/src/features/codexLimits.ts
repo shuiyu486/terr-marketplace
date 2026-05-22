@@ -19,38 +19,78 @@ interface CachedLimits {
   rate_limits: RateLimits;
 }
 
-let cached: CachedLimits | null = loadCache();
-let lastProbeAt = 0;
-let probing = false;
-
-export function withCodexLimitFallback(data: StatusLineData): StatusLineData {
-  if (!cached || Date.now() - cached.ts > FALLBACK_CACHE_MAX_AGE_MS) return data;
-  if (!isLocalProxyUrl(claudeEnv().ANTHROPIC_BASE_URL)) return data;
-  return { ...data, rate_limits: cached.rate_limits };
+interface ProbeEnv {
+  baseUrl: string;
+  token: string;
+  model: string;
 }
 
-export function maybeProbeCodexLimits(data: StatusLineData, cfg: Config): void {
-  if (probing) return;
-  if (Date.now() - lastProbeAt < probeIntervalMs(cfg)) return;
+export interface CodexLimitsService {
+  getSnapshot(data: StatusLineData): RateLimits | null;
+  ensureFresh(data: StatusLineData, opts: { maxWaitMs: number }): Promise<RateLimits | null>;
+}
 
-  const env = claudeEnv();
-  const baseUrl = env.ANTHROPIC_BASE_URL;
-  const token = env.ANTHROPIC_AUTH_TOKEN || env.ANTHROPIC_API_KEY;
-  const model = env.ANTHROPIC_DEFAULT_SONNET_MODEL || data.model?.display_name;
-  if (!baseUrl || !token || !model || !isLocalProxyUrl(baseUrl)) return;
+export function createCodexLimitsService(cfg: Config): CodexLimitsService {
+  let cached: CachedLimits | null = loadCache();
+  let lastProbeAt = 0;
+  let inflight: Promise<RateLimits | null> | null = null;
 
-  lastProbeAt = Date.now();
-  probing = true;
-  probe(baseUrl, token, model)
-    .then((limits) => {
-      if (!limits) return;
-      cached = { ts: Date.now(), rate_limits: limits };
+  function getSnapshot(data: StatusLineData): RateLimits | null {
+    if (data.rate_limits?.five_hour) return data.rate_limits;
+    if (!cached || Date.now() - cached.ts > FALLBACK_CACHE_MAX_AGE_MS) return null;
+    if (!isLocalProxyUrl(claudeEnv().ANTHROPIC_BASE_URL)) return null;
+    return cached.rate_limits;
+  }
+
+  async function ensureFresh(
+    data: StatusLineData,
+    opts: { maxWaitMs: number },
+  ): Promise<RateLimits | null> {
+    const snapshot = getSnapshot(data);
+    if (snapshot) {
+      if (!data.rate_limits?.five_hour) refreshInBackground(data);
+      return snapshot;
+    }
+
+    const promise = startProbe(data);
+    if (!promise) return null;
+    if (opts.maxWaitMs <= 0) return null;
+
+    return waitFor(promise, opts.maxWaitMs);
+  }
+
+  function refreshInBackground(data: StatusLineData): void {
+    startProbe(data);
+  }
+
+  function startProbe(data: StatusLineData): Promise<RateLimits | null> | null {
+    if (inflight) return inflight;
+    if (Date.now() - lastProbeAt < probeIntervalMs(cfg)) return null;
+
+    const env = probeEnv(data);
+    if (!env) return null;
+
+    lastProbeAt = Date.now();
+    inflight = probe(env.baseUrl, env.token, env.model)
+      .then((limits) => {
+        if (limits) saveCache(limits);
+        return limits;
+      })
+      .catch(() => null)
+      .finally(() => {
+        inflight = null;
+      });
+    return inflight;
+  }
+
+  function saveCache(limits: RateLimits): void {
+    cached = { ts: Date.now(), rate_limits: limits };
+    try {
       fs.writeFileSync(CACHE_PATH, JSON.stringify(cached), "utf8");
-    })
-    .catch(() => {})
-    .finally(() => {
-      probing = false;
-    });
+    } catch {}
+  }
+
+  return { getSnapshot, ensureFresh };
 }
 
 function loadCache(): CachedLimits | null {
@@ -63,6 +103,22 @@ function loadCache(): CachedLimits | null {
   }
 }
 
+function waitFor<T>(promise: Promise<T>, timeoutMs: number): Promise<T | null> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), timeoutMs);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(null);
+      },
+    );
+  });
+}
+
 function probeIntervalMs(cfg: Config): number {
   const minutes = Number.isFinite(cfg.codexProbeIntervalMinutes)
     ? cfg.codexProbeIntervalMinutes
@@ -71,6 +127,15 @@ function probeIntervalMs(cfg: Config): number {
     MAX_PROBE_INTERVAL_MINUTES,
     Math.max(MIN_PROBE_INTERVAL_MINUTES, minutes),
   ) * 60 * 1000;
+}
+
+function probeEnv(data: StatusLineData): ProbeEnv | null {
+  const env = claudeEnv();
+  const baseUrl = env.ANTHROPIC_BASE_URL;
+  const token = env.ANTHROPIC_AUTH_TOKEN || env.ANTHROPIC_API_KEY;
+  const model = env.ANTHROPIC_DEFAULT_SONNET_MODEL || data.model?.display_name;
+  if (!baseUrl || !token || !model || !isLocalProxyUrl(baseUrl)) return null;
+  return { baseUrl, token, model };
 }
 
 function isLocalProxyUrl(baseUrl: string | undefined): boolean {

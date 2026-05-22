@@ -39,10 +39,10 @@ stdin JSON (每 ~300ms)
   │  ┌─────────────────────────────────────┐
   │  │ 长驻模式: 进程启动一次，循环读取     │
   │  │ readStdinLoop(handler)              │
-  │  │   ├── data 事件 → 累积 buffer       │
-  │  │   ├── JSON.parse 完整 → handler()   │
-  │  │   ├── fs.writeSync(1, ...) 即时刷新  │
-  │  │   └── end/error → process.exit(0)   │
+  │  │   ├── data 事件 → 累积 buffer           │
+  │  │   ├── 切分连续顶层 JSON → async handler() │
+  │  │   ├── fs.writeSync(1, ...) 即时刷新      │
+  │  │   └── end/error → 等待 pending 后退出    │
   │  └─────────────────────────────────────┘
   │
   ├── StatusLineData
@@ -80,14 +80,15 @@ stdin JSON (每 ~300ms)
 - `agents.ts`: 解析 `Task`/`Agent` 的 `tool_use`，追踪运行状态+耗时
 - `todos.ts`: 解析 `TodoWrite`/`TaskCreate`/`TaskUpdate`，维护 TodoState
 - `render.ts`: `stableContextWindow()` 保留上一帧有效上下文，过滤流式输出期间临时 0 输入帧
-- `limits.ts`: 纯渲染；`codexLimits.ts` 在本地代理环境下按配置间隔探测并缓存 `X-Codex-*` headers，可覆盖陈旧的 stdin 用量数据，并用 24 小时旧缓存避免刷新前整行消失
+- `limits.ts`: 纯渲染；`codexLimits.ts` 提供 `getSnapshot()`/`ensureFresh()` 服务，在本地代理环境下读取缓存快照、复用 in-flight probe，并按配置间隔探测 `X-Codex-*` headers；首次无缓存时入口最多等待 3000ms
 
 ### stdin.ts — 500ms 超时 + 长驻循环
 
 - **`readStdin()`** (one-shot, 保留兼容): 单次读取，500ms 超时，用于手动测试
-- **`readStdinLoop()`** (长驻模式, 主用): 进程启动一次，stdin 每收到一个完整 JSON 对象调用 handler，stdin 关闭时退出
+- **`readStdinLoop()`** (长驻模式, 主用): 进程启动一次，stdin 每收到一个完整 JSON 对象按顺序调用 handler，stdin 关闭时等待 pending handler 完成后退出
   - 消除 Windows 上每 ~300ms spawn Node.js 进程的开销（Desktop Heap 碎片化的主因）
-  - buffer + drain() 模式: 累积 chunk 直到 JSON.parse 成功
+  - buffer + drain() 模式: 按顶层 `{}`/`[]` 边界切分连续 JSON，支持 `{}{} ` 或换行分隔的多帧输入
+  - 支持 async handler，避免一次性 stdin 调用时打断首次 Usage limit probe
 - 失败静默退出 (process.exit(0))
 
 ### colors.ts

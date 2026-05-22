@@ -9,6 +9,7 @@ Claude Code 主进程
   │  ~300ms 推送 StatusLineData JSON 到 stdin
   ▼
 index.ts (长驻进程 readStdinLoop)
+  │  codexLimits.ensureFresh(data)          → 可选 Usage fallback
   │  parseTranscript(data.transcript_path)  → ParseResult
   │  render(data, parseResult, cfg)         → ANSI 字符串
   │  fs.writeSync(1, output + "\n")         → 即时 flush 到 stdout
@@ -18,6 +19,7 @@ Claude Code 终端渲染 ANSI
 
 - **长驻进程**：一个 node 进程处理所有更新，消除 Windows Desktop Heap 每周期 spawn 开销
 - **stdout flush**：管道模式下 `process.stdout.write()` 不自动 flush，必须用 `fs.writeSync(1, ...)`
+- **Usage fallback**：`codexLimits.ts` 管理缓存快照与 probe；首次无缓存时最多等待 3000ms，stdin 结束时会等待 pending handler 完成
 
 ## 状态栏每行含义
 
@@ -151,6 +153,9 @@ Windows 上 Git Bash 的 `$TEMP` 可能指向 `/tmp`，而 Node.js 的 `os.tmpdi
 ### 6. 版本号三文件同步
 `package.json` + `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json` 版本号需同步。bugfix → patch，feature → minor。
 
+### 7. Usage fallback 不能 fire-and-forget
+Codex headers fallback 如果只后台 probe，一次性 stdin 调用会在请求完成前退出，导致首帧没有 usage 行。`readStdinLoop()` 必须支持 async handler、连续 JSON framing，并在 stdin end 时等待 pending handler；`src/features/codexLimits.ts` 的 `ensureFresh()` 负责 3000ms 首次等待、in-flight 复用和缓存写入。
+
 ## 项目结构
 
 ```
@@ -179,6 +184,7 @@ echo '{...}' | node dist/index.js  # 手动测试
 
 ## 版本历史
 
+- **1.3.10** — 服务化 Codex Usage fallback：首次无缓存时等待短 probe，修复一次性 stdin 调用不显示 usage 行
 - **1.3.0** — 拆分 `showToolActivity` 为总开关 + 两个子开关（`showRunningTools`/`showCompletedTools`），可独立控制运行中/已完成工具显示
 - **1.2.3** — 修复 ses 重启不归零：缓存键从 Claude PID 改为 transcript UUID，删除 `findClaudePid()` 进程树遍历
 - **1.2.2** — ses/api 分离完整实现：dist 编译同步，render 使用 `ctx.sesIn/sesOut` + `ctx.apiIn/apiOut`

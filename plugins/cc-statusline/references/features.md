@@ -43,7 +43,9 @@
 
 ## Usage Limits (`features/limits.ts`)
 
-- **数据源**: 优先使用 stdin JSON `rate_limits.five_hour`；本地代理环境下 `features/codexLimits.ts` 会按 `codexProbeIntervalMinutes`（默认 3 分钟，范围 1-10）定时探测 `X-Codex-*` headers 并缓存，缓存最长可兜底显示 24 小时，避免刷新前或短暂探测失败时整行消失
+- **数据源**: 优先使用 stdin JSON `rate_limits.five_hour`；本地代理环境下 `features/codexLimits.ts` 的服务会读取缓存快照，并按 `codexProbeIntervalMinutes`（默认 3 分钟，范围 1-10）探测 `X-Codex-*` headers
+- **首次 fallback**: 无 stdin `rate_limits` 且无可用缓存时，入口最多等待 3000ms 完成一次 `max_tokens: 1` probe；失败或超时则静默跳过 usage 行
+- **缓存**: 成功 probe 写入 `os.tmpdir()/cc-statusline-codex-limits.json`，缓存最长可兜底显示 24 小时，避免刷新前或短暂探测失败时整行消失
 - **无 transcript 提取阶段** — stdin/headers 转换后渲染
 - **渲染**: 同一行显示 5h 与可选 7d 窗口；每个窗口包含 10 字符进度条 (█ 已用 / ░ 剩余) + 百分比 + 重置倒计时
 - **颜色**: <75% 绿(108), 75-89% 黄(215), ≥90% 红(167)+粗
