@@ -1,0 +1,96 @@
+# 已有账本更新流程：存在 PLUGIN_FORK_SYNC.md
+
+当目标魔改插件根目录存在 `PLUGIN_FORK_SYNC.md` 时使用本流程。目标是按账本精确做三方对比，并安全移植上游变化。
+
+## 读取账本
+
+从 `PLUGIN_FORK_SYNC.md` 提取：
+
+- `Upstream.repo/path/branch/lastSyncedCommit`
+- `Local plugin.repo/path/pushRemote/pushBranch`
+- `Local modifications`
+- `Sync policy.compareStrategy/autoApply/pushAfterSync`
+
+如果 `lastSyncedCommit` 缺失或明显不是 commit/tag，停止自动更新，改走首次同步流程或询问用户补充。
+
+## 三方快照
+
+准备三份快照：
+
+| 快照 | 来源 |
+| --- | --- |
+| `base` | upstream repo 的 `lastSyncedCommit` + upstream path |
+| `upstream` | upstream repo 的当前 branch/head + upstream path |
+| `local` | 本地插件目录 |
+
+不要在本地插件目录直接执行 destructive git 操作。
+
+## hash-first 对比
+
+先生成三份快照的文件 hash 清单：
+
+1. `base == upstream`：上游未改，通常不需要读文件。
+2. `base == local`：本地未改，上游变化可作为低风险候选。
+3. `base != upstream` 且 `base != local`：双方都改，列为冲突并读取内容审阅。
+4. `Local modifications` 中列出的文件始终高亮展示，即使 hash 分类显示低风险。
+
+## 文件级分类
+
+| 类型 | 判断 | 默认处理 |
+| --- | --- | --- |
+| 仅上游变更 | `base→upstream` 有变，`base→local` 无变 | 可自动移植到补丁 |
+| 仅本地变更 | `base→local` 有变，`base→upstream` 无变 | 保留本地 |
+| 双方同文件变更 | 两边都改同一文件 | 人工审阅 |
+| 上游删除、本地修改 | 上游删除但本地仍改 | 高风险冲突 |
+| 本地新增 | 只存在 local | 保留 |
+| 上游新增 | 只存在 upstream | 可建议新增 |
+
+`PLUGIN_FORK_SYNC.md` 是本地维护账本，不来自上游；除非用户要求更新账本，否则不要纳入上游同步补丁。
+
+## 更新报告
+
+输出结构：
+
+```markdown
+## 结论
+- 当前模式：已有账本更新
+- 上游是否有更新：是/否
+- 是否能安全自动移植：是/部分/否
+
+## 账本摘要
+- 上游：repo/path/base → head
+- 本地：repo/path
+- 本地魔改文件：...
+
+## 上游变化摘要
+- 新增：...
+- 修改：...
+- 删除：...
+
+## 文件级同步计划
+| 文件 | 上游变化 | 本地变化 | 风险 | 建议 |
+| --- | --- | --- | --- | --- |
+
+## 待确认
+- [ ] 是否生成补丁
+- [ ] 是否应用低风险变更
+- [ ] 是否更新 lastSyncedCommit
+- [ ] 是否提交/push
+```
+
+## 应用更新
+
+只有用户明确同意时才写入文件。应用低风险变更后：
+
+- 更新 `PLUGIN_FORK_SYNC.md` 的 `lastSyncedCommit` 为已同步的 upstream head commit。
+- 如果发现新的本地魔改文件，同步更新 `Local modifications`。
+- 运行可用的最小验证，例如 JSON 解析、SKILL.md frontmatter 检查、`claude plugin validate <marketplace>`。
+
+## commit/push 条件
+
+只有同时满足以下条件才提交或 push：
+
+- 用户当前明确要求提交或 push，或账本 `pushAfterSync` 允许且用户已确认。
+- 工作区只包含本次同步相关改动。
+- 已展示提交文件列表、提交信息、目标 remote/branch。
+- 无未解决冲突或高风险自动改写。
