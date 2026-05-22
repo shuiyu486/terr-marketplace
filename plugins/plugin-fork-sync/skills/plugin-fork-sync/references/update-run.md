@@ -11,6 +11,8 @@
 - `Local modifications`
 - `Sync policy.compareStrategy/autoApply/pushAfterSync`
 
+账本中的 `Local plugin.path` 应是 repo-relative 路径，例如 `plugins/<plugin-name>`；`Local modifications` 应是 plugin-relative 路径，例如 `hooks/pretooluse.py`。如果读到账本里有本机绝对路径，更新账本时顺手转换为可移植路径。
+
 如果 `lastSyncedCommit` 缺失或明显不是 commit/tag，停止自动更新，改走首次同步流程或询问用户补充。
 
 ## 三方快照
@@ -45,7 +47,7 @@
 | 本地新增 | 只存在 local | 保留 |
 | 上游新增 | 只存在 upstream | 可建议新增 |
 
-`PLUGIN_FORK_SYNC.md` 是本地维护账本，不来自上游；除非用户要求更新账本，否则不要纳入上游同步补丁。账本是维护清单，不是提交历史记录；只记录仍需长期维护的 fork 差异。如果某个文件已经与上游完全一致，不要把它列为本地魔改文件，也不要保留它曾经同步或回归上游的原因；这类历史原因应放进 commit message。
+`PLUGIN_FORK_SYNC.md` 是本地维护账本，不来自上游；除非用户要求更新账本，否则不要纳入上游同步补丁。账本是维护清单，不是提交历史记录；只记录仍需长期维护的 fork 差异。如果某个文件已经与上游完全一致，不要把它列为本地魔改文件，也不要保留它曾经同步或回归上游的原因；这类历史原因应放进 commit message。账本文件本身应作为目标插件仓库中的受版本控制文件维护，更新账本时默认纳入本次同步提交。
 
 ## 更新报告
 
@@ -84,14 +86,15 @@
 只有用户明确同意时才写入文件。应用低风险变更后：
 
 - 更新 `PLUGIN_FORK_SYNC.md` 的 `lastSyncedCommit` 为已同步的 upstream head commit。
-- 如果发现新的本地魔改文件，同步更新 `Local modifications`。
+- 如果发现新的本地魔改文件，同步更新 `Local modifications`，并使用 plugin-relative 路径。
+- 如果账本中存在本机绝对路径，转换为 repo-relative 或 plugin-relative 路径。
 - 运行可用的最小验证，例如 JSON 解析、SKILL.md frontmatter 检查、`claude plugin validate <marketplace>`。
 
 ## commit/push 条件
 
 用户确认执行同步/应用更新后，自动提交并 push 本次同步相关改动，不再单独追问 commit/push。只有同时满足以下条件才执行：
 
-- 工作区只包含本次同步相关改动。
+- 工作区只包含本次同步相关改动，包括生成或更新的 `PLUGIN_FORK_SYNC.md`。
 - 已展示提交文件列表、提交信息、目标 remote/branch。
 - 无未解决冲突或高风险自动改写。
 - remote 和 branch 明确可用。

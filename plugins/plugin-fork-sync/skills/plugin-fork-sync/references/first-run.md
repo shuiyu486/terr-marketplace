@@ -26,6 +26,8 @@
 
 ## 生成 PLUGIN_FORK_SYNC.md
 
+在目标插件根目录创建 `PLUGIN_FORK_SYNC.md`，并把它作为插件所在 git 仓库的正式文件纳入本次同步提交。账本内容要适合跨机器使用：优先写仓库 URL、上游子路径、repo-relative 路径和 plugin-relative 路径，不要写死当前电脑的绝对路径。
+
 建议内容：
 
 ```markdown
@@ -39,7 +41,7 @@
 
 ## Local plugin
 - repo: <local-marketplace-repo-url>
-- path: <local-plugin-path-in-repo>
+- path: plugins/<plugin-name>
 - pushRemote: origin
 - pushBranch: main
 
@@ -52,7 +54,7 @@
 - pushAfterSync: after-confirmed-sync
 ```
 
-`Local modifications` 应优先从 hash 差异、README 说明、plugin.json metadata、用户描述中提取。账本是维护清单，不是提交历史记录；只记录仍需长期维护的 fork 差异。如果某个文件已经与上游完全一致，不要把它写入账本，也不要保留它曾经同步或回归上游的原因；这类历史原因应放进 commit message。不要为了填满清单而猜测。
+`Local modifications` 应优先从 hash 差异、README 说明、plugin.json metadata、用户描述中提取。账本是维护清单，不是提交历史记录；只记录仍需长期维护的 fork 差异。如果某个文件已经与上游完全一致，不要把它写入账本，也不要保留它曾经同步或回归上游的原因；这类历史原因应放进 commit message。文件路径用 plugin-relative 形式，例如 `hooks/pretooluse.py`，不要使用本机绝对路径。不要为了填满清单而猜测。
 
 ## 首次同步报告
 
@@ -87,4 +89,4 @@
 
 ## 写入规则
 
-只有用户明确同意时，才创建 `PLUGIN_FORK_SYNC.md`。如果用户确认执行首次同步/写入账本，写入后默认自动 commit 并 push 本次同步相关改动；如果工作区不干净、remote/branch 不明确或存在冲突，则停止在提交前并报告原因。
+只有用户明确同意时，才创建 `PLUGIN_FORK_SYNC.md`。写入后确认它位于目标插件所在 git 仓库内；如果目标插件不在 git 仓库中，先询问用户要纳入哪个本地仓库，不要把账本留成只存在于当前机器的游离文件。如果用户确认执行首次同步/写入账本，写入后默认把 `PLUGIN_FORK_SYNC.md` 纳入本次 commit 并 push；如果工作区不干净、remote/branch 不明确或存在冲突，则停止在提交前并报告原因。

@@ -43,6 +43,8 @@ PLUGIN_FORK_SYNC.md
 - 优先使用 hash-first：先比较文件列表和 hash，再读取必要文件内容。
 - 用户确认执行同步/应用后，commit 和 push 视为已授权；执行前仍要检查工作区只包含本次同步相关改动，并展示目标 remote/branch。删除、reset、clean、强制 checkout 等破坏性操作仍必须单独确认。
 - `PLUGIN_FORK_SYNC.md` 是本地维护账本，不来自上游；除非用户要求更新账本，否则不要把它纳入上游同步补丁。它不是提交历史记录，不要记录已完成同步的叙事原因；这类历史原因应放进 commit message。
+- 生成或更新 `PLUGIN_FORK_SYNC.md` 时，把它作为目标插件仓库中的受版本控制文件处理，并纳入本次同步提交，便于在其它电脑继续管理和迭代。
+- 账本和报告中的路径优先使用 repo-relative 或 plugin-relative 形式，例如 `plugins/<plugin-name>`、`hooks/pretooluse.py`；避免写入本机绝对路径。只有在用户输入歧义、需要定位当前机器文件，或报告临时工作目录时才展示绝对路径。
 
 ## 默认报告语言
 
