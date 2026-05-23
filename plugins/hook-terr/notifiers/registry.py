@@ -1,10 +1,10 @@
 from typing import Any, Dict
 
 from core.models import HookContext, NotificationResult
-from notifiers import beep, custom_command, popup, windows_toast
+from notifiers import custom_command, popup, sound, windows_toast
 
 SENDERS = {
-    "beep": beep.send,
+    "sound": sound.send,
     "windows_toast": windows_toast.send,
     "popup": popup.send,
     "custom_command": custom_command.send,

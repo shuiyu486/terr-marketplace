@@ -7,9 +7,10 @@
       "silent": true,
       "timeoutMs": 1500
     },
-    "beep": {
+    "sound": {
       "enabled": true,
-      "timeoutMs": 800
+      "timeoutMs": 2500,
+      "wavPath": "C:\\Windows\\Media\\tada.wav"
     },
     "popup": {
       "enabled": true,
@@ -27,7 +28,7 @@
   "events": {
     "Stop": {
       "enabled": true,
-      "notifications": ["beep", "popup"]
+      "notifications": ["sound", "popup"]
     },
     "SubagentStop": {
       "enabled": false,

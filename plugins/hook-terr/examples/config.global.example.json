@@ -1,11 +1,11 @@
 {
   "version": 1,
   "notifications": {
-    "beep": { "enabled": true },
+    "sound": { "enabled": true },
     "windows_toast": { "enabled": true, "silent": true },
     "popup": { "enabled": false }
   },
   "events": {
-    "Stop": { "enabled": true, "notifications": ["beep", "windows_toast"] }
+    "Stop": { "enabled": true, "notifications": ["sound", "windows_toast"] }
   }
 }

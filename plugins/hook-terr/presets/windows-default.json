@@ -1,15 +1,15 @@
 {
   "version": 1,
-  "description": "Default Windows reminder preset: short beep plus tray notification.",
+  "description": "Default Windows reminder preset: short sound plus tray notification.",
   "settings": {
     "notifications": {
-      "beep": { "enabled": true, "timeoutMs": 800 },
+      "sound": { "enabled": true, "timeoutMs": 800 },
       "windows_toast": { "enabled": true, "silent": true, "timeoutMs": 1500 },
       "popup": { "enabled": false },
       "custom_command": { "enabled": false }
     },
     "events": {
-      "Stop": { "notifications": ["beep", "windows_toast"] }
+      "Stop": { "notifications": ["sound", "windows_toast"] }
     }
   }
 }

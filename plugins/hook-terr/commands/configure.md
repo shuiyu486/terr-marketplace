@@ -43,15 +43,15 @@ Use `AskUserQuestion` with `multiSelect: true`:
 - Question: `Stop 阶段启用哪些通知通道？`
 - Header: `通知通道`
 - Options:
-  1. `beep` — Windows short sound.
-  2. `popup` — Windows MessageBox popup; default recommended together with beep.
+  1. `sound` — Windows `.wav` notification sound.
+  2. `popup` — Windows MessageBox popup; default recommended together with sound.
   3. `windows_toast` — Windows tray balloon notification.
 
 If the user selects no channels, stop and say no changes were made.
 
 ### 4. Write settings
 
-Convert selected labels to a comma-separated list such as `beep,popup`. Then run:
+Convert selected labels to a comma-separated list such as `sound,popup`. Then run:
 
 ```powershell
 $env:CLAUDE_PLUGIN_ROOT = $pluginPath
@@ -70,4 +70,10 @@ Tell the user:
 写入位置: <path printed by settings_writer.py>
 Stop channels: <channels>
 配置会在下一次 hook 触发时生效。
+```
+
+If `sound` is enabled, also tell the user:
+
+```text
+你启用了 sound 通道。可运行 /hook-terr:sound 试听并选择提示音。
 ```

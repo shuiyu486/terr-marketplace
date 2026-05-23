@@ -26,18 +26,25 @@ defaults/rules/*.json
 
 `settings.events.<Event>.notifications` 是默认通知通道来源。`rule.notify.channels` 是可选的规则级覆盖；未设置时回退到事件默认通道。
 
-内置 `stop-notify` 不写死 channels，让 `/hook-terr:configure` 只改 settings 即可生效。默认 Stop 通道是 `beep + popup`；`SubagentStop` 默认关闭且不配置通知，避免子 agent 结束时弹提示音。
+内置 `stop-notify` 不写死 channels，让 `/hook-terr:configure` 只改 settings 即可生效。默认 Stop 通道是 `sound + popup`；`SubagentStop` 默认关闭且不配置通知，避免子 agent 结束时弹提示音。
 
 ## Slash commands
 
 - `/hook-terr` 只读取并显示当前生效配置。
 - `/hook-terr:configure` 会先询问写入全局还是项目 settings，然后更新 Stop 通知通道。
+- `/hook-terr:sound` 会试听 Windows `.wav`，并将所选 sound 提示音写入全局 settings。
 
-写入位置：
+`/hook-terr:configure` 写入位置：
 
 ```text
 ~/.claude/hook-terr/settings.json
 <project>/.claude/hook-terr/settings.json
+```
+
+`/hook-terr:sound` 始终写入：
+
+```text
+~/.claude/hook-terr/settings.json
 ```
 
 ## Presets

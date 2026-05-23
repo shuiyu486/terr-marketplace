@@ -31,7 +31,8 @@ python (Join-Path $pluginPath 'core\config_status.py')
    - Existing settings/rule files
    - Whether hook-terr is enabled
    - Stop effective channels
-   - `notifications.beep.enabled`, `notifications.windows_toast.enabled`, `notifications.popup.enabled`
+   - `notifications.sound.enabled` and `notifications.sound.wavPath`
+   - `notifications.windows_toast.enabled`, `notifications.popup.enabled`
    - Matched Stop rule id and decision
    - Diagnostics, if any
 

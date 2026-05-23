@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 VALID_EVENTS = {"Stop", "SubagentStop", "PreToolUse", "PostToolUse", "UserPromptSubmit"}
 VALID_DECISIONS = {"allow", "warn", "block"}
 VALID_OPERATORS = {"equals", "contains", "regex", "not_regex", "in"}
-VALID_CHANNELS = {"windows_toast", "beep", "popup", "custom_command"}
+VALID_CHANNELS = {"windows_toast", "sound", "popup", "custom_command"}
 
 
 def validate_settings(settings: Any) -> List[str]:
@@ -30,6 +30,10 @@ def validate_settings(settings: Any) -> List[str]:
             channel_enabled = config.get("enabled")
             if channel_enabled is not None and not isinstance(channel_enabled, bool):
                 errors.append(f"settings.notifications.{channel}.enabled must be a boolean")
+            if channel == "sound":
+                wav_path = config.get("wavPath")
+                if wav_path is not None and not isinstance(wav_path, str):
+                    errors.append("settings.notifications.sound.wavPath must be a string")
             if channel == "popup":
                 icon = config.get("icon")
                 if icon is not None and icon not in ("info", "warning", "error"):

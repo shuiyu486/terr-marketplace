@@ -37,7 +37,7 @@ plugins/
 |---|---|---|
 | 修改 runtime、hook 入口、事件流 | `references/runtime.md` | 只改 README、示例或 marketplace 文案 |
 | 修改 settings/rules schema、默认规则、presets | `references/configuration.md`、`references/rules.md` | 只修通知实现 bug |
-| 修改 Windows toast、beep、popup、custom_command | `references/notifications.md` | 只改规则匹配或 marketplace 注册 |
+| 修改 Windows toast、sound、popup、custom_command | `references/notifications.md` | 只改规则匹配或 marketplace 注册 |
 | 发布、版本、marketplace 注册、验证 | `references/release.md` | 只是本地实验或解释代码 |
 
 ## 验证标准

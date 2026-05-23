@@ -1,12 +1,12 @@
 # Notifications
 
-`hook-terr` 支持四类通知器：`beep`、`windows_toast`、`popup`、`custom_command`。
+`hook-terr` 支持四类通知器：`sound`、`windows_toast`、`popup`、`custom_command`。
 
-默认 Stop 通道是 `beep + popup`。通知失败 fail open，不会阻断 Claude Code 主流程，但简要诊断会追加到 hook `systemMessage`。
+默认 Stop 通道是 `sound + popup`。通知失败 fail open，不会阻断 Claude Code 主流程，但简要诊断会追加到 hook `systemMessage`。
 
-## beep
+## sound
 
-Windows 下播放短提示音。默认启用。不要用于长时间循环或外部音频文件。
+Windows 下播放 `.wav` 提示音。默认使用 `C:\\Windows\\Media\\tada.wav`，可通过 `/hook-terr:sound` 试听并保存全局偏好。
 
 ## windows_toast
 
