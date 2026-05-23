@@ -9,7 +9,7 @@
 3. `context_builder` 将原始 payload 规范化为 `HookContext`。
 4. `config_loader` 加载 settings 和 rules。
 5. `rule_matcher` 找到当前事件最高优先级命中规则。
-6. `action_executor` 执行通知器。
+6. `action_executor` 解析有效通知通道并执行通知器。
 7. `response_builder` 输出 Claude Code hook JSON。
 
 ## 新增事件规则
@@ -31,7 +31,8 @@
 
 ## Hook 输出协议
 
-- Stop block 使用 `decision: block`。
+- Stop/SubagentStop block 使用 `decision: block`。
 - PreToolUse/PostToolUse block 使用 `hookSpecificOutput.permissionDecision: deny`。
 - warn 使用 `systemMessage`。
 - allow 返回 `{}`。
+- 通知失败 fail open，但简要诊断会追加到 hook `systemMessage`。

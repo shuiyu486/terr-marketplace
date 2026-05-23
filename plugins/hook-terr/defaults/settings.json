@@ -12,7 +12,7 @@
       "timeoutMs": 800
     },
     "popup": {
-      "enabled": false,
+      "enabled": true,
       "title": "Claude Code 提醒",
       "icon": "info",
       "timeoutMs": 1500
@@ -27,7 +27,11 @@
   "events": {
     "Stop": {
       "enabled": true,
-      "notifications": ["beep", "windows_toast"]
+      "notifications": ["beep", "popup"]
+    },
+    "SubagentStop": {
+      "enabled": false,
+      "notifications": []
     },
     "PreToolUse": {
       "enabled": true

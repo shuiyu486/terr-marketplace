@@ -1,18 +1,20 @@
-from typing import Dict
+from typing import Dict, List, Optional
 
 from core.models import Rule
 
 
-def build_response(event_name: str, rule: Rule, message: str) -> Dict:
+def build_response(event_name: str, rule: Rule, message: str, diagnostics: Optional[List[str]] = None) -> Dict:
+    final_message = append_diagnostic_text(message, diagnostics or [])
+
     if rule.decision == "allow":
-        return {}
+        return {"systemMessage": final_message} if final_message else {}
 
     if rule.decision == "block":
-        if event_name == "Stop":
+        if event_name in ("Stop", "SubagentStop"):
             return {
                 "decision": "block",
-                "reason": message,
-                "systemMessage": message,
+                "reason": final_message,
+                "systemMessage": final_message,
             }
         if event_name in ("PreToolUse", "PostToolUse"):
             return {
@@ -20,15 +22,22 @@ def build_response(event_name: str, rule: Rule, message: str) -> Dict:
                     "hookEventName": event_name,
                     "permissionDecision": "deny",
                 },
-                "systemMessage": message,
+                "systemMessage": final_message,
             }
 
-    return {"systemMessage": message} if message else {}
+    return {"systemMessage": final_message} if final_message else {}
+
+
+def append_diagnostic_text(message: str, diagnostics: List[str]) -> str:
+    if not diagnostics:
+        return message
+    visible = diagnostics[:3]
+    suffix = "" if len(diagnostics) <= 3 else f"；另有 {len(diagnostics) - 3} 条诊断"
+    diagnostic_text = "hook-terr 诊断：" + "；".join(visible) + suffix
+    return f"{message}\n\n{diagnostic_text}" if message else diagnostic_text
 
 
 def diagnostic_response(diagnostics):
     if not diagnostics:
         return {}
-    visible = diagnostics[:3]
-    suffix = "" if len(diagnostics) <= 3 else f"；另有 {len(diagnostics) - 3} 条诊断"
-    return {"systemMessage": "hook-terr 配置诊断：" + "；".join(visible) + suffix}
+    return {"systemMessage": append_diagnostic_text("", diagnostics)}

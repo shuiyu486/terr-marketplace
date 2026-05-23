@@ -1,16 +1,64 @@
 import re
 from typing import Any, Dict, List
 
-VALID_EVENTS = {"Stop", "PreToolUse", "PostToolUse", "UserPromptSubmit"}
+VALID_EVENTS = {"Stop", "SubagentStop", "PreToolUse", "PostToolUse", "UserPromptSubmit"}
 VALID_DECISIONS = {"allow", "warn", "block"}
 VALID_OPERATORS = {"equals", "contains", "regex", "not_regex", "in"}
 VALID_CHANNELS = {"windows_toast", "beep", "popup", "custom_command"}
 
 
 def validate_settings(settings: Any) -> List[str]:
+    errors = []
     if not isinstance(settings, dict):
         return ["settings must be a JSON object"]
-    return []
+
+    enabled = settings.get("enabled")
+    if enabled is not None and not isinstance(enabled, bool):
+        errors.append("settings.enabled must be a boolean")
+
+    notifications = settings.get("notifications", {})
+    if notifications is not None and not isinstance(notifications, dict):
+        errors.append("settings.notifications must be an object")
+    elif isinstance(notifications, dict):
+        for channel, config in notifications.items():
+            if channel not in VALID_CHANNELS:
+                errors.append(f"settings.notifications has unknown channel '{channel}'")
+                continue
+            if not isinstance(config, dict):
+                errors.append(f"settings.notifications.{channel} must be an object")
+                continue
+            channel_enabled = config.get("enabled")
+            if channel_enabled is not None and not isinstance(channel_enabled, bool):
+                errors.append(f"settings.notifications.{channel}.enabled must be a boolean")
+            if channel == "popup":
+                icon = config.get("icon")
+                if icon is not None and icon not in ("info", "warning", "error"):
+                    errors.append("settings.notifications.popup.icon must be one of info, warning, error")
+
+    events = settings.get("events", {})
+    if events is not None and not isinstance(events, dict):
+        errors.append("settings.events must be an object")
+    elif isinstance(events, dict):
+        for event_name, config in events.items():
+            if event_name not in VALID_EVENTS:
+                errors.append(f"settings.events has unknown event '{event_name}'")
+                continue
+            if not isinstance(config, dict):
+                errors.append(f"settings.events.{event_name} must be an object")
+                continue
+            event_enabled = config.get("enabled")
+            if event_enabled is not None and not isinstance(event_enabled, bool):
+                errors.append(f"settings.events.{event_name}.enabled must be a boolean")
+            channels = config.get("notifications")
+            if channels is not None:
+                if not isinstance(channels, list):
+                    errors.append(f"settings.events.{event_name}.notifications must be an array")
+                else:
+                    for channel in channels:
+                        if channel not in VALID_CHANNELS:
+                            errors.append(f"settings.events.{event_name}.notifications has unknown channel '{channel}'")
+
+    return errors
 
 
 def validate_rule(data: Any, source: str) -> List[str]:

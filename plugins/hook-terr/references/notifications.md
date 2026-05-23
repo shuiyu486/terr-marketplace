@@ -2,17 +2,19 @@
 
 `hook-terr` 支持四类通知器：`beep`、`windows_toast`、`popup`、`custom_command`。
 
+默认 Stop 通道是 `beep + popup`。通知失败 fail open，不会阻断 Claude Code 主流程，但简要诊断会追加到 hook `systemMessage`。
+
 ## beep
 
 Windows 下播放短提示音。默认启用。不要用于长时间循环或外部音频文件。
 
 ## windows_toast
 
-Windows 下显示 tray balloon 通知。默认静音，由 `beep` 负责声音，避免重复打扰。
+Windows 下显示 tray balloon 通知。默认可用，但不再作为 Stop 默认通道。可通过 `/hook-terr:configure` 或 settings 覆盖启用到 Stop 通道。
 
 ## popup
 
-结构化弹窗，支持标题、正文和图标。默认关闭。实现必须非阻塞：hook 只启动弹窗进程，不等待用户关闭。
+结构化弹窗，支持标题、正文和图标。默认作为 Stop 通道启用。实现必须非阻塞：hook 只启动弹窗进程，不等待用户关闭。
 
 ## custom_command
 

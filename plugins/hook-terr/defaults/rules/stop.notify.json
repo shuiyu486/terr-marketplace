@@ -12,7 +12,6 @@
   },
   "notify": {
     "enabled": true,
-    "channels": ["beep", "windows_toast"],
     "title": "Claude Code 提醒",
     "text": "任务可能已完成或需要你协助。"
   }

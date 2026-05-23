@@ -10,7 +10,7 @@ defaults/settings.json
 <project>/.claude/hook-terr/settings.json
 ```
 
-后加载的配置会深度覆盖前面的配置。
+后加载的配置会深度覆盖前面的配置。数组会整体替换，不做按元素合并。
 
 ## 规则加载顺序
 
@@ -21,6 +21,24 @@ defaults/rules/*.json
 ```
 
 规则以 `id` 为唯一键。项目规则覆盖全局规则，全局规则覆盖默认规则。
+
+## 通知通道来源
+
+`settings.events.<Event>.notifications` 是默认通知通道来源。`rule.notify.channels` 是可选的规则级覆盖；未设置时回退到事件默认通道。
+
+内置 `stop-notify` 不写死 channels，让 `/hook-terr:configure` 只改 settings 即可生效。默认 Stop 通道是 `beep + popup`；`SubagentStop` 默认关闭且不配置通知，避免子 agent 结束时弹提示音。
+
+## Slash commands
+
+- `/hook-terr` 只读取并显示当前生效配置。
+- `/hook-terr:configure` 会先询问写入全局还是项目 settings，然后更新 Stop 通知通道。
+
+写入位置：
+
+```text
+~/.claude/hook-terr/settings.json
+<project>/.claude/hook-terr/settings.json
+```
 
 ## Presets
 

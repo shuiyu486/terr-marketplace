@@ -25,13 +25,15 @@ def run(event_name: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
     if not rule:
         return diagnostic_response(diagnostics)
 
-    message, notification_results = execute(rule, context, settings)
+    message, notification_results, execution_diagnostics = execute(rule, context, settings)
     failures = [f"{result.channel}: {result.error}" for result in notification_results if not result.success]
-    if failures:
-        for failure in failures:
-            warn(f"hook-terr notifier failed: {failure}")
+    for failure in failures:
+        warn(f"hook-terr notifier failed: {failure}")
+    for diagnostic in execution_diagnostics:
+        warn(f"hook-terr notifier diagnostic: {diagnostic}")
 
-    response = build_response(event_name, rule, message)
+    response_diagnostics = diagnostics + execution_diagnostics + failures
+    response = build_response(event_name, rule, message, response_diagnostics)
     if response:
         return response
-    return diagnostic_response(diagnostics + failures)
+    return diagnostic_response(response_diagnostics)

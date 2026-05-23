@@ -1,29 +1,37 @@
 # hook-terr
 
-`hook-terr` 是一个个人工作流 hook runtime 插件，用于在 Claude Code 的 hook 事件中执行可配置规则。首版内置 Stop 提醒：当 Claude Code 准备结束本轮任务时，可通过 Windows 通知、提示音、结构化弹窗或自定义命令提醒用户。
+`hook-terr` 是一个个人工作流 hook runtime 插件，用于在 Claude Code 的 hook 事件中执行可配置规则。内置 Stop 提醒：当 Claude Code 准备结束本轮任务时，可通过 Windows 提示音、popup 弹窗、tray 通知或自定义命令提醒用户。
 
 ## 特性
 
-- 注册 `Stop`、`PreToolUse`、`PostToolUse`、`UserPromptSubmit` 四类 hook 入口。
-- 默认只启用 Stop 提醒规则，其它事件可通过规则文件扩展。
+- 注册 `Stop`、`SubagentStop`、`PreToolUse`、`PostToolUse`、`UserPromptSubmit` 五类 hook 入口。
+- 默认只启用主会话 Stop 提醒规则；`SubagentStop` 默认关闭，避免子 agent 结束时弹提示音。
 - 支持插件内默认配置、用户全局覆盖和项目覆盖。
+- 默认 Stop 通道为 Windows 短提示音 + popup 弹窗。
 - 支持 Windows tray 通知、提示音、结构化弹窗和高级自定义命令。
-- hook 异常 fail open，通知失败不会阻断 Claude Code 主流程。
+- hook 异常 fail open，通知失败不会阻断 Claude Code 主流程，并会把简要诊断追加到 `systemMessage`。
+
+## Commands
+
+- `/hook-terr` — 显示当前生效的 hook-terr 配置。
+- `/hook-terr:configure` — 交互式配置 Stop 通知通道，并选择写入全局或项目 settings 覆盖层。
 
 ## 配置来源
 
 加载优先级：
 
 ```text
-plugin defaults/presets < ~/.claude/hook-terr < <project>/.claude/hook-terr
+defaults/settings.json
+~/.claude/hook-terr/settings.json
+<project>/.claude/hook-terr/settings.json
 ```
 
-随插件分发的默认文件：
+规则加载优先级：
 
 ```text
-defaults/settings.json
 defaults/rules/*.json
-presets/*.json
+~/.claude/hook-terr/rules/*.json
+<project>/.claude/hook-terr/rules/*.json
 ```
 
 用户全局覆盖：
@@ -40,19 +48,23 @@ presets/*.json
 <project>/.claude/hook-terr/rules/*.json
 ```
 
+`presets/` 随插件分发，但不会自动加载；需要复制到全局或项目 settings 后才会生效。
+
 ## 默认行为
 
 默认 Stop 规则会：
 
 - 返回 `systemMessage`，提醒 Claude 检查是否需要通知用户。
-- 尝试播放短提示音。
-- 尝试发送 Windows tray 通知。
+- 尝试播放 Windows 短提示音。
+- 尝试显示 Windows popup 弹窗。
 
-非 Windows 平台会正常降级，通知器失败只产生诊断，不会导致 hook 非 0 退出。
+Windows tray balloon notification 仍然可用，但不再是默认 Stop 通道；可通过 `/hook-terr:configure` 切换启用。
 
-## 自定义弹窗和命令
+## 通知通道
 
-`popup` 是结构化弹窗，只允许配置标题、正文和图标。`custom_command` 是高级能力，默认关闭；启用后等价于执行本机命令，只应配置可信命令。
+`settings.events.<Event>.notifications` 是事件默认通知通道来源。`rule.notify.channels` 是可选的规则级覆盖；未设置时回退到事件默认通道。内置 `stop-notify` 不写死 channels，让 `/hook-terr:configure` 只改 settings 即可生效。
+
+`popup` 默认作为 Stop 通道启用，但仍可在 settings 覆盖层关闭。`custom_command` 是高级能力，默认关闭；启用后等价于执行本机命令，只应配置可信命令。
 
 ## 扩展规则
 
