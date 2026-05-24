@@ -31,8 +31,8 @@ defaults/rules/*.json
 ## Slash commands
 
 - `/hook-terr` 只读取并显示当前生效配置。
-- `/hook-terr:configure` 会先询问写入全局还是项目 settings，然后更新 Stop 通知通道。
-- `/hook-terr:sound` 会试听 Windows `.wav`，并将所选 sound 提示音写入全局 settings。
+- `/hook-terr:configure` 会先询问写入全局还是项目 settings，然后更新 Stop 通知通道。选择 `sound` 时，会在目标 settings 层显式初始化 `notifications.sound.wavPath` 为 `C:\\Windows\\Media\\tada.wav`，除非该层已有自定义 wavPath。
+- `/hook-terr:sound` 可直接保存默认提示音，或打开外部 PowerShell picker 试听后，将所选 sound 提示音写入全局 settings。
 
 `/hook-terr:configure` 写入位置：
 

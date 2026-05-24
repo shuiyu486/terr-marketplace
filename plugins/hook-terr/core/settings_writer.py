@@ -5,6 +5,7 @@ from copy import deepcopy
 from typing import Any, Dict, List
 
 VALID_CHANNELS = {"sound", "windows_toast", "popup", "custom_command"}
+DEFAULT_SOUND_WAV_PATH = r"C:\Windows\Media\tada.wav"
 
 
 def settings_path(scope: str, cwd: str) -> str:
@@ -41,6 +42,8 @@ def write_stop_channels(scope: str, cwd: str, channels: List[str]) -> str:
     for channel in channels:
         channel_config = notifications.setdefault(channel, {})
         channel_config["enabled"] = True
+        if channel == "sound":
+            channel_config.setdefault("wavPath", DEFAULT_SOUND_WAV_PATH)
 
     write_settings(path, settings)
     return path
@@ -52,7 +55,7 @@ def write_sound(cwd: str, wav_path: str) -> str:
     notifications = settings.setdefault("notifications", {})
     sound = notifications.setdefault("sound", {})
     sound["enabled"] = True
-    sound["wavPath"] = wav_path
+    sound["wavPath"] = wav_path or DEFAULT_SOUND_WAV_PATH
     replace_stop_channel(settings, "beep", "sound")
     write_settings(path, settings)
     return path

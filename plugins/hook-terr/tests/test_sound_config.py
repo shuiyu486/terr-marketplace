@@ -11,7 +11,7 @@ if PLUGIN_ROOT not in sys.path:
 
 from core.models import HookContext
 from core.schema import validate_settings
-from core.settings_writer import write_sound
+from core.settings_writer import DEFAULT_SOUND_WAV_PATH, write_stop_channels, write_sound
 from notifiers import sound
 
 
@@ -44,6 +44,35 @@ class SoundConfigTests(unittest.TestCase):
                 settings = json.load(handle)
 
             self.assertEqual(settings["events"]["Stop"]["notifications"], ["sound", "popup"])
+
+    def test_write_stop_channels_initializes_default_sound_config(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home}):
+            cwd = os.path.join(home, "project")
+            os.makedirs(cwd)
+
+            settings_path = write_stop_channels("global", cwd, ["sound"])
+
+            with open(settings_path, "r", encoding="utf-8") as handle:
+                settings = json.load(handle)
+
+            self.assertEqual(settings["events"]["Stop"]["notifications"], ["sound"])
+            self.assertTrue(settings["notifications"]["sound"]["enabled"])
+            self.assertEqual(settings["notifications"]["sound"]["wavPath"], DEFAULT_SOUND_WAV_PATH)
+
+    def test_write_stop_channels_preserves_existing_sound_wav_path(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home}):
+            cwd = os.path.join(home, "project")
+            os.makedirs(cwd)
+            custom_path = r"C:\Windows\Media\notify.wav"
+            write_sound(cwd, custom_path)
+
+            settings_path = write_stop_channels("global", cwd, ["sound", "popup"])
+
+            with open(settings_path, "r", encoding="utf-8") as handle:
+                settings = json.load(handle)
+
+            self.assertEqual(settings["events"]["Stop"]["notifications"], ["sound", "popup"])
+            self.assertEqual(settings["notifications"]["sound"]["wavPath"], custom_path)
 
     def test_validate_settings_requires_sound_wav_path_string(self):
         errors = validate_settings({"notifications": {"sound": {"wavPath": 123}}})

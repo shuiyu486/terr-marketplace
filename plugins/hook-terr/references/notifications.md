@@ -6,7 +6,14 @@
 
 ## sound
 
-Windows 下播放 `.wav` 提示音。默认使用 `C:\\Windows\\Media\\tada.wav`，可通过 `/hook-terr:sound` 试听并保存全局偏好。
+Windows 下播放 `.wav` 提示音。默认使用 `C:\\Windows\\Media\\tada.wav`。
+
+`/hook-terr:sound` 支持两种路径：
+
+- `Use default`：跳过试听，直接保存默认 `tada.wav`。
+- `Open picker`：打开外部 PowerShell 试听菜单，用户试听后把 id、alias 或 wavPath 回填给 Claude Code，再写入全局 settings。
+
+外部 picker 只负责试听和输出选择，不直接修改 settings。
 
 ## windows_toast
 

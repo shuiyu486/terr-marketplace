@@ -14,8 +14,8 @@
 ## Commands
 
 - `/hook-terr` — 显示当前生效的 hook-terr 配置。
-- `/hook-terr:configure` — 交互式配置 Stop 通知通道，并选择写入全局或项目 settings 覆盖层。
-- `/hook-terr:sound` — 试听 Windows `.wav` 并保存全局 sound 提示音。
+- `/hook-terr:configure` — 交互式配置 Stop 通知通道，并选择写入全局或项目 settings 覆盖层；启用 `sound` 时会补齐默认提示音。
+- `/hook-terr:sound` — 直接保存默认 sound 提示音，或打开外部 PowerShell picker 试听后保存全局偏好。
 
 ## 配置来源
 
@@ -65,7 +65,7 @@ Windows tray balloon notification 仍然可用，但不再是默认 Stop 通道�
 
 `settings.events.<Event>.notifications` 是事件默认通知通道来源。`rule.notify.channels` 是可选的规则级覆盖；未设置时回退到事件默认通道。内置 `stop-notify` 不写死 channels，让 `/hook-terr:configure` 只改 settings 即可生效。
 
-`sound` 默认播放 `C:\\Windows\\Media\\tada.wav`，可通过 `/hook-terr:sound` 试听并写入全局偏好。`popup` 默认作为 Stop 通道启用，但仍可在 settings 覆盖层关闭。`custom_command` 是高级能力，默认关闭；启用后等价于执行本机命令，只应配置可信命令。
+`sound` 默认播放 `C:\\Windows\\Media\\tada.wav`。`/hook-terr:sound` 可跳过试听直接保存默认音效；需要试听时会打开外部 PowerShell picker，用户选好后回填 id、alias 或 wavPath 再写入全局偏好。`popup` 默认作为 Stop 通道启用，但仍可在 settings 覆盖层关闭。`custom_command` 是高级能力，默认关闭；启用后等价于执行本机命令，只应配置可信命令。
 
 ## 扩展规则
 
