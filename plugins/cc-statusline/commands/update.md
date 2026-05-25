@@ -67,12 +67,7 @@ if (-not (Test-Path $settingsPath)) {
     Write-Output "ERROR: settings.json not found. Run /cc-statusline:setup first."
     exit 1
 }
-$settings = Get-Content $settingsPath -Raw | ConvertFrom-Json
-$currentCmd = $settings.statusLine.command
-$currentVersion = "unknown"
-if ($currentCmd -match 'cc-statusline[/\\]([\d.]+)[/\\]') {
-    $currentVersion = $matches[1]
-}
+$currentVersion = node -e "const fs = require('fs'); try { const s = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); const m = String(s.statusLine?.command ?? '').match(/cc-statusline[/\\\\]([\\d.]+)[/\\\\]/); process.stdout.write(m?.[1] ?? 'unknown'); } catch { process.stdout.write('unknown'); }" $settingsPath
 Write-Output "CURRENT_VERSION=$currentVersion"
 ```
 
@@ -193,12 +188,11 @@ node "<CACHE_DIR>/dist/index.js"
 **Windows PowerShell — UTF-8 without BOM:**
 
 ```powershell
-$newCmd = "node `"$($cacheDir -replace '\\','/')/dist/index.js`""
-$settings = Get-Content $settingsPath -Raw | ConvertFrom-Json
-$settings.statusLine.command = $newCmd
-$json = $settings | ConvertTo-Json -Depth 10
-$json = $json -replace '\\/', '/'  # unescape forward slashes
-[System.IO.File]::WriteAllText($settingsPath, $json, (New-Object System.Text.UTF8Encoding $false))
+node -e "const fs = require('fs'); const p = process.argv[1]; const cacheDir = process.argv[2].replace(/\\\\/g, '/'); const quote = String.fromCharCode(34); const s = JSON.parse(fs.readFileSync(p, 'utf8')); s.statusLine = s.statusLine || { type: 'command' }; s.statusLine.type = 'command'; s.statusLine.command = 'node ' + quote + cacheDir + '/dist/index.js' + quote; fs.writeFileSync(p, JSON.stringify(s, null, 2) + '\n', 'utf8');" $settingsPath $cacheDir
+if ($LASTEXITCODE -ne 0) {
+    Write-Output "ERROR: settings.json update failed"
+    exit 1
+}
 Write-Output "PATH_UPDATED"
 ```
 
@@ -213,7 +207,67 @@ fs.writeFileSync('$SETTINGS', JSON.stringify(s, null, 2));
 "
 ```
 
-## Step 8: Restart Running Statusline
+## Step 8: Update Plugin Registry
+
+Update Claude Code's plugin registry so slash commands are registered from the same cached version as the status line runtime.
+
+**Windows PowerShell — use Node.js to preserve JSON encoding:**
+
+```powershell
+node -e "
+const fs = require('fs');
+const p = process.argv[1];
+const installPath = process.argv[2];
+const version = process.argv[3];
+const gitCommitSha = process.argv[4];
+const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+const key = 'cc-statusline@terr-marketplace';
+const entries = data.installedPlugins?.[key] ?? data.plugins?.[key] ?? data[key];
+if (!Array.isArray(entries) || entries.length === 0) throw new Error('cc-statusline plugin registry entry not found');
+for (const entry of entries) {
+  if (entry.scope === 'user' || entries.length === 1) {
+    entry.installPath = installPath;
+    entry.version = version;
+    entry.lastUpdated = new Date().toISOString();
+    if (gitCommitSha) entry.gitCommitSha = gitCommitSha;
+  }
+}
+fs.writeFileSync(p, JSON.stringify(data, null, 2) + '\n', 'utf8');
+" (Join-Path $claudeDir 'plugins\installed_plugins.json') $cacheDir $latestVersion (git -C $marketplaceDir rev-parse HEAD)
+if ($LASTEXITCODE -ne 0) {
+    Write-Output "ERROR: plugin registry update failed"
+    exit 1
+}
+Write-Output "PLUGIN_REGISTRY_UPDATED"
+```
+
+**macOS/Linux:**
+
+```bash
+node -e "
+const fs = require('fs');
+const p = process.argv[1];
+const installPath = process.argv[2];
+const version = process.argv[3];
+const gitCommitSha = process.argv[4];
+const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+const key = 'cc-statusline@terr-marketplace';
+const entries = data.installedPlugins?.[key] ?? data.plugins?.[key] ?? data[key];
+if (!Array.isArray(entries) || entries.length === 0) throw new Error('cc-statusline plugin registry entry not found');
+for (const entry of entries) {
+  if (entry.scope === 'user' || entries.length === 1) {
+    entry.installPath = installPath;
+    entry.version = version;
+    entry.lastUpdated = new Date().toISOString();
+    if (gitCommitSha) entry.gitCommitSha = gitCommitSha;
+  }
+}
+fs.writeFileSync(p, JSON.stringify(data, null, 2) + '\n', 'utf8');
+" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/installed_plugins.json" "$CACHE_DIR" "$LATEST_VERSION" "$(git -C "$MARKETPLACE_DIR" rev-parse HEAD)" || { echo "ERROR: plugin registry update failed"; exit 1; }
+echo "PLUGIN_REGISTRY_UPDATED"
+```
+
+## Step 9: Restart Running Statusline
 
 Stop existing cc-statusline Node processes so the next Claude Code status-line refresh loads the updated build. Match only Node processes whose command line points at `plugins/cache/terr-marketplace/cc-statusline/*/dist/index.js`.
 
@@ -244,7 +298,7 @@ done < <(ps -eo pid=,args= | awk -v root="$CACHE_ROOT" '$0 ~ /node/ && index($0,
 echo "STATUSLINE_RESTARTED=$STOPPED"
 ```
 
-## Step 9: Clean Old Versions
+## Step 10: Clean Old Versions
 
 Remove outdated cached versions, keeping only the current one:
 
@@ -269,16 +323,17 @@ done
 echo "OLD_CLEANED"
 ```
 
-## Step 10: Verify
+## Step 11: Verify
 
-Read `settings.json` and confirm the path points to the new version:
+Read `settings.json` and `installed_plugins.json` to confirm both the status-line runtime and slash-command registry point to the new version:
 
 ```bash
 cat ~/.claude/settings.json | grep -A2 statusLine
+cat ~/.claude/plugins/installed_plugins.json | grep -A8 'cc-statusline@terr-marketplace'
 ```
 
 Tell the user:
 
 > **Updated to v{LATEST_VERSION}!** The status line now runs from the latest build. Existing cc-statusline processes were stopped, so Claude Code will start the updated status line on the next refresh.
 > 
-> Previous version was v{CURRENT_VERSION}. Old cached versions have been cleaned up.
+> Previous version was v{CURRENT_VERSION}. Old cached versions have been cleaned up. Run `/reload-plugins` to refresh slash command registration in the current Claude Code session.

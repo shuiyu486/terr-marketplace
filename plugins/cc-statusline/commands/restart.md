@@ -7,6 +7,8 @@ allowed-tools: ["Bash", "PowerShell"]
 
 Restart the long-running cc-statusline process without changing configuration or rebuilding. Claude Code will start it again on the next status-line refresh.
 
+This only restarts the status-line runtime. If slash commands are stale or missing after an update, run `/reload-plugins` to refresh Claude Code's plugin command registration.
+
 This command only targets Node processes whose command line points at:
 
 ```text
@@ -46,4 +48,4 @@ echo "Restarted cc-statusline processes: $STOPPED"
 
 Tell the user:
 
-> cc-statusline restart requested. Claude Code will launch a fresh status line process on the next refresh.
+> cc-statusline restart requested. Claude Code will launch a fresh status line process on the next refresh. If slash commands are stale or missing, run `/reload-plugins`.

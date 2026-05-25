@@ -47,4 +47,5 @@ cc-statusline 可能同时存在开发副本、marketplace 副本和运行时 ca
 - 修改任一 `CLAUDE.local.md` 或 `references/*.md` 后，把同名文件同步到其它 cc-statusline 源码副本。
 - marketplace 副本通常是发布入口；运行时 cache 副本只用于 Claude Code 实际执行。
 - 修改源码后，除 build 外还要确保运行时 cache 使用的新 `dist/`，否则 settings.json 仍可能指向旧代码。
+- 更新 cache 版本时必须同步 Claude Code 的 `plugins/installed_plugins.json`，否则 slash command 注册仍会指向旧 installPath。
 - 若不确定有哪些副本，搜索 `plugins/**/cc-statusline` 或检查 Claude Code 插件 marketplace/cache 目录，不把搜索结果写回文档。
