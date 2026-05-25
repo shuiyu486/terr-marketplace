@@ -19,6 +19,7 @@ const DEFAULT_CONFIG: Config = {
   showRunningTools: true,
   showCompletedTools: true,
   showAgentTracking: true,
+  agentDisplayMode: "compact",
   showTodoProgress: true,
   showUsageLimits: true,
   codexProbeIntervalMinutes: 3,

@@ -28,6 +28,7 @@ If no config file exists, these are the defaults:
   "showRunningTools": true,
   "showCompletedTools": true,
   "showAgentTracking": true,
+  "agentDisplayMode": "compact",
   "showTodoProgress": true,
   "showUsageLimits": true,
   "codexProbeIntervalMinutes": 3
@@ -43,6 +44,7 @@ Summarize the current config to the user. For each toggle, show its state with a
   ✓ Effort 级别    ✓ Token 统计    ✓ 当前路径
   ✓ Tool 主开关    ✓ Running tools    ✓ Completed tools
   ✓ Agent 追踪    ✓ Todo 进度    ✓ 用量限制
+  Agent 显示: compact
   上下文阈值: 警告 70% / 危险 90%
   Codex 用量刷新: 3 分钟
 ```
@@ -82,9 +84,17 @@ Present threshold preset options. Mark the preset closest to current values as "
 3. label: "警告 70% / 危险 90%", description: "较不敏感（默认）"
 4. label: "保持当前不变", description: "当前: 警告 {WARN}% / 危险 {DANGER}%"
 
-Because Question 1 is split into three sub-questions and AskUserQuestion supports at most 4 questions per call, ask Question 3 in a second AskUserQuestion call after the first answers are collected.
+Because Question 1 is split into three sub-questions and AskUserQuestion supports at most 4 questions per call, ask Questions 3-4 in a second AskUserQuestion call after the first answers are collected.
 
-**Question 3** (single select): "Codex 用量刷新间隔"
+**Question 3** (single select): "Agent 显示模式"
+
+Present display mode options. Mark the current mode as "(Recommended)":
+
+1. label: "compact", description: "默认值，单行摘要：运行中 agent 明细 + 已完成 agent 按类型聚合"
+2. label: "multiline", description: "多行展开：显示最近保留的全部 agent，包含 model"
+3. label: "保持当前", description: "当前: {MODE}"
+
+**Question 4** (single select): "Codex 用量刷新间隔"
 
 Present interval preset options. Mark the current or closest value as "(Recommended)":
 
@@ -99,12 +109,13 @@ After the user answers:
 
 1. **Question 1**: For each item in the user's selected array, flip that feature's boolean value from the current config. Items NOT selected keep their current value.
 2. **Question 2**: If the user picked a preset (1-3), use those threshold values. If the user picked "保持当前不变" (4), keep the current threshold values.
-3. **Question 3**: If the user picked an interval preset (1-3), set `codexProbeIntervalMinutes` to 1, 3, or 5. If the user picked "保持当前" (4), keep the current value. Clamp any manually provided value to 1-10.
-4. Write the final config using the Write Config section below.
+3. **Question 3**: If the user picked `compact` or `multiline`, set `agentDisplayMode` to that value. If the user picked "保持当前" (3), keep the current value.
+4. **Question 4**: If the user picked an interval preset (1-3), set `codexProbeIntervalMinutes` to 1, 3, or 5. If the user picked "保持当前" (4), keep the current value. Clamp any manually provided value to 1-10.
+5. Write the final config using the Write Config section below.
 
 ## Write Config
 
-After the user confirms their choices, write the config file:
+After the user confirms their choices, write the config file. Pass `agentDisplayMode` as `compact` or `multiline`:
 
 **macOS/Linux:**
 
@@ -121,15 +132,16 @@ const config = {
   showRunningTools: process.argv[5] === 'true',
   showCompletedTools: process.argv[6] === 'true',
   showAgentTracking: process.argv[7] === 'true',
-  showTodoProgress: process.argv[8] === 'true',
-  showUsageLimits: process.argv[9] === 'true',
-  codexProbeIntervalMinutes: Math.min(10, Math.max(1, parseInt(process.argv[10], 10) || 3)),
-  ctxWarnThreshold: parseInt(process.argv[11], 10),
-  ctxDangerThreshold: parseInt(process.argv[12], 10)
+  agentDisplayMode: ['compact', 'multiline'].includes(process.argv[8]) ? process.argv[8] : 'compact',
+  showTodoProgress: process.argv[9] === 'true',
+  showUsageLimits: process.argv[10] === 'true',
+  codexProbeIntervalMinutes: Math.min(10, Math.max(1, parseInt(process.argv[11], 10) || 3)),
+  ctxWarnThreshold: parseInt(process.argv[12], 10),
+  ctxDangerThreshold: parseInt(process.argv[13], 10)
 };
 fs.writeFileSync(p, JSON.stringify(config, null, 2));
 console.log('Config saved to', p);
-" "<showEffort>" "<showTokensLine>" "<showPath>" "<showToolActivity>" "<showRunningTools>" "<showCompletedTools>" "<showAgentTracking>" "<showTodoProgress>" "<showUsageLimits>" "<codexProbeIntervalMinutes>" "<ctxWarn>" "<ctxDanger>"
+" "<showEffort>" "<showTokensLine>" "<showPath>" "<showToolActivity>" "<showRunningTools>" "<showCompletedTools>" "<showAgentTracking>" "<agentDisplayMode>" "<showTodoProgress>" "<showUsageLimits>" "<codexProbeIntervalMinutes>" "<ctxWarn>" "<ctxDanger>"
 ```
 
 **Windows (PowerShell):**
@@ -145,6 +157,7 @@ $config = @{
     showRunningTools = $showRunningTools
     showCompletedTools = $showCompletedTools
     showAgentTracking = $showAgentTracking
+    agentDisplayMode = if ($agentDisplayMode -eq 'multiline') { 'multiline' } else { 'compact' }
     showTodoProgress = $showTodoProgress
     showUsageLimits = $showUsageLimits
     codexProbeIntervalMinutes = [Math]::Min(10, [Math]::Max(1, [int]$codexProbeIntervalMinutes))

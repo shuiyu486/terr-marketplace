@@ -25,11 +25,21 @@
 ## Agent Tracking (`features/agents.ts`)
 
 - 数据源：`tool_use` name 为 `Task` 或 `Agent`，以及对应 `tool_result`
-- 字段：`subagent_type`、`model`、`description`、`startTime`
+- 字段：`subagent_type`、`model`、`description`、`startTime`、可选 `endTime`
 - 按 `tool_use_id` 去重，保留最近 10 条
-- 渲染最多 3 条 running/completed，耗时格式 `Xm Ys`
+- `agentDisplayMode: "compact"` 默认单行摘要：最近 running 明细 + completed 按 agent 类型聚合
+- `agentDisplayMode: "multiline"` 多行展开最近保留的全部 agent，并在类型后显示 model
+- 展示时 `feature-dev:code-reviewer` 会缩短为 `code-reviewer`
 
-示例：`◷ explore: Finding auth code (2m 15s)`
+compact 示例：`◷ code-reviewer: 审查正确性 2m │ ✓ code-reviewer ×2 │ ✓ code-explorer ×1`
+
+multiline 示例：
+```text
+agent: 3 tracked
+       ├─ ◷ code-reviewer(sonnet): 审查正确性 2m 15s
+       ├─ ✓ code-reviewer(sonnet): 审查项目惯例
+       └─ ✓ code-explorer(sonnet): 分析渲染路径
+```
 
 ## Todo Progress (`features/todos.ts`)
 

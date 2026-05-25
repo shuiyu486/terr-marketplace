@@ -80,6 +80,7 @@ export interface AgentEvent {
   description: string;
   status: "running" | "completed";
   startTime: number;
+  endTime?: number;
 }
 
 export interface TodoItem {
@@ -129,6 +130,7 @@ export interface Config {
   showRunningTools: boolean;
   showCompletedTools: boolean;
   showAgentTracking: boolean;
+  agentDisplayMode: "compact" | "multiline";
   showTodoProgress: boolean;
   showUsageLimits: boolean;
   codexProbeIntervalMinutes: number;

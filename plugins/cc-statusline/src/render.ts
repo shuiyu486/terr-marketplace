@@ -87,6 +87,17 @@ function now(): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
 }
 
+function pushLabeledLines(lines: string[], label: string, labelColor: number, value: string | null): void {
+  if (!value) return;
+
+  const [first, ...rest] = value.split("\n");
+  lines.push(`${color(label, labelColor)}: ${first}`);
+  const indent = " ".repeat(label.length + 2);
+  for (const line of rest) {
+    lines.push(`${indent}${line}`);
+  }
+}
+
 export function render(
   data: StatusLineData,
   ctx: ParseResult,
@@ -126,8 +137,7 @@ export function render(
   if (toolLine) lines.push(`${color("tools", 74)}: ${toolLine}`);
 
   // Line 5: agent tracking
-  const agentLine = renderAgents(ctx.agents, cfg);
-  if (agentLine) lines.push(`${color("agent", 141)}: ${agentLine}`);
+  pushLabeledLines(lines, "agent", 141, renderAgents(ctx.agents, cfg));
 
   // Line 6: todo progress
   const todoLine = renderTodos(

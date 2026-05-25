@@ -19,6 +19,7 @@
   "showRunningTools": true,
   "showCompletedTools": true,
   "showAgentTracking": true,
+  "agentDisplayMode": "compact",
   "showTodoProgress": true,
   "showUsageLimits": true,
   "ctxWarnThreshold": 70,
@@ -38,6 +39,7 @@
 | `showRunningTools` | boolean | true | 显示运行中工具 |
 | `showCompletedTools` | boolean | true | 显示已完成工具聚合 |
 | `showAgentTracking` | boolean | true | 显示 agent 追踪行 |
+| `agentDisplayMode` | `"compact" \| "multiline"` | `"compact"` | Agent 显示模式；compact 单行摘要，multiline 多行展开并显示 model |
 | `showTodoProgress` | boolean | true | 显示 todo 进度 |
 | `showUsageLimits` | boolean | true | 显示 usage limits；缺 stdin 数据时可触发 Codex fallback |
 | `ctxWarnThreshold` | number | 70 | 上下文黄色阈值 |
