@@ -1,3 +1,4 @@
+import * as crypto from "crypto";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -25,7 +26,8 @@ function hasContextUsage(current: ContextWindow): boolean {
 function contextCachePath(transcriptPath: string): string | null {
   if (!transcriptPath) return null;
   const name = path.basename(transcriptPath, path.extname(transcriptPath));
-  return path.join(CACHE_DIR, `ctx-${name}.json`);
+  const key = crypto.createHash("sha1").update(path.resolve(transcriptPath)).digest("hex").slice(0, 12);
+  return path.join(CACHE_DIR, `ctx-${name}-${key}.json`);
 }
 
 function readCachedContextWindow(transcriptPath: string): ContextWindow | null {

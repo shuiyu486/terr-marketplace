@@ -26,6 +26,15 @@ stdin StatusLineData
 6. `render(...)` 生成 ANSI 字符串并持久化最后可信 context 快照
 7. `fs.writeSync(1, msg + "\n")` 即时输出
 
+## 缓存文件
+
+缓存目录：`os.tmpdir()/cc-statusline-cache/`
+
+| 文件 | 用途 |
+|------|------|
+| `ses-{transcript-UUID}.txt` | transcript 派生的 session/API/tool/agent/todo 状态 |
+| `ctx-{transcript-UUID}-{pathHash}.json` | 最后一次可信 `context_window` 快照；`pathHash` 来自完整 transcript 路径，避免同名文件串会话 |
+
 ## SessionCacheV2
 
 缓存位置：`os.tmpdir()/cc-statusline-cache/ses-{transcript-UUID}.txt`
