@@ -20,10 +20,10 @@ stdin StatusLineData
 `index.ts` 的主路径：
 1. `loadConfig()` 合并用户配置与 `DEFAULT_CONFIG`
 2. `createCodexLimitsService(cfg)` 创建 usage fallback 服务
-3. `readStdinLoop(async data => ...)` 长驻读取完整 JSON frame
+3. `readStdinLoop(async data => ...)` 读取本次命令 stdin 中的完整 JSON frame
 4. `ensureFresh(data, { maxWaitMs: 3000 })` 可选补齐 `rate_limits`
 5. `parseTranscript(data.transcript_path)` 得到 `ParseResult`
-6. `render(...)` 生成 ANSI 字符串
+6. `render(...)` 生成 ANSI 字符串并持久化最后可信 context 快照
 7. `fs.writeSync(1, msg + "\n")` 即时输出
 
 ## SessionCacheV2
@@ -60,12 +60,13 @@ stdin StatusLineData
 - `api`：当前 transcript 历史累计；按 transcript UUID cache 持久。
 - 两者共用同一 delta 计算，但生命周期不同。
 
-## stdin 长驻循环
+## stdin 循环
 
+- Claude Code 会按状态栏刷新重新运行 command，不能依赖 Node module-level 状态跨刷新保留。
 - `readStdinLoop(handler)` 是主用路径：累积 chunk，完整 JSON parse 成功后调用 async handler。
 - end/error 前必须等待 pending handler，避免一次性 stdin 调用在 Codex probe 完成前退出。
 - `readStdin()` 仅用于兼容和手动测试。
-- handler 内异常应吞掉单帧错误，不能杀死长驻进程。
+- handler 内异常应吞掉单帧错误，不能让单次刷新失败影响后续刷新。
 
 ## Codex usage fallback
 

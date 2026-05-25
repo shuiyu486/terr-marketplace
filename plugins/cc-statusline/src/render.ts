@@ -1,3 +1,6 @@
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import type { StatusLineData, Config, ParseResult } from "./types";
 import { fmtW } from "./format";
 import { color } from "./colors";
@@ -8,6 +11,7 @@ import { renderLimits } from "./features/limits";
 
 type ContextWindow = StatusLineData["context_window"];
 
+const CACHE_DIR = path.join(os.tmpdir(), "cc-statusline-cache");
 let lastContextWindow: ContextWindow | null = null;
 
 function hasContextUsage(current: ContextWindow): boolean {
@@ -18,13 +22,45 @@ function hasContextUsage(current: ContextWindow): boolean {
   );
 }
 
-function stableContextWindow(current: ContextWindow): ContextWindow {
+function contextCachePath(transcriptPath: string): string | null {
+  if (!transcriptPath) return null;
+  const name = path.basename(transcriptPath, path.extname(transcriptPath));
+  return path.join(CACHE_DIR, `ctx-${name}.json`);
+}
+
+function readCachedContextWindow(transcriptPath: string): ContextWindow | null {
+  const cachePath = contextCachePath(transcriptPath);
+  if (!cachePath) return null;
+
+  try {
+    const parsed = JSON.parse(fs.readFileSync(cachePath, "utf8"));
+    const value = parsed?.context_window;
+    if (value && hasContextUsage(value)) return value as ContextWindow;
+  } catch {}
+
+  return null;
+}
+
+function writeCachedContextWindow(transcriptPath: string, contextWindow: ContextWindow): void {
+  const cachePath = contextCachePath(transcriptPath);
+  if (!cachePath) return;
+
+  try {
+    fs.mkdirSync(CACHE_DIR, { recursive: true });
+    const tmpPath = `${cachePath}.${process.pid}.tmp`;
+    fs.writeFileSync(tmpPath, JSON.stringify({ version: 1, context_window: contextWindow }), "utf8");
+    fs.renameSync(tmpPath, cachePath);
+  } catch {}
+}
+
+function stableContextWindow(current: ContextWindow, transcriptPath: string): ContextWindow {
   if (hasContextUsage(current)) {
     lastContextWindow = current;
+    writeCachedContextWindow(transcriptPath, current);
     return current;
   }
 
-  return lastContextWindow ?? current;
+  return lastContextWindow ?? readCachedContextWindow(transcriptPath) ?? current;
 }
 
 function ctxColor(pct: number, cfg: Config): string {
@@ -54,7 +90,7 @@ export function render(
   ctx: ParseResult,
   cfg: Config,
 ): string {
-  const contextWindow = stableContextWindow(data.context_window);
+  const contextWindow = stableContextWindow(data.context_window, data.transcript_path);
   const model = color(data.model.display_name, 111);
   const effort = cfg.showEffort ? ` ${effortColor(data.effort.level)}` : "";
   const pct = Math.round(contextWindow.used_percentage);

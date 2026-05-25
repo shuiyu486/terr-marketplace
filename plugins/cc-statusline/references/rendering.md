@@ -28,7 +28,7 @@ Line 7: path: /dir                                                        [showP
 
 ## Context 兜底
 
-流式输出期间 stdin 可能短暂给出 `context_window` 的 `0/0` 帧。渲染层应保留上一帧有效 context，避免显示 `ctx:0w/100w` 闪烁。
+刷新期间 stdin 可能短暂给出 `context_window` 的 `0/0` 帧。渲染层应按 transcript 缓存上一帧有效 context，避免跨进程刷新时显示 `ctx:0/0 0%` 闪烁。
 
 ## ANSI 256 色约定
 

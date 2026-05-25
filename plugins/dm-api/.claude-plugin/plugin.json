@@ -1,6 +1,6 @@
 {
   "name": "dm-api",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "大漠插件(DaMao Plugin) API 文档查询 skill。查询键鼠模拟、找图找色、文字识别、后台绑定、内存读写、窗口操作等 465 个 API 函数的用法、参数和示例。",
   "author": {
     "name": "terrapin"

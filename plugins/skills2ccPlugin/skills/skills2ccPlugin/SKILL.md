@@ -1,10 +1,7 @@
 ---
 name: skills2ccPlugin
-description: >-
-  将 skill 转换为 terr-marketplace 可安装插件。当用户想把 skill 发布到 marketplace，
-  将 skill-creator 的输出打包为插件，或提到"发布 skill"、"打包插件"、"注册到 marketplace"、
-  "让 skill 能通过 /plugin install 安装"时使用。即使措辞不同（"上线"、"分享"、"分发"），
-  只要意图是将 skill 变成 marketplace 中的可安装单元，就应该触发。
+description: 将 skill 目录转换为 terr-marketplace 可安装插件，生成 plugin.json 并注册 marketplace 条目。
+disable-model-invocation: true
 ---
 
 # skills2ccPlugin

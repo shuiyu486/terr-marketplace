@@ -1,6 +1,7 @@
 ---
 name: plugin-fork-sync
 description: Command-only helper for `/plugin-fork-sync`.
+disable-model-invocation: true
 compatibility: Claude Code on Windows or Unix; uses bundled references for first-run and update-run workflows; never overwrites plugin files without explicit user approval; after the user confirms a sync/apply action, commit and push the sync changes automatically when the repository state is safe.
 ---
 

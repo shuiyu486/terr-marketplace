@@ -1,7 +1,7 @@
 ---
 name: config-sync
-description: |
-  Two-way sync, diff, and quick compatibility check of terminal configs (WezTerm, Nushell, Starship, Claude Code) between local environment and ccNovaTerm project. Manages 5 config files + 2 reference docs with auto-fetch from remote git; auto-protects proxy settings. Triggers on: "同步到项目/本地", "sync/push/pull/apply configs", "对比/diff/compare/有什么不同/看看区别", "更新模板", "快速检查/quick check/兼容吗/check compatibility", or any mention of comparing/syncing configs against ccNovaTerm. Use proactively when users edit or discuss WezTerm/Nushell/Starship/Claude Code configs — suggest a quick check after editing managed files.
+description: Two-way sync, diff, and quick compatibility check of terminal configs between local environment and ccNovaTerm.
+disable-model-invocation: true
 compatibility: Windows (PowerShell 5.1+), primary template source is remote GitHub fetch (no local project auto-discovery)
 ---
 

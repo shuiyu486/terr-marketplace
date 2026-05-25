@@ -1,6 +1,7 @@
 ---
 name: dm-api
-description: 查询大漠插件(DaMao Plugin) API 文档。当用户询问大漠插件函数用法、按键精灵/TC/易语言脚本编写、找图找色、后台绑定、内存读写、文字识别(OCR)、窗口操作、键鼠模拟、AI找图(YOLO)、Foobar透明窗口绘制、防护盾、汇编执行、答题系统等相关问题时使用此 skill。即使用户没有明确提到"大漠"，只要涉及 dm.FindPic、dm.BindWindow、dm.Ocr、dm.ReadInt、dm.AiFindPic 等以 dm. 开头的 COM 函数调用，或者询问如何在按键精灵/TC/易语言中实现自动化操作（找图、找色、找字、后台、内存、脚本），都应触发此 skill。也适用于用户询问多函数协作方案（如"后台找图点击"需要 BindWindow → FindPic → MoveTo → LeftClick 完整流程）。
+description: 查询大漠插件(DaMao Plugin) 465 个 API 函数的用法、参数、返回值和示例。
+disable-model-invocation: true
 version: 1.1.0
 ---
 

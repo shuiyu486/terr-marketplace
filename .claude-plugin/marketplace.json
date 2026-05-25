@@ -14,7 +14,7 @@
         "path": "plugins/config-sync"
       },
       "description": "双向同步+对比终端配置文件。管理5个文件含CLAUDE.local.md。统一diff含hash预检。渐进式披露架构(7个reference文件)。内置代理保护+自定义排除规则。远程仓库为唯一模板源。",
-      "version": "1.5.0",
+      "version": "1.5.1",
       "author": { "name": "ccNovaTerm" },
       "repository": "https://github.com/shuiyu486/ccNovaTerm",
       "license": "MIT",
@@ -28,7 +28,7 @@
         "path": "plugins/skills2ccPlugin"
       },
       "description": "将 skill 转换为 terr-marketplace 可安装插件并发布。自动生成 plugin.json、组织目录、注册 marketplace.json",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "author": { "name": "terrapin" },
       "repository": "https://github.com/shuiyu486/terr-marketplace",
       "license": "MIT",
@@ -42,7 +42,7 @@
         "path": "plugins/dm-api"
       },
       "description": "大漠插件(DaMao Plugin) API 文档查询。支持 465 个函数的参数说明、返回值和使用示例，涵盖键鼠模拟、找图找色、文字识别、背景绑定、内存读写、窗口操作等功能。",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": { "name": "terrapin" },
       "license": "MIT",
       "keywords": ["大漠插件", "dm", "按键精灵", "automation", "找图", "找色", "OCR", "后台绑定", "内存读写"]
@@ -55,7 +55,7 @@
         "path": "plugins/skill-creator"
       },
       "description": "创建、修改、修复和优化 Claude Code skills。支持 skill 全生命周期：从零创建、迭代改进、运行 evals、基准测试、盲比评估、描述触发优化、打包发布。",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "author": { "name": "Anthropic" },
       "repository": "https://github.com/anthropics/claude-plugins-official",
       "license": "Apache-2.0",
@@ -69,7 +69,7 @@
         "path": "plugins/hookify"
       },
       "description": "Easily create hooks to prevent unwanted behaviors by analyzing conversation patterns. Forked with Windows encoding fix.",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "author": { "name": "terrapin" },
       "license": "MIT",
       "keywords": ["hooks", "safety", "rules", "stop", "pretooluse", "posttooluse"]
@@ -110,7 +110,7 @@
         "path": "plugins/plugin-fork-sync"
       },
       "description": "Manual slash-command tool for syncing customized Claude Code marketplace plugins with upstream plugins. Provides first-run PLUGIN_FORK_SYNC.md initialization and existing-ledger update workflows with on-demand references.",
-      "version": "0.2.2",
+      "version": "0.2.3",
       "author": { "name": "terrapin" },
       "repository": "https://github.com/shuiyu486/terr-marketplace",
       "license": "MIT",
