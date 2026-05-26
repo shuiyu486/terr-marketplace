@@ -3,6 +3,7 @@ import * as http from "http";
 import * as https from "https";
 import * as os from "os";
 import * as path from "path";
+import { getClaudeConfigDir } from "../config";
 import type { Config, StatusLineData } from "../types";
 
 const DEFAULT_PROBE_INTERVAL_MINUTES = 3;
@@ -10,7 +11,7 @@ const MIN_PROBE_INTERVAL_MINUTES = 1;
 const MAX_PROBE_INTERVAL_MINUTES = 10;
 const FALLBACK_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const CACHE_PATH = path.join(os.tmpdir(), "cc-statusline-codex-limits.json");
-const SETTINGS_PATH = path.join(os.homedir(), ".claude", "settings.json");
+const SETTINGS_PATH = path.join(getClaudeConfigDir(), "settings.json");
 
 type RateLimits = NonNullable<StatusLineData["rate_limits"]>;
 

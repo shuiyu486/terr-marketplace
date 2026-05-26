@@ -1,21 +1,59 @@
 ---
 description: Configure cc-statusline display options (effort, tokens, path, tools, agents, todos, limits, thresholds)
-allowed-tools: ["Bash", "Read", "Edit", "Write", "AskUserQuestion"]
+allowed-tools: ["Bash", "PowerShell", "Read", "Edit", "Write", "AskUserQuestion"]
 ---
 
 # cc-statusline Configuration
 
-Configure which elements the status line displays. Settings are saved to `~/.claude/cc-statusline.json`.
+Configure which elements the status line displays. Settings are saved to `${CLAUDE_CONFIG_DIR}/cc-statusline.json`, or `~/.claude/cc-statusline.json` when `CLAUDE_CONFIG_DIR` is unset.
 
 ## Read Current Config
 
-Read the config file if it exists:
+Read and normalize the config file if it exists. If it is missing, use the full defaults below. If it is invalid JSON, back it up as `cc-statusline.json.bak-*`, write defaults, and continue from those defaults.
 
 ```bash
-cat "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/cc-statusline.json" 2>/dev/null || echo "no config file"
+node -e "
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const dir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
+const p = path.join(dir, 'cc-statusline.json');
+const defaults = {
+  showEffort: true,
+  showTokensLine: true,
+  showPath: true,
+  ctxWarnThreshold: 70,
+  ctxDangerThreshold: 90,
+  showToolActivity: true,
+  showRunningTools: true,
+  showCompletedTools: true,
+  showAgentTracking: true,
+  agentDisplayMode: 'compact',
+  showTodoProgress: true,
+  showUsageLimits: true,
+  codexProbeIntervalMinutes: 3
+};
+fs.mkdirSync(dir, { recursive: true });
+let parsed = {};
+try {
+  parsed = JSON.parse(fs.readFileSync(p, 'utf8'));
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('config root must be object');
+} catch (error) {
+  if (fs.existsSync(p)) {
+    const backup = p + '.bak-' + new Date().toISOString().replace(/[:.]/g, '-');
+    fs.copyFileSync(p, backup);
+    console.log('Backed up corrupt config to', backup);
+  }
+}
+const config = { ...defaults, ...parsed };
+if (config.agentDisplayMode !== 'compact' && config.agentDisplayMode !== 'multiline') config.agentDisplayMode = 'compact';
+config.codexProbeIntervalMinutes = Math.min(10, Math.max(1, parseInt(config.codexProbeIntervalMinutes, 10) || 3));
+fs.writeFileSync(p, JSON.stringify(config, null, 2) + '\n', 'utf8');
+console.log(JSON.stringify(config, null, 2));
+" 
 ```
 
-If no config file exists, these are the defaults:
+These are the defaults:
 
 ```json
 {
@@ -139,7 +177,8 @@ const config = {
   ctxWarnThreshold: parseInt(process.argv[12], 10),
   ctxDangerThreshold: parseInt(process.argv[13], 10)
 };
-fs.writeFileSync(p, JSON.stringify(config, null, 2));
+fs.mkdirSync(path.dirname(p), { recursive: true });
+fs.writeFileSync(p, JSON.stringify(config, null, 2) + '\n');
 console.log('Config saved to', p);
 " "<showEffort>" "<showTokensLine>" "<showPath>" "<showToolActivity>" "<showRunningTools>" "<showCompletedTools>" "<showAgentTracking>" "<agentDisplayMode>" "<showTodoProgress>" "<showUsageLimits>" "<codexProbeIntervalMinutes>" "<ctxWarn>" "<ctxDanger>"
 ```
@@ -149,6 +188,7 @@ console.log('Config saved to', p);
 ```powershell
 $claudeDir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }
 $configPath = Join-Path $claudeDir 'cc-statusline.json'
+New-Item -ItemType Directory -Force $claudeDir | Out-Null
 $config = @{
     showEffort = $showEffort
     showTokensLine = $showTokensLine
@@ -165,7 +205,7 @@ $config = @{
     ctxDangerThreshold = $ctxDanger
 }
 $json = $config | ConvertTo-Json
-[System.IO.File]::WriteAllText($configPath, $json, (New-Object System.Text.UTF8Encoding $false))
+[System.IO.File]::WriteAllText($configPath, $json + "`n", (New-Object System.Text.UTF8Encoding $false))
 Write-Output "Config saved to $configPath"
 ```
 

@@ -14,7 +14,13 @@
 3. `plugins/cc-statusline/.claude-plugin/plugin.json`
 4. terr-marketplace 根 `.claude-plugin/marketplace.json` 中的 cc-statusline 条目
 
-不 bump 版本时，`/cc-statusline:update` 可能无法识别更新。
+用户可见变更仍必须 bump 版本；`/cc-statusline:update` 即使版本相同也必须刷新 runtime cache，避免 marketplace 源码和运行时 cache 不一致。
+
+## `/cc-statusline:update` 不变量
+
+`/cc-statusline:update` 是修复式用户侧更新流程：即使 marketplace latest version 等于 settings 中 current version，也不能提前输出 Already up to date 并停止。必须继续复制 marketplace 到 cache、安装依赖、build、relink `settings.json`、更新 `installed_plugins.json`、停止旧 statusline 进程。
+
+update 还必须迁移 `${CLAUDE_CONFIG_DIR:-~/.claude}/cc-statusline.json`：无配置创建完整默认配置，缺字段补全写回，损坏 JSON 备份后写默认。
 
 ## 验证
 

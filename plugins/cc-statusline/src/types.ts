@@ -120,18 +120,4 @@ export interface ParseResult {
   todoTotal: number;
 }
 
-export interface Config {
-  showEffort: boolean;
-  showTokensLine: boolean;
-  showPath: boolean;
-  ctxWarnThreshold: number;
-  ctxDangerThreshold: number;
-  showToolActivity: boolean;
-  showRunningTools: boolean;
-  showCompletedTools: boolean;
-  showAgentTracking: boolean;
-  agentDisplayMode: "compact" | "multiline";
-  showTodoProgress: boolean;
-  showUsageLimits: boolean;
-  codexProbeIntervalMinutes: number;
-}
+export type { Config } from "./config";

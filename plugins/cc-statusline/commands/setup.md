@@ -1,6 +1,6 @@
 ---
 description: Set up cc-statusline in Claude Code settings (find path, write statusLine config)
-allowed-tools: ["Bash", "Read", "Edit", "Write", "AskUserQuestion"]
+allowed-tools: ["Bash", "PowerShell", "Read", "Edit", "Write", "AskUserQuestion"]
 ---
 
 # cc-statusline Setup
@@ -108,6 +108,8 @@ If it exists, read it, parse as JSON, add/update the `statusLine` field, and wri
 
 ```powershell
 $settingsPath = Join-Path $claudeDir 'settings.json'
+$pluginPathForCommand = $pluginPath -replace '\\','/'
+$command = 'node "' + $pluginPathForCommand + '/dist/index.js"'
 $existing = @{}
 if (Test-Path $settingsPath) {
     try {
@@ -121,7 +123,7 @@ if (Test-Path $settingsPath) {
 $existing | Add-Member -NotePropertyName statusLine -NotePropertyValue @{ type = 'command'; command = $command } -Force
 $json = $existing | ConvertTo-Json -Depth 10
 $json = $json -replace '\\/', '/'  # unescape forward slashes
-[System.IO.File]::WriteAllText($settingsPath, $json, (New-Object System.Text.UTF8Encoding $false))
+[System.IO.File]::WriteAllText($settingsPath, $json + "`n", (New-Object System.Text.UTF8Encoding $false))
 ```
 
 **macOS/Linux — use Node.js for JSON merge:**

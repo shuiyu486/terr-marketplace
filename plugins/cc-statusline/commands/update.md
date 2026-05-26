@@ -1,11 +1,13 @@
 ---
-description: One-click update cc-statusline — pull latest from remote, build, relink settings.json, and restart statusline
+description: One-click update cc-statusline — pull latest, migrate config, rebuild, relink settings.json, and restart statusline
 allowed-tools: ["Bash", "PowerShell", "Read", "Edit", "Write"]
 ---
 
 # cc-statusline Update
 
-One-click update for already-installed users. Pulls the latest plugin from the remote marketplace, builds it, and updates `settings.json` to point to the new version. Preserves your existing `cc-statusline.json` config.
+One-click repair-style update for already-installed users. Pulls the latest plugin from the remote marketplace, rebuilds the runtime cache even when the version is unchanged, migrates `cc-statusline.json`, updates `settings.json`, updates the plugin registry, and restarts the status line.
+
+Existing config values are preserved when valid. Missing config files are created with complete defaults; corrupt config JSON is backed up before defaults are written.
 
 No git push/commit — this is a user-side update, not a maintainer publish.
 
@@ -18,7 +20,7 @@ Pull the latest plugin code from the remote marketplace repo:
 ```powershell
 $claudeDir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }
 $marketplaceDir = Join-Path $claudeDir 'plugins\marketplaces\terr-marketplace'
-cd $marketplaceDir
+Set-Location $marketplaceDir
 git pull 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Output "ERROR: git pull failed. Check network or run /plugin install cc-statusline manually."
@@ -63,11 +65,10 @@ echo "LATEST_VERSION=$LATEST_VERSION"
 
 ```powershell
 $settingsPath = Join-Path $claudeDir 'settings.json'
-if (-not (Test-Path $settingsPath)) {
-    Write-Output "ERROR: settings.json not found. Run /cc-statusline:setup first."
-    exit 1
+$currentVersion = 'unknown'
+if (Test-Path $settingsPath) {
+    $currentVersion = node -e "const fs = require('fs'); try { const s = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); const m = String(s.statusLine?.command ?? '').match(/cc-statusline[/\\]([\d.]+)[/\\]/); process.stdout.write(m?.[1] ?? 'unknown'); } catch { process.stdout.write('unknown'); }" $settingsPath
 }
-$currentVersion = node -e "const fs = require('fs'); try { const s = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); const m = String(s.statusLine?.command ?? '').match(/cc-statusline[/\\\\]([\\d.]+)[/\\\\]/); process.stdout.write(m?.[1] ?? 'unknown'); } catch { process.stdout.write('unknown'); }" $settingsPath
 Write-Output "CURRENT_VERSION=$currentVersion"
 ```
 
@@ -75,87 +76,80 @@ Write-Output "CURRENT_VERSION=$currentVersion"
 
 ```bash
 SETTINGS="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json"
-if [ ! -f "$SETTINGS" ]; then
-    echo "ERROR: settings.json not found. Run /cc-statusline:setup first."
-    exit 1
+if [ -f "$SETTINGS" ]; then
+  CURRENT_VERSION=$(node -e "try{process.stdout.write(require('$SETTINGS').statusLine?.command?.match(/cc-statusline[/\\]([\d.]+)[/\\]/)?.[1]||'unknown')}catch(e){process.stdout.write('unknown')}")
+else
+  CURRENT_VERSION="unknown"
 fi
-CURRENT_VERSION=$(node -e "try{process.stdout.write(require('$SETTINGS').statusLine.command.match(/cc-statusline[/\\\\]([\\d.]+)[/\\\\]/)?.[1]||'unknown')}catch(e){console.log('unknown')}")
 echo "CURRENT_VERSION=$CURRENT_VERSION"
 ```
 
-## Step 4: Compare Versions
+## Step 4: Decide Update Mode
 
-Compare `LATEST_VERSION` with `CURRENT_VERSION`:
-
-- If `LATEST_VERSION == CURRENT_VERSION`: check if the build exists (see below). If build is intact, tell the user **"Already up to date (v{version})."** and stop. If build is missing, proceed to Step 6 (repair mode — skip copy, just rebuild).
-- If `LATEST_VERSION > CURRENT_VERSION`: proceed to Step 5.
-- If `CURRENT_VERSION` is "unknown" or comparison fails: proceed to Step 5 (full update — do not skip copy).
-
-**Build existence check (when versions match):**
+Always continue. Version equality does not skip copy/build/relink/restart because marketplace source may have changed after `git pull`, or cache/runtime may still contain an older build.
 
 **Windows (PowerShell):**
 
 ```powershell
-$cacheDir = Join-Path $claudeDir "plugins\cache\terr-marketplace\cc-statusline\$currentVersion"
-$distFile = Join-Path $cacheDir 'dist\index.js'
-if (Test-Path $distFile) {
-    Write-Output "BUILD_INTACT"
+if ($currentVersion -eq $latestVersion) {
+    Write-Output "SAME_VERSION_REFRESH=$latestVersion"
+} elseif ($currentVersion -eq 'unknown') {
+    Write-Output "CURRENT_VERSION_UNKNOWN_REFRESH"
 } else {
-    Write-Output "BUILD_MISSING"
+    Write-Output "VERSION_UPDATE=$currentVersion->$latestVersion"
 }
 ```
 
 **macOS / Linux:**
 
 ```bash
-CACHE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/cache/terr-marketplace/cc-statusline/$CURRENT_VERSION"
-if [ -f "$CACHE_DIR/dist/index.js" ]; then
-    echo "BUILD_INTACT"
+if [ "$CURRENT_VERSION" = "$LATEST_VERSION" ]; then
+  echo "SAME_VERSION_REFRESH=$LATEST_VERSION"
+elif [ "$CURRENT_VERSION" = "unknown" ]; then
+  echo "CURRENT_VERSION_UNKNOWN_REFRESH"
 else
-    echo "BUILD_MISSING"
+  echo "VERSION_UPDATE=$CURRENT_VERSION->$LATEST_VERSION"
 fi
 ```
 
-## Step 5: Copy to Cache
+## Step 5: Copy to Temporary Cache
 
-Copy the plugin source from marketplace to the cache directory, excluding build artifacts.
-
-**⚠️ Skip this entire step in repair mode** (version unchanged but build missing) — the source files already exist in cache, only the build is missing. Jump directly to Step 6.
+Copy the plugin source from marketplace to a temporary cache directory, excluding build artifacts. The final cache directory is replaced only after the build succeeds.
 
 **Windows (PowerShell):**
 
 ```powershell
-$cacheDir = Join-Path $claudeDir "plugins\cache\terr-marketplace\cc-statusline\$latestVersion"
-# Remove existing stale copy if any
-if (Test-Path $cacheDir) { Remove-Item -Recurse -Force $cacheDir }
-New-Item -ItemType Directory -Force $cacheDir | Out-Null
-# Copy all except node_modules and dist (will rebuild)
-Copy-Item -Path "$sourceDir\*" -Destination $cacheDir -Recurse -Force
-# Remove stale node_modules and dist from cache copy
-Remove-Item -Recurse -Force (Join-Path $cacheDir 'node_modules') -ErrorAction SilentlyContinue
-Remove-Item -Recurse -Force (Join-Path $cacheDir 'dist') -ErrorAction SilentlyContinue
-Write-Output "CACHE_COPIED=$cacheDir"
+$cacheRoot = Join-Path $claudeDir 'plugins\cache\terr-marketplace\cc-statusline'
+$cacheDir = Join-Path $cacheRoot $latestVersion
+$tempCacheDir = Join-Path $cacheRoot "$latestVersion.tmp-update"
+if (Test-Path $tempCacheDir) { Remove-Item -Recurse -Force $tempCacheDir }
+New-Item -ItemType Directory -Force $tempCacheDir | Out-Null
+Get-ChildItem -LiteralPath $sourceDir -Force | Where-Object {
+    $_.Name -notin @('node_modules', 'dist', '.git')
+} | Copy-Item -Destination $tempCacheDir -Recurse -Force
+Write-Output "CACHE_COPIED=$tempCacheDir"
 ```
 
 **macOS / Linux:**
 
 ```bash
-CACHE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/cache/terr-marketplace/cc-statusline/$LATEST_VERSION"
-rm -rf "$CACHE_DIR"
-mkdir -p "$CACHE_DIR"
-# Copy all except node_modules and dist
-rsync -a --exclude='node_modules' --exclude='dist' --exclude='.git' "$SOURCE_DIR/" "$CACHE_DIR/"
-echo "CACHE_COPIED=$CACHE_DIR"
+CACHE_ROOT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/cache/terr-marketplace/cc-statusline"
+CACHE_DIR="$CACHE_ROOT/$LATEST_VERSION"
+TEMP_CACHE_DIR="$CACHE_ROOT/$LATEST_VERSION.tmp-update"
+rm -rf "$TEMP_CACHE_DIR"
+mkdir -p "$TEMP_CACHE_DIR"
+rsync -a --exclude='node_modules' --exclude='dist' --exclude='.git' "$SOURCE_DIR/" "$TEMP_CACHE_DIR/"
+echo "CACHE_COPIED=$TEMP_CACHE_DIR"
 ```
 
-## Step 6: Build
+## Step 6: Build Temporary Cache
 
-Run `npm install && npm run build` in the cache directory:
+Run `npm install && npm run build` in the temporary cache directory:
 
 **Windows (PowerShell):**
 
 ```powershell
-cd $cacheDir
+Set-Location $tempCacheDir
 npm install 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Output "ERROR: npm install failed"
@@ -172,23 +166,79 @@ Write-Output "BUILD_OK"
 **macOS / Linux:**
 
 ```bash
-cd "$CACHE_DIR"
+cd "$TEMP_CACHE_DIR"
 npm install && npm run build || { echo "ERROR: build failed"; exit 1; }
 echo "BUILD_OK"
 ```
 
-## Step 7: Update settings.json
+## Step 7: Stop Running Statusline and Promote Cache
+
+Stop existing cc-statusline Node processes, then replace the versioned cache directory with the freshly built temporary cache.
+
+**Windows (PowerShell):**
+
+```powershell
+$cacheRootForMatch = $cacheRoot -replace '\\','/'
+$escapedRoot = [regex]::Escape($cacheRootForMatch)
+$pattern = "$escapedRoot/.+/dist/index\.js"
+$stopped = 0
+Get-CimInstance Win32_Process | Where-Object {
+    $_.Name -eq 'node.exe' -and (($_.CommandLine -replace '\\','/') -match $pattern)
+} | ForEach-Object {
+    Stop-Process -Id $_.ProcessId -Force -Confirm:$false
+    $stopped++
+}
+if (Test-Path $cacheDir) { Remove-Item -Recurse -Force $cacheDir }
+Move-Item -Path $tempCacheDir -Destination $cacheDir
+Write-Output "STATUSLINE_RESTARTED=$stopped"
+Write-Output "CACHE_PROMOTED=$cacheDir"
+```
+
+**macOS / Linux:**
+
+```bash
+STOPPED=0
+while IFS= read -r pid; do
+    kill "$pid" 2>/dev/null && STOPPED=$((STOPPED + 1))
+done < <(ps -eo pid=,args= | awk -v root="$CACHE_ROOT" '$0 ~ /node/ && index($0, root) && $0 ~ /\/dist\/index\.js/ { print $1 }')
+rm -rf "$CACHE_DIR"
+mv "$TEMP_CACHE_DIR" "$CACHE_DIR"
+echo "STATUSLINE_RESTARTED=$STOPPED"
+echo "CACHE_PROMOTED=$CACHE_DIR"
+```
+
+## Step 8: Migrate cc-statusline.json
+
+Use the freshly built shared config module to create, repair, or backfill the user config file.
+
+**Windows (PowerShell):**
+
+```powershell
+node -e "const { migrateConfigFile } = require(process.argv[1]); const r = migrateConfigFile(); console.log('CONFIG_' + r.status.toUpperCase()); console.log('CONFIG_PATH=' + r.configPath); if (r.backupPath) console.log('CONFIG_BACKUP=' + r.backupPath);" (Join-Path $cacheDir 'dist\config.js')
+if ($LASTEXITCODE -ne 0) {
+    Write-Output "ERROR: config migration failed"
+    exit 1
+}
+```
+
+**macOS / Linux:**
+
+```bash
+node -e "const { migrateConfigFile } = require(process.argv[1]); const r = migrateConfigFile(); console.log('CONFIG_' + r.status.toUpperCase()); console.log('CONFIG_PATH=' + r.configPath); if (r.backupPath) console.log('CONFIG_BACKUP=' + r.backupPath);" "$CACHE_DIR/dist/config.js" || { echo "ERROR: config migration failed"; exit 1; }
+```
+
+## Step 9: Update settings.json
 
 Point `statusLine.command` to the new cached build. Uses forward slashes (Claude Code handles this correctly on all platforms):
 
-```
+```text
 node "<CACHE_DIR>/dist/index.js"
 ```
 
 **Windows PowerShell — UTF-8 without BOM:**
 
 ```powershell
-node -e "const fs = require('fs'); const p = process.argv[1]; const cacheDir = process.argv[2].replace(/\\\\/g, '/'); const quote = String.fromCharCode(34); const s = JSON.parse(fs.readFileSync(p, 'utf8')); s.statusLine = s.statusLine || { type: 'command' }; s.statusLine.type = 'command'; s.statusLine.command = 'node ' + quote + cacheDir + '/dist/index.js' + quote; fs.writeFileSync(p, JSON.stringify(s, null, 2) + '\n', 'utf8');" $settingsPath $cacheDir
+node -e "const fs = require('fs'); const p = process.argv[1]; const cacheDir = process.argv[2].replace(/\\/g, '/'); const quote = String.fromCharCode(34); let s = {}; try { s = JSON.parse(fs.readFileSync(p, 'utf8')); } catch {} s.statusLine = s.statusLine || {}; s.statusLine.type = 'command'; s.statusLine.command = 'node ' + quote + cacheDir + '/dist/index.js' + quote; fs.writeFileSync(p, JSON.stringify(s, null, 2) + '\n', 'utf8');" $settingsPath $cacheDir
 if ($LASTEXITCODE -ne 0) {
     Write-Output "ERROR: settings.json update failed"
     exit 1
@@ -201,13 +251,19 @@ Write-Output "PATH_UPDATED"
 ```bash
 node -e "
 const fs = require('fs');
-const s = JSON.parse(fs.readFileSync('$SETTINGS', 'utf8'));
-s.statusLine.command = 'node \"$CACHE_DIR/dist/index.js\"';
-fs.writeFileSync('$SETTINGS', JSON.stringify(s, null, 2));
-"
+const p = process.argv[1];
+const cacheDir = process.argv[2];
+let s = {};
+try { s = JSON.parse(fs.readFileSync(p, 'utf8')); } catch {}
+s.statusLine = s.statusLine || {};
+s.statusLine.type = 'command';
+s.statusLine.command = 'node \"' + cacheDir + '/dist/index.js\"';
+fs.writeFileSync(p, JSON.stringify(s, null, 2) + '\n', 'utf8');
+" "$SETTINGS" "$CACHE_DIR" || { echo "ERROR: settings.json update failed"; exit 1; }
+echo "PATH_UPDATED"
 ```
 
-## Step 8: Update Plugin Registry
+## Step 10: Update Plugin Registry
 
 Update Claude Code's plugin registry so slash commands are registered from the same cached version as the status line runtime.
 
@@ -267,45 +323,13 @@ fs.writeFileSync(p, JSON.stringify(data, null, 2) + '\n', 'utf8');
 echo "PLUGIN_REGISTRY_UPDATED"
 ```
 
-## Step 9: Restart Running Statusline
-
-Stop existing cc-statusline Node processes so the next Claude Code status-line refresh loads the updated build. Match only Node processes whose command line points at `plugins/cache/terr-marketplace/cc-statusline/*/dist/index.js`.
-
-**Windows (PowerShell):**
-
-```powershell
-$cacheRootForMatch = (Join-Path $claudeDir 'plugins\cache\terr-marketplace\cc-statusline') -replace '\\','/'
-$escapedRoot = [regex]::Escape($cacheRootForMatch)
-$pattern = "$escapedRoot/.+/dist/index\.js"
-$stopped = 0
-Get-CimInstance Win32_Process | Where-Object {
-    $_.Name -eq 'node.exe' -and (($_.CommandLine -replace '\\','/') -match $pattern)
-} | ForEach-Object {
-    Stop-Process -Id $_.ProcessId -Force -Confirm:$false
-    $stopped++
-}
-Write-Output "STATUSLINE_RESTARTED=$stopped"
-```
-
-**macOS / Linux:**
-
-```bash
-CACHE_ROOT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/cache/terr-marketplace/cc-statusline"
-STOPPED=0
-while IFS= read -r pid; do
-    kill "$pid" 2>/dev/null && STOPPED=$((STOPPED + 1))
-done < <(ps -eo pid=,args= | awk -v root="$CACHE_ROOT" '$0 ~ /node/ && index($0, root) && $0 ~ /\/dist\/index\.js/ { print $1 }')
-echo "STATUSLINE_RESTARTED=$STOPPED"
-```
-
-## Step 10: Clean Old Versions
+## Step 11: Clean Old Versions
 
 Remove outdated cached versions, keeping only the current one:
 
 **Windows (PowerShell):**
 
 ```powershell
-$cacheRoot = Join-Path $claudeDir 'plugins\cache\terr-marketplace\cc-statusline'
 Get-ChildItem $cacheRoot -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne $latestVersion } | Remove-Item -Recurse -Force
 Write-Output "OLD_CLEANED"
 ```
@@ -313,7 +337,6 @@ Write-Output "OLD_CLEANED"
 **macOS / Linux:**
 
 ```bash
-CACHE_ROOT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/cache/terr-marketplace/cc-statusline"
 for d in "$CACHE_ROOT"/*/; do
     dir_name=$(basename "$d")
     if [ "$dir_name" != "$LATEST_VERSION" ]; then
@@ -323,17 +346,29 @@ done
 echo "OLD_CLEANED"
 ```
 
-## Step 11: Verify
+## Step 12: Verify
 
-Read `settings.json` and `installed_plugins.json` to confirm both the status-line runtime and slash-command registry point to the new version:
+Read `settings.json`, `installed_plugins.json`, and `cc-statusline.json` to confirm the runtime, slash-command registry, and user config were refreshed:
+
+**Windows (PowerShell):**
+
+```powershell
+Get-Content (Join-Path $claudeDir 'settings.json') | Select-String -Pattern 'statusLine' -Context 0,2
+Get-Content (Join-Path $claudeDir 'plugins\installed_plugins.json') | Select-String -Pattern 'cc-statusline@terr-marketplace' -Context 0,8
+Get-Content (Join-Path $claudeDir 'cc-statusline.json')
+```
+
+**macOS / Linux:**
 
 ```bash
-cat ~/.claude/settings.json | grep -A2 statusLine
-cat ~/.claude/plugins/installed_plugins.json | grep -A8 'cc-statusline@terr-marketplace'
+CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+grep -A2 'statusLine' "$CLAUDE_DIR/settings.json"
+grep -A8 'cc-statusline@terr-marketplace' "$CLAUDE_DIR/plugins/installed_plugins.json"
+cat "$CLAUDE_DIR/cc-statusline.json"
 ```
 
 Tell the user:
 
-> **Updated to v{LATEST_VERSION}!** The status line now runs from the latest build. Existing cc-statusline processes were stopped, so Claude Code will start the updated status line on the next refresh.
-> 
+> **Updated/refreshed to v{LATEST_VERSION}!** The status line now runs from the freshly rebuilt cache. `cc-statusline.json` has been created, repaired, or backfilled as needed, and existing cc-statusline processes were stopped so Claude Code will start the updated status line on the next refresh.
+>
 > Previous version was v{CURRENT_VERSION}. Old cached versions have been cleaned up. Run `/reload-plugins` to refresh slash command registration in the current Claude Code session.

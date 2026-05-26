@@ -38,6 +38,6 @@ echo '{...}' | node dist/index.js
 
 ## 配置与同步
 
-用户配置：`~/.claude/cc-statusline.json`，默认全部显示，详见 `references/config.md`。
+用户配置：`${CLAUDE_CONFIG_DIR}/cc-statusline.json`，未设置时为 `~/.claude/cc-statusline.json`；默认全部显示，详见 `references/config.md`。
 
 修改代码后同步相关 reference 文档；发现新 gotcha 时，优先写入对应 reference，只有高频且会影响操作顺序的规则才加入本文件。

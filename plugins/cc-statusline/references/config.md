@@ -4,9 +4,9 @@
 
 ## 配置文件
 
-路径：`~/.claude/cc-statusline.json`
+路径：`${CLAUDE_CONFIG_DIR}/cc-statusline.json`；未设置 `CLAUDE_CONFIG_DIR` 时为 `~/.claude/cc-statusline.json`。
 
-用户文件只需写覆盖字段；加载逻辑是：`{ ...DEFAULT_CONFIG, ...JSON.parse(file) }`。
+runtime 启动时会先执行一次幂等配置迁移，再通过 `loadConfig()` 读取并 normalize 配置；读取失败时使用 `DEFAULT_CONFIG`。`/cc-statusline:update` 和 `/cc-statusline:configure` 也会把用户配置写成完整当前 schema：无配置时创建默认配置，合法旧配置补齐缺失字段，损坏 JSON 先备份为 `cc-statusline.json.bak-*` 再写默认配置。
 
 ## 默认值
 
@@ -53,8 +53,8 @@
 ## 同步要求
 
 新增、删除或重命名配置字段时，同步更新：
-1. `src/types.ts` 的 `Config`
-2. `src/index.ts` 的 `DEFAULT_CONFIG`
-3. `commands/configure.md` 的展示、选项和写入逻辑
+1. `src/config.ts` 的 `Config`、`DEFAULT_CONFIG` 和 normalize 逻辑
+2. `commands/configure.md` 的展示、选项和写入逻辑
+3. `commands/update.md` 的配置迁移入口
 4. `references/config.md`
 5. 若影响渲染或 feature 行为，同时更新 `references/rendering.md` 或 `references/features.md`

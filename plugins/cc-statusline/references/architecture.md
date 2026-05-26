@@ -18,13 +18,14 @@ stdin StatusLineData
 ```
 
 `index.ts` 的主路径：
-1. `loadConfig()` 合并用户配置与 `DEFAULT_CONFIG`
-2. `createCodexLimitsService(cfg)` 创建 usage fallback 服务
-3. `readStdinLoop(async data => ...)` 读取本次命令 stdin 中的完整 JSON frame
-4. `ensureFresh(data, { maxWaitMs: 3000 })` 可选补齐 `rate_limits`
-5. `parseTranscript(data.transcript_path)` 得到 `ParseResult`
-6. `render(...)` 生成 ANSI 字符串并持久化最后可信 context 快照
-7. `fs.writeSync(1, msg + "\n")` 即时输出
+1. `migrateConfigFile()` 幂等创建/补全/修复 `${CLAUDE_CONFIG_DIR:-~/.claude}/cc-statusline.json`
+2. `loadConfig()` 读取并 normalize 配置，失败时使用 `DEFAULT_CONFIG`
+3. `createCodexLimitsService(cfg)` 创建 usage fallback 服务
+4. `readStdinLoop(async data => ...)` 读取本次命令 stdin 中的完整 JSON frame
+5. `ensureFresh(data, { maxWaitMs: 3000 })` 可选补齐 `rate_limits`
+6. `parseTranscript(data.transcript_path)` 得到 `ParseResult`
+7. `render(...)` 生成 ANSI 字符串并持久化最后可信 context 快照
+8. `fs.writeSync(1, msg + "\n")` 即时输出
 
 ## 缓存文件
 
