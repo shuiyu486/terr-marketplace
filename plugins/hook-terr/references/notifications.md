@@ -19,7 +19,7 @@ Windows 下播放 `.wav` 提示音。默认使用 `C:\\Windows\\Media\\tada.wav`
 
 Windows 下显示 tray balloon 通知。默认可用，但不再作为 Stop 默认通道。可通过 `/hook-terr:configure` 或 settings 覆盖启用到 Stop 通道。
 
-实现要求：hook 只启动隐藏的独立 PowerShell 通知进程并立即返回；通知进程必须使用 `-STA` 和 `System.Windows.Forms.ApplicationContext` message loop 保活，避免 `NotifyIcon.ShowBalloonTip()` 调用成功但气泡尚未展示进程就退出。`timeoutMs` 会限制在 5–30 秒之间。
+实现要求：hook 将通知脚本写入临时 `.ps1`，再通过 `cmd.exe /c start powershell.exe -STA -File ...` 启动独立通知进程并立即返回，避免 Claude Code 清理 Stop hook 子进程时中断通知。通知进程会同时投递 WinRT `ToastNotificationManager` 和 `System.Windows.Forms.NotifyIcon` tray balloon；后者使用 `ApplicationContext` message loop 保活。`timeoutMs` 会限制在 5–30 秒之间。设置 `HOOK_TERR_WINDOWS_TOAST_LOG` 时会把 WinRT/NotifyIcon 投递路径写入该日志。
 
 ## popup
 
