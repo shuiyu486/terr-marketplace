@@ -19,6 +19,8 @@ Windows 下播放 `.wav` 提示音。默认使用 `C:\\Windows\\Media\\tada.wav`
 
 Windows 下显示 tray balloon 通知。默认可用，但不再作为 Stop 默认通道。可通过 `/hook-terr:configure` 或 settings 覆盖启用到 Stop 通道。
 
+实现要求：hook 只启动隐藏的独立 PowerShell 通知进程并立即返回；通知进程必须使用 `-STA` 和 `System.Windows.Forms.ApplicationContext` message loop 保活，避免 `NotifyIcon.ShowBalloonTip()` 调用成功但气泡尚未展示进程就退出。`timeoutMs` 会限制在 5–30 秒之间。
+
 ## popup
 
 结构化弹窗，支持标题、正文和图标。默认作为 Stop 通道启用。实现必须非阻塞：hook 只启动弹窗进程，不等待用户关闭。

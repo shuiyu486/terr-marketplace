@@ -59,7 +59,7 @@ defaults/rules/*.json
 - 尝试播放 Windows `.wav` sound。
 - 尝试显示 Windows popup 弹窗。
 
-Windows tray balloon notification 仍然可用，但不再是默认 Stop 通道；可通过 `/hook-terr:configure` 切换启用。
+Windows tray balloon notification 仍然可用，但不再是默认 Stop 通道；可通过 `/hook-terr:configure` 切换启用。启用后会通过隐藏的独立 STA PowerShell 通知进程显示气泡，hook 本身不会等待气泡关闭。
 
 ## 通知通道
 
