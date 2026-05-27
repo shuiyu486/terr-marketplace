@@ -26,12 +26,12 @@ defaults/rules/*.json
 
 `settings.events.<Event>.notifications` 是默认通知通道来源。`rule.notify.channels` 是可选的规则级覆盖；未设置时回退到事件默认通道。
 
-内置 `stop-notify` 不写死 channels，让 `/hook-terr:configure` 只改 settings 即可生效。默认 Stop 通道是 `sound + popup`；`SubagentStop` 默认关闭且不配置通知，避免子 agent 结束时弹提示音。
+内置 `stop-notify` 默认不执行外部通知，只返回自检 `systemMessage`。`/hook-terr:configure` 只修改 settings 中的通道选择；这些通道会被启用 `notify` 的用户或项目规则使用。`SubagentStop` 默认关闭且不配置通知，避免子 agent 结束时弹提示音。
 
 ## Slash commands
 
 - `/hook-terr` 只读取并显示当前生效配置。
-- `/hook-terr:configure` 会先询问写入全局还是项目 settings，然后更新 Stop 通知通道。选择 `sound` 时，会在目标 settings 层显式初始化 `notifications.sound.wavPath` 为 `C:\\Windows\\Media\\tada.wav`，除非该层已有自定义 wavPath。
+- `/hook-terr:configure` 会先询问写入全局还是项目 settings，然后更新启用 notify 的 Stop 规则可使用的通知通道。选择 `sound` 时，会在目标 settings 层显式初始化 `notifications.sound.wavPath` 为 `C:\\Windows\\Media\\tada.wav`，除非该层已有自定义 wavPath。
 - `/hook-terr:sound` 可直接保存默认提示音，或打开外部 PowerShell picker 试听后，将所选 sound 提示音写入全局 settings。
 
 `/hook-terr:configure` 写入位置：

@@ -17,7 +17,7 @@
 
 ## notify
 
-`notify.enabled` 为 true 时会执行外部通知。`notify.title` 和 `notify.text` 控制通知文案。
+`notify.enabled` 为 true 时会执行外部通知。`notify.title` 和 `notify.text` 控制通知文案；返回给 Claude 的 `systemMessage` 来自 `message.text`。
 
 `notify.channels` 是可选的规则级覆盖：
 
@@ -25,7 +25,7 @@
 - 设置为数组时，只使用该数组中的通道。
 - 设置为空数组时，规则仍可返回 `systemMessage`，但不执行外部通知。
 
-内置 `stop-notify` 不写死 channels，让 Stop 默认通道由 settings 控制。
+内置 `stop-notify` 默认 `notify.enabled=false`，只返回自检 `systemMessage`；需要外部通知时，用用户或项目规则显式启用 `notify`。
 
 ## 条件操作符
 

@@ -5,7 +5,7 @@ allowed-tools: ["PowerShell", "Read", "Write", "Edit", "AskUserQuestion"]
 
 # hook-terr Configure
 
-Configure Stop notification channels. Always ask whether to write global or project settings before modifying files.
+Configure Stop notification channels used by explicit Stop notify rules. Always ask whether to write global or project settings before modifying files.
 
 ## Steps
 
@@ -40,7 +40,7 @@ Use `AskUserQuestion`:
 
 Use `AskUserQuestion` with `multiSelect: true`:
 
-- Question: `Stop 阶段启用哪些通知通道？`
+- Question: `显式 Stop notify 规则使用哪些通知通道？`
 - Header: `通知通道`
 - Options:
   1. `sound` — Windows `.wav` notification sound.
@@ -69,7 +69,7 @@ Tell the user:
 已更新 hook-terr Stop 通知配置。
 写入位置: <path printed by settings_writer.py>
 Stop channels: <channels>
-配置会在下一次 hook 触发时生效。
+配置会被启用 notify 的 Stop 规则使用。默认 Stop 自检规则不会直接触发外部通知。
 ```
 
 If `sound` is enabled, also tell the user:

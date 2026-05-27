@@ -2,7 +2,7 @@
 
 `hook-terr` 支持四类通知器：`sound`、`windows_toast`、`popup`、`custom_command`。
 
-默认 Stop 通道是 `sound + popup`。通知失败 fail open，不会阻断 Claude Code 主流程，但简要诊断会追加到 hook `systemMessage`。
+默认 Stop 自检规则不执行外部通知；只有启用 `notify` 的规则才会调用通知器。通知失败 fail open，不会阻断 Claude Code 主流程，但简要诊断会追加到 hook `systemMessage`。
 
 ## sound
 
@@ -17,13 +17,13 @@ Windows 下播放 `.wav` 提示音。默认使用 `C:\\Windows\\Media\\tada.wav`
 
 ## windows_toast
 
-Windows 下显示 tray balloon 通知。默认可用，但不再作为 Stop 默认通道。可通过 `/hook-terr:configure` 或 settings 覆盖启用到 Stop 通道。
+Windows 下显示 tray balloon 通知。默认可用，但不会由默认 Stop 自检规则触发。启用 notify 的规则可通过 `/hook-terr:configure` 或 settings 覆盖选择该通道。
 
 实现要求：hook 将通知脚本写入临时 `.ps1`，再通过 `cmd.exe /c start powershell.exe -STA -File ...` 启动独立通知进程并立即返回，避免 Claude Code 清理 Stop hook 子进程时中断通知。通知进程会同时投递 WinRT `ToastNotificationManager` 和 `System.Windows.Forms.NotifyIcon` tray balloon；后者使用 `ApplicationContext` message loop 保活。`timeoutMs` 会限制在 5–30 秒之间。设置 `HOOK_TERR_WINDOWS_TOAST_LOG` 时会把 WinRT/NotifyIcon 投递路径写入该日志。
 
 ## popup
 
-结构化弹窗，支持标题、正文和图标。默认作为 Stop 通道启用。实现必须非阻塞：hook 只启动弹窗进程，不等待用户关闭。
+结构化弹窗，支持标题、正文和图标。默认通道配置中可用，但不会由默认 Stop 自检规则触发。实现必须非阻塞：hook 只启动弹窗进程，不等待用户关闭。
 
 ## custom_command
 
