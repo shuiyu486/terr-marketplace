@@ -2,6 +2,10 @@
 
 A feature-rich status line for Claude Code.
 
+## Screenshot
+
+![cc-statusline usage limits](docs/assets/cc-statusline.png)
+
 ## Features
 
 - Model name with ANSI colors
