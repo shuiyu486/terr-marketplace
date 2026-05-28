@@ -1,0 +1,10 @@
+{
+  "name": "ida-mcp-router",
+  "version": "0.2.0",
+  "description": "Project-memory template for routing high-output IDA MCP reverse-engineering work through sub-agents and on-demand references.",
+  "author": {
+    "name": "terrapin"
+  },
+  "license": "MIT",
+  "keywords": ["ida", "mcp", "reverse-engineering", "claude-local", "context-management"]
+}

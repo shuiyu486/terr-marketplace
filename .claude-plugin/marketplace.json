@@ -117,6 +117,20 @@
       "keywords": ["claude-code", "plugins", "marketplace", "fork", "upstream", "sync", "slash-command"]
     },
     {
+      "name": "ida-mcp-router",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/shuiyu486/terr-marketplace.git",
+        "path": "plugins/ida-mcp-router"
+      },
+      "description": "Project-memory template for routing high-output IDA MCP reverse-engineering work through sub-agents and on-demand references.",
+      "version": "0.2.0",
+      "author": { "name": "terrapin" },
+      "repository": "https://github.com/shuiyu486/terr-marketplace",
+      "license": "MIT",
+      "keywords": ["ida", "mcp", "reverse-engineering", "claude-local", "context-management"]
+    },
+    {
       "name": "feature-dev",
       "source": {
         "source": "git-subdir",
