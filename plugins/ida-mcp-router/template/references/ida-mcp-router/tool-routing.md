@@ -4,8 +4,8 @@
 
 ## 路由总则
 
-- 主会话：单地址、单函数、少量数据、最终结论、所有 IDB 修改。
-- 子 agent：宽泛搜索、候选筛选、调用图探索、大函数预读、批量综合分析。
+- 主会话：单地址、单函数、少量数据、最终结论、所有 IDB 修改；每轮最多 1 个重型 IDA MCP 调用。
+- 子 agent：宽泛搜索、多函数/多范围候选筛选、调用图探索、大函数预读、批量综合分析。
 - 子 agent 默认只读；除非用户明确授权，不得修改 IDB。
 - 高风险 tool 的输出必须由子 agent 压缩为候选地址、证据、置信度、下一步。
 
@@ -42,7 +42,7 @@
 | 大范围 `analyze_function` | 可能包含太多细节 | 摘要，不贴完整伪代码 |
 | `callgraph` | 节点/边爆炸 | `max_depth <= 2` 起步，返回关键边 |
 | `list_funcs` / `list_globals` / `imports` | 枚举型结果 | 返回匹配候选，不返回完整列表 |
-| `find_regex` / `find_bytes` / `find` / `search_text` | 搜索结果可能很多；`search_text` 会扫描渲染 listing，尤其容易过宽 | `limit <= 50`，优先用结构化搜索；`search_text` 不作为第一步全局扫描，必要时先读 `search-narrowing.md` |
+| `find_regex` / `find_bytes` / `find` / `search_text` | 搜索结果可能很多；`search_text` 会扫描渲染 listing，尤其容易过宽 | `limit <= 50`，优先用结构化搜索；`search_text` 不作为第一步全局扫描；多范围搜索默认子 agent 串行执行，必要时先读 `search-narrowing.md` / `mcp-stability.md` |
 | `type_query` / `search_structs` | 类型/结构枚举可能很大 | 返回候选类型和判断依据 |
 | `ida://types` / `ida://structs` | 资源 dump 大 | 避免主会话直接读 |
 | 多函数 `decompile` / `disasm` | 直接撑大上下文 | 子 agent 摘要后主会话精读单点 |

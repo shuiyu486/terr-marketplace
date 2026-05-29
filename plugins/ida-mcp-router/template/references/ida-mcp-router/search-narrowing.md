@@ -12,7 +12,7 @@
 
 ## 易卡住模式
 
-- 避免同时启动多个重型 IDA MCP 查询；`search_text`、大范围 `insn_query`、callgraph、批量 decompile 应串行收敛。
+- 避免同时启动多个重型 IDA MCP 查询；`search_text`、大范围 `insn_query`、callgraph、批量 decompile 应串行收敛，多范围任务也不要并发打同一 IDA worker。
 - `search_text` 只有 `start` 没有 `end` 边界时，可能从起点向后扫描很远；不要用它模拟函数范围内搜索。
 - 不要裸搜短偏移或泛常量，例如 `101h`、`78h`、`rbp-448h`；先确认基址寄存器、栈局部或结构字段关系，再查等价地址。
 - 大范围 `insn_query` 不要设置过大的 `max_scan_insns`；主会话从 `count <= 80`、`max_scan_insns <= 5000` 起步。
