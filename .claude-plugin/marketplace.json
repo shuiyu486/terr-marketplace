@@ -146,6 +146,20 @@
       "repository": "https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev",
       "license": "Apache-2.0",
       "keywords": ["feature-development", "agents", "architecture", "code-review", "workflow", "brainstorming"]
+    },
+    {
+      "name": "handoff",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/shuiyu486/terr-marketplace.git",
+        "path": "plugins/handoff"
+      },
+      "description": "Compact the current conversation into a handoff document for another agent to pick up.",
+      "version": "1.0.0",
+      "author": { "name": "Matt Pocock" },
+      "repository": "https://github.com/mattpocock/skills",
+      "license": "MIT",
+      "keywords": ["handoff", "context", "summarization", "productivity", "skill"]
     }
   ]
 }
