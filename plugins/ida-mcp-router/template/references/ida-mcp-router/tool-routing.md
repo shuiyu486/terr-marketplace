@@ -32,6 +32,7 @@
 | `basic_blocks` | 限制 `max_blocks`，只看已确认函数 | CFG 很大或需要路径筛选 |
 | `callees` | 单函数调用列表 | 多层调用链探索 |
 | `type_inspect` | 已知类型名 | 类型枚举或关系探索 |
+| `insn_query` | 单范围、明确 mnemonic/operand，`count <= 80`、`max_scan_insns <= 5000` | 多范围、多条件或扫描慢时交给子 agent 串行筛选 |
 
 ## 高风险：默认子 agent
 

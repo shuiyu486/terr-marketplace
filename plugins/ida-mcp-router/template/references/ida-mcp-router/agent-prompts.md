@@ -13,9 +13,10 @@
 禁止：rename、set_type、set_comments、patch、define/undefine、declare_type、idb_save。
 
 限制：
+- 开始前先判断任务规模：单地址/单函数可小范围精读；多范围/多候选/宽搜索必须先做串行筛选计划。
 - 每次最多精读 1 个函数。
 - disasm max_instructions <= 120。
-- xref/query/list/search limit 或 count <= 50。
+- xref/list/search limit 或 count <= 50；`insn_query` 单范围可从 count <= 80、max_scan_insns <= 5000 起步。
 - callgraph max_depth <= 2 起步。
 - 不要并发启动多个重型 IDA 查询；`search_text`、大范围 `insn_query`、callgraph、批量 decompile 应串行收敛；多范围探索也按范围逐个处理。
 - 不要用 `search_text(start=...)` 模拟函数范围内搜索；已知范围优先 `disasm` 分页。
@@ -24,6 +25,7 @@
 - 不要调用无界 analyze_batch、full disasm、大范围 type dump。
 
 返回最多 300-500 字：
+0. 简述实际执行范围：完整/分页/跳过/失败。
 1. 候选地址/函数名，最多 10 条。
 2. 每条的触发依据：字符串、常量、xref、调用关系、字段偏移或关键条件。
 3. 判断方向：为什么可能相关，或为什么可能是误报。
