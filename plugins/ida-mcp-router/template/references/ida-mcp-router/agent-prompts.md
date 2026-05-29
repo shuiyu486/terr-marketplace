@@ -17,6 +17,10 @@
 - disasm max_instructions <= 120。
 - xref/query/list/search limit 或 count <= 50。
 - callgraph max_depth <= 2 起步。
+- 不要并发启动多个重型 IDA 查询；`search_text`、大范围 `insn_query`、callgraph、批量 decompile 应串行收敛。
+- 不要用 `search_text(start=...)` 模拟函数范围内搜索；已知范围优先 `disasm` 分页。
+- 不要裸搜短偏移或泛常量，例如 `101h`、`78h`、`rbp-448h`；先确认基址寄存器/局部再查等价地址。
+- 大范围 `insn_query` 从 `count <= 80`、`max_scan_insns <= 5000` 起步。
 - 不要调用无界 analyze_batch、full disasm、大范围 type dump。
 
 返回最多 300-500 字：
