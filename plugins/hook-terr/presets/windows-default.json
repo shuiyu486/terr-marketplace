@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Default Windows reminder preset: short sound plus tray notification.",
+  "description": "Channel preset for explicit Stop notify rules: short sound plus tray notification. Does not trigger notifications by itself.",
   "settings": {
     "notifications": {
       "sound": { "enabled": true, "timeoutMs": 800 },

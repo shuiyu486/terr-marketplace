@@ -26,6 +26,95 @@ class StopNotificationPolicyTests(unittest.TestCase):
             self.assertIn("准备结束本轮回复前", response["systemMessage"])
             send_notification.assert_not_called()
 
+    def test_legacy_custom_command_template_settings_are_rejected(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            config_dir = os.path.join(home, ".claude", "hook-terr")
+            os.makedirs(config_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(config_dir, "settings.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "notifications": {
+                            "custom_command": {
+                                "enabled": True,
+                                "command": "Write-Host '{{message}}'",
+                            }
+                        },
+                        "events": {"Stop": {"notifications": ["custom_command"]}},
+                    },
+                    handle,
+                )
+
+            with patch("core.action_executor.send_notification") as send_notification:
+                response = run("Stop", {"cwd": cwd})
+
+            self.assertIn("systemMessage", response)
+            self.assertIn("custom_command.command", response["systemMessage"])
+            self.assertIn("removed legacy template", response["systemMessage"])
+            send_notification.assert_not_called()
+
+    def test_explicit_empty_notify_channels_does_not_add_diagnostic(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            rules_dir = os.path.join(home, ".claude", "hook-terr", "rules")
+            os.makedirs(rules_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(rules_dir, "empty-channels.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "version": 1,
+                        "id": "empty-channels",
+                        "enabled": True,
+                        "event": "Stop",
+                        "priority": 200,
+                        "decision": "warn",
+                        "when": [],
+                        "message": {"text": "empty channels"},
+                        "notify": {"enabled": True, "channels": []},
+                    },
+                    handle,
+                )
+
+            with patch("core.action_executor.send_notification") as send_notification:
+                response = run("Stop", {"cwd": cwd})
+
+            self.assertEqual(response, {"systemMessage": "empty channels"})
+            send_notification.assert_not_called()
+
+    def test_notify_without_rule_channels_uses_event_channels(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            config_dir = os.path.join(home, ".claude", "hook-terr")
+            rules_dir = os.path.join(home, ".claude", "hook-terr", "rules")
+            os.makedirs(config_dir)
+            os.makedirs(rules_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(config_dir, "settings.json"), "w", encoding="utf-8") as handle:
+                json.dump({"events": {"Stop": {"notifications": ["sound"]}}}, handle)
+            with open(os.path.join(rules_dir, "event-channels.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "version": 1,
+                        "id": "event-channels",
+                        "enabled": True,
+                        "event": "Stop",
+                        "priority": 200,
+                        "decision": "warn",
+                        "when": [],
+                        "message": {"text": "event channels"},
+                        "notify": {"enabled": True, "title": "title", "text": "text"},
+                    },
+                    handle,
+                )
+
+            with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
+                response = run("Stop", {"cwd": cwd})
+
+            self.assertEqual(response, {"systemMessage": "event channels"})
+            send_notification.assert_called_once()
+            self.assertEqual(send_notification.call_args.args[0], "sound")
+
     def test_explicit_stop_notify_rule_still_sends_notification(self):
         with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
             cwd = os.path.join(home, "project")

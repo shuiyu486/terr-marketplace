@@ -31,6 +31,10 @@
 
 项目修改后的文档收尾提醒由 runtime feature `features.documentationReminder` 实现，不是 `defaults/rules/*.json` 规则。它需要跨 `PostToolUse`、`Stop` 和 `UserPromptSubmit` 共享会话状态，因此不能通过创建同 `id` 规则禁用；请在 settings 中设置 `features.documentationReminder.enabled=false`。
 
+## 与 custom_command.command 的区别
+
+规则中的 `message.text`、`notify.title` 和 `notify.text` 仍可使用规则文案模板。禁用的是 settings 中 `notifications.custom_command.command` 的旧模板替换。custom command 如需读取最终通知标题或正文，应使用 `HOOK_TERR_TITLE` 和 `HOOK_TERR_MESSAGE` 环境变量。
+
 ## 条件操作符
 
 - `equals`

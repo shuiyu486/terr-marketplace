@@ -72,7 +72,7 @@ Windows notification 仍然可用，但不再由默认 Stop 自检规则触发�
 
 `settings.events.<Event>.notifications` 是事件默认通知通道来源。`rule.notify.channels` 是可选的规则级覆盖；未设置时回退到事件默认通道。默认 `stop-notify` 只做自检提示；需要外部通知时，创建启用 `notify` 的用户或项目规则。
 
-`sound` 默认播放 `C:\\Windows\\Media\\tada.wav`。`/hook-terr:sound` 可跳过试听直接保存默认音效；需要试听时会打开外部 PowerShell picker，用户选好后回填 id、alias 或 wavPath 再写入全局偏好。`popup` 默认可用，但只有启用 notify 的规则选择该通道时才会触发。`custom_command` 是高级能力，默认关闭；启用后等价于执行本机命令，只应配置可信命令；动态消息优先通过 `HOOK_TERR_*` 环境变量读取，避免拼接进 shell 命令。
+`sound` 默认播放 `C:\\Windows\\Media\\tada.wav`。`/hook-terr:sound` 可跳过试听直接保存默认音效；需要试听时会打开外部 PowerShell picker，用户选好后回填 id、alias 或 wavPath 再写入全局偏好。`popup` 默认可用，但只有启用 notify 的规则选择该通道时才会触发。`custom_command` 是高级能力，默认关闭；启用后等价于执行本机命令，只应配置可信命令；动态消息只能通过 `HOOK_TERR_*` 环境变量读取，旧 `{{message}}` 等 `custom_command.command` 模板会导致 settings 加载诊断报错。
 
 ## 扩展规则
 

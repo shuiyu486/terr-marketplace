@@ -5,6 +5,7 @@ VALID_EVENTS = {"Stop", "SubagentStop", "PreToolUse", "PostToolUse", "UserPrompt
 VALID_DECISIONS = {"allow", "warn", "block"}
 VALID_OPERATORS = {"equals", "contains", "regex", "not_regex", "in"}
 VALID_CHANNELS = {"windows_toast", "sound", "popup", "custom_command"}
+LEGACY_CUSTOM_COMMAND_TOKENS = ("{{event}}", "{{title}}", "{{message}}", "{{cwd}}", "{{timestamp}}")
 
 
 def validate_settings(settings: Any) -> List[str]:
@@ -38,6 +39,23 @@ def validate_settings(settings: Any) -> List[str]:
                 icon = config.get("icon")
                 if icon is not None and icon not in ("info", "warning", "error"):
                     errors.append("settings.notifications.popup.icon must be one of info, warning, error")
+            if channel == "custom_command":
+                command = config.get("command")
+                if command is not None and not isinstance(command, str):
+                    errors.append("settings.notifications.custom_command.command must be a string")
+                legacy_tokens = legacy_custom_command_tokens(command)
+                if legacy_tokens:
+                    errors.append(
+                        "settings.notifications.custom_command.command uses removed legacy template token(s): "
+                        + ", ".join(legacy_tokens)
+                        + "; use HOOK_TERR_MESSAGE, HOOK_TERR_TITLE, HOOK_TERR_EVENT, HOOK_TERR_CWD, and HOOK_TERR_TIMESTAMP environment variables instead"
+                    )
+                timeout_ms = config.get("timeoutMs")
+                if timeout_ms is not None and (isinstance(timeout_ms, bool) or not isinstance(timeout_ms, (int, float))):
+                    errors.append("settings.notifications.custom_command.timeoutMs must be a number")
+                detached = config.get("detached")
+                if detached is not None and not isinstance(detached, bool):
+                    errors.append("settings.notifications.custom_command.detached must be a boolean")
 
     events = settings.get("events", {})
     if events is not None and not isinstance(events, dict):
@@ -59,7 +77,9 @@ def validate_settings(settings: Any) -> List[str]:
                     errors.append(f"settings.events.{event_name}.notifications must be an array")
                 else:
                     for channel in channels:
-                        if channel not in VALID_CHANNELS:
+                        if not isinstance(channel, str):
+                            errors.append(f"settings.events.{event_name}.notifications must contain only strings")
+                        elif channel not in VALID_CHANNELS:
                             errors.append(f"settings.events.{event_name}.notifications has unknown channel '{channel}'")
 
     features = settings.get("features", {})
@@ -94,6 +114,12 @@ def validate_settings(settings: Any) -> List[str]:
     return errors
 
 
+def legacy_custom_command_tokens(command: Any) -> List[str]:
+    if not isinstance(command, str):
+        return []
+    return [token for token in LEGACY_CUSTOM_COMMAND_TOKENS if token in command]
+
+
 def validate_rule(data: Any, source: str) -> List[str]:
     errors = []
     if not isinstance(data, dict):
@@ -103,21 +129,51 @@ def validate_rule(data: Any, source: str) -> List[str]:
         if key not in data:
             errors.append(f"{source}: missing required field '{key}'")
 
+    for key in ("id", "event", "decision"):
+        if key in data and not isinstance(data.get(key), str):
+            errors.append(f"{source}: {key} must be a string")
+
+    enabled = data.get("enabled")
+    if "enabled" in data and not isinstance(enabled, bool):
+        errors.append(f"{source}: enabled must be a boolean")
+
     event = data.get("event")
-    if event and event not in VALID_EVENTS:
+    if isinstance(event, str) and event not in VALID_EVENTS:
         errors.append(f"{source}: invalid event '{event}'")
 
     decision = data.get("decision")
-    if decision and decision not in VALID_DECISIONS:
+    if isinstance(decision, str) and decision not in VALID_DECISIONS:
         errors.append(f"{source}: invalid decision '{decision}'")
 
+    priority = data.get("priority")
+    if priority is not None and (isinstance(priority, bool) or not isinstance(priority, int)):
+        errors.append(f"{source}: priority must be an integer")
+
+    match = data.get("match")
+    if match is not None:
+        if not isinstance(match, str):
+            errors.append(f"{source}: match must be a string")
+        elif match not in ("all", "any"):
+            errors.append(f"{source}: match must be one of all, any")
+
+    message = data.get("message", {})
+    if message is not None and not isinstance(message, dict):
+        errors.append(f"{source}: message must be an object")
+
     notify = data.get("notify", {})
+    if notify is not None and not isinstance(notify, dict):
+        errors.append(f"{source}: notify must be an object")
     if isinstance(notify, dict):
+        notify_enabled = notify.get("enabled")
+        if notify_enabled is not None and not isinstance(notify_enabled, bool):
+            errors.append(f"{source}: notify.enabled must be a boolean")
         channels = notify.get("channels", [])
-        if channels and not isinstance(channels, list):
+        if channels is not None and not isinstance(channels, list):
             errors.append(f"{source}: notify.channels must be an array")
         for channel in channels if isinstance(channels, list) else []:
-            if channel not in VALID_CHANNELS:
+            if not isinstance(channel, str):
+                errors.append(f"{source}: notify.channels must contain only strings")
+            elif channel not in VALID_CHANNELS:
                 errors.append(f"{source}: unknown notification channel '{channel}'")
 
     when = data.get("when", [])
@@ -130,7 +186,9 @@ def validate_rule(data: Any, source: str) -> List[str]:
             errors.append(f"{source}: condition {index} must be an object")
             continue
         op = condition.get("op")
-        if op not in VALID_OPERATORS:
+        if not isinstance(op, str):
+            errors.append(f"{source}: condition {index} operator must be a string")
+        elif op not in VALID_OPERATORS:
             errors.append(f"{source}: condition {index} has invalid operator '{op}'")
         if op in ("regex", "not_regex"):
             try:

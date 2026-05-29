@@ -12,7 +12,8 @@ def execute(rule: Rule, context: HookContext, settings: Dict[str, Any]) -> Tuple
     notify = rule.notify if isinstance(rule.notify, dict) else {}
     if notify.get("enabled", False):
         channels = resolve_channels(rule, context, settings)
-        if not channels:
+        explicit_channels = "channels" in notify
+        if not channels and not explicit_channels:
             diagnostics.append(f"{context.hook_event_name}: notify.enabled=true 但没有可执行通知通道")
         for channel in channels:
             channel_config = settings.get("notifications", {}).get(channel, {})

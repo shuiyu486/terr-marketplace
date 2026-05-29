@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Strong Windows reminder preset: sound plus structured popup.",
+  "description": "Channel preset for explicit Stop notify rules: sound plus structured popup. Does not trigger notifications by itself.",
   "settings": {
     "notifications": {
       "sound": { "enabled": true, "timeoutMs": 800 },

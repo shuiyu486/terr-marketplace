@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Sample custom command preset. Review before enabling because it executes a local command.",
+  "description": "Sample custom command preset. Review before enabling because it executes a local command. Dynamic values are available through HOOK_TERR_* environment variables only.",
   "settings": {
     "notifications": {
       "custom_command": {

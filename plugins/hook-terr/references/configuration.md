@@ -74,6 +74,12 @@ defaults/rules/*.json
 
 运行时状态存储在 `~/.claude/hook-terr/state/documentation-reminder/`。
 
+## custom_command 配置迁移
+
+`notifications.custom_command.command` 中不再支持旧模板变量：`{{event}}`、`{{title}}`、`{{message}}`、`{{cwd}}`、`{{timestamp}}`。如果用户或项目 settings 包含这些模板，settings 加载阶段会报诊断并跳过该配置层。
+
+请改用 `HOOK_TERR_*` 环境变量，例如 PowerShell 中使用 `$env:HOOK_TERR_MESSAGE`，sh/bash 中使用 `$HOOK_TERR_MESSAGE`。
+
 ## Presets
 
 `presets/` 随 marketplace 插件分发，保存开源可复用配置方案。它们不会自动加载，用户可以复制其中内容到全局或项目 settings 中。
