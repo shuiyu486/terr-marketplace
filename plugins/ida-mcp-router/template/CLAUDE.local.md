@@ -25,8 +25,8 @@
 
 ## 仓库同步
 
-- 当前工作目录 `C:\AI\m_projects\RE\cdm` 不是远程 git 仓库；插件仓库在 `C:\Users\terrapin\.claude\plugins\marketplaces\terr-marketplace\plugins\ida-mcp-router`。
-- 修改当前目录的记忆模板后，需要同步到上述插件仓库的对应文件，再在插件仓库中提交和推送。
+- 当前分析工作目录通常不是远程 git 仓库；可提交的源仓库在 Claude 插件 marketplace 的 `plugins/ida-mcp-router` 目录。
+- 修改当前目录的记忆模板后，需要同步到已安装 marketplace 仓库的对应 `template/` 文件，再在该插件仓库中提交和推送。
 
 ## 默认决策
 
