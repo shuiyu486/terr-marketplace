@@ -27,6 +27,10 @@
 
 内置 `stop-notify` 默认 `notify.enabled=false`，只返回自检 `systemMessage`；需要外部通知时，用用户或项目规则显式启用 `notify`。
 
+## 文档收尾提醒不是规则
+
+项目修改后的文档收尾提醒由 runtime feature `features.documentationReminder` 实现，不是 `defaults/rules/*.json` 规则。它需要跨 `PostToolUse`、`Stop` 和 `UserPromptSubmit` 共享会话状态，因此不能通过创建同 `id` 规则禁用；请在 settings 中设置 `features.documentationReminder.enabled=false`。
+
 ## 条件操作符
 
 - `equals`

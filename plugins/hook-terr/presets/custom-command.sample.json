@@ -7,7 +7,7 @@
         "enabled": false,
         "detached": true,
         "timeoutMs": 1000,
-        "command": "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show('{{message}}', '{{title}}') | Out-Null"
+        "command": "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show($env:HOOK_TERR_MESSAGE, $env:HOOK_TERR_TITLE) | Out-Null"
       }
     },
     "events": {

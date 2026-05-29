@@ -29,7 +29,21 @@ Windows 下显示 tray balloon 通知。默认可用，但不会由默认 Stop �
 
 高级自定义命令，默认关闭。启用后等价于执行本机命令。
 
-允许模板变量：
+推荐通过环境变量读取动态值，避免把消息内容拼进 shell/PowerShell 命令源码：
+
+- `HOOK_TERR_EVENT`
+- `HOOK_TERR_TITLE`
+- `HOOK_TERR_MESSAGE`
+- `HOOK_TERR_CWD`
+- `HOOK_TERR_TIMESTAMP`
+
+Windows PowerShell 示例：
+
+```powershell
+Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show($env:HOOK_TERR_MESSAGE, $env:HOOK_TERR_TITLE) | Out-Null
+```
+
+仍保留旧模板变量以兼容已有配置：
 
 - `{{event}}`
 - `{{title}}`
@@ -40,6 +54,6 @@ Windows 下显示 tray balloon 通知。默认可用，但不会由默认 Stop �
 安全边界：
 
 - 只配置可信命令。
-- 不要拼接未信任输入。
+- 优先使用 `HOOK_TERR_*` 环境变量；不要把 `{{message}}`、`{{title}}` 等动态内容拼入 shell 字符串或 PowerShell 字符串。
 - 命令 stdout/stderr 必须与 hook stdout 隔离。
 - 优先使用 detached 模式，避免阻塞 hook。

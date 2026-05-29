@@ -6,6 +6,7 @@
 
 - 注册 `Stop`、`SubagentStop`、`PreToolUse`、`PostToolUse`、`UserPromptSubmit` 五类 hook 入口。
 - 默认只启用主会话 Stop 自检规则；`SubagentStop` 默认关闭，避免子 agent 结束时弹提示音。
+- 默认启用文档收尾提醒：项目内使用 `Write`、`Edit`、`MultiEdit` 或 `NotebookEdit` 修改文件后，首次 Stop 会提醒 Claude 更新相关文档并完成 commit/push。
 - 支持插件内默认配置、用户全局覆盖和项目覆盖。
 - Stop 外部通知需要通过用户或项目规则显式启用，避免每次 Stop 都误触发。
 - 支持 Windows tray 通知、提示音、结构化弹窗和高级自定义命令。
@@ -58,13 +59,20 @@ defaults/rules/*.json
 - 返回 `systemMessage`，提醒 Claude 检查是否需要通知用户。
 - 不直接触发 Windows `.wav` sound、popup 或 toast，避免非完成/非求助场景误打扰。
 
+默认文档收尾提醒会：
+
+- 仅在当前 `cwd` 看起来像项目，且修改工具命中的文件位于该项目目录内时记录状态。
+- 识别 `Write`、`Edit`、`MultiEdit` 和 `NotebookEdit`；不根据 `Bash` 命令猜测文件修改。
+- 在同一会话首次 Stop 时返回 `decision: block`，要求 Claude 更新相关文档，并在验证后 commit/push。
+- 同一轮只提醒一次；再次 Stop 会放行。用户或项目 settings 可通过 `features.documentationReminder.enabled=false` 关闭。
+
 Windows notification 仍然可用，但不再由默认 Stop 自检规则触发。启用 notify 的自定义规则可以通过 `/hook-terr:configure` 选择通道；通知进程会独立启动，hook 本身不会等待通知关闭。
 
 ## 通知通道
 
 `settings.events.<Event>.notifications` 是事件默认通知通道来源。`rule.notify.channels` 是可选的规则级覆盖；未设置时回退到事件默认通道。默认 `stop-notify` 只做自检提示；需要外部通知时，创建启用 `notify` 的用户或项目规则。
 
-`sound` 默认播放 `C:\\Windows\\Media\\tada.wav`。`/hook-terr:sound` 可跳过试听直接保存默认音效；需要试听时会打开外部 PowerShell picker，用户选好后回填 id、alias 或 wavPath 再写入全局偏好。`popup` 默认可用，但只有启用 notify 的规则选择该通道时才会触发。`custom_command` 是高级能力，默认关闭；启用后等价于执行本机命令，只应配置可信命令。
+`sound` 默认播放 `C:\\Windows\\Media\\tada.wav`。`/hook-terr:sound` 可跳过试听直接保存默认音效；需要试听时会打开外部 PowerShell picker，用户选好后回填 id、alias 或 wavPath 再写入全局偏好。`popup` 默认可用，但只有启用 notify 的规则选择该通道时才会触发。`custom_command` 是高级能力，默认关闭；启用后等价于执行本机命令，只应配置可信命令；动态消息优先通过 `HOOK_TERR_*` 环境变量读取，避免拼接进 shell 命令。
 
 ## 扩展规则
 

@@ -62,6 +62,35 @@ def validate_settings(settings: Any) -> List[str]:
                         if channel not in VALID_CHANNELS:
                             errors.append(f"settings.events.{event_name}.notifications has unknown channel '{channel}'")
 
+    features = settings.get("features", {})
+    if features is not None and not isinstance(features, dict):
+        errors.append("settings.features must be an object")
+    elif isinstance(features, dict):
+        reminder = features.get("documentationReminder")
+        if reminder is not None:
+            if not isinstance(reminder, dict):
+                errors.append("settings.features.documentationReminder must be an object")
+            else:
+                reminder_enabled = reminder.get("enabled")
+                if reminder_enabled is not None and not isinstance(reminder_enabled, bool):
+                    errors.append("settings.features.documentationReminder.enabled must be a boolean")
+                tools = reminder.get("tools")
+                if tools is not None:
+                    if not isinstance(tools, list):
+                        errors.append("settings.features.documentationReminder.tools must be an array")
+                    else:
+                        for tool in tools:
+                            if not isinstance(tool, str):
+                                errors.append("settings.features.documentationReminder.tools must contain only strings")
+                                break
+                ttl = reminder.get("stateTtlHours")
+                if ttl is not None:
+                    if not isinstance(ttl, int) or ttl <= 0:
+                        errors.append("settings.features.documentationReminder.stateTtlHours must be a positive integer")
+                message = reminder.get("message")
+                if message is not None and not isinstance(message, str):
+                    errors.append("settings.features.documentationReminder.message must be a string")
+
     return errors
 
 

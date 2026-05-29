@@ -47,6 +47,33 @@ defaults/rules/*.json
 ~/.claude/hook-terr/settings.json
 ```
 
+## 文档收尾提醒
+
+`features.documentationReminder` 默认启用，随插件默认 settings 分发；更新插件后，未显式覆盖该配置的机器会自动应用。
+
+默认行为：当当前 `cwd` 看起来像项目，且本会话通过 `Write`、`Edit`、`MultiEdit` 或 `NotebookEdit` 修改了项目目录内文件时，首次 Stop 会 block 一次，提醒 Claude 更新相关文档并在验证后 commit/push。状态按 `session_id` 或 `transcript_path` 隔离，避免同一项目内多个 Claude Code 会话互相污染。
+
+禁用方式：
+
+```json
+{
+  "features": {
+    "documentationReminder": {
+      "enabled": false
+    }
+  }
+}
+```
+
+可覆盖字段：
+
+- `enabled`: 是否启用。
+- `tools`: 触发记录的工具名数组，默认 `Write`、`Edit`、`MultiEdit`、`NotebookEdit`。
+- `stateTtlHours`: 状态文件保留小时数。
+- `message`: Stop block 返回给 Claude 的提醒文案。
+
+运行时状态存储在 `~/.claude/hook-terr/state/documentation-reminder/`。
+
 ## Presets
 
 `presets/` 随 marketplace 插件分发，保存开源可复用配置方案。它们不会自动加载，用户可以复制其中内容到全局或项目 settings 中。

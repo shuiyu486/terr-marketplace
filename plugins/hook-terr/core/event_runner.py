@@ -3,6 +3,7 @@ from typing import Any, Dict
 from core.action_executor import execute
 from core.config_loader import load_configuration, warn
 from core.context_builder import build_context
+from core.documentation_reminder import handle_documentation_reminder
 from core.response_builder import build_response, diagnostic_response
 from core.rule_matcher import find_match
 
@@ -20,6 +21,12 @@ def run(event_name: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
     event_settings = settings.get("events", {}).get(event_name, {})
     if isinstance(event_settings, dict) and not event_settings.get("enabled", True):
         return {}
+
+    feature_response, feature_diagnostics = handle_documentation_reminder(event_name, context, settings)
+    for diagnostic in feature_diagnostics:
+        warn(f"hook-terr documentation reminder: {diagnostic}")
+    if feature_response:
+        return feature_response
 
     rule = find_match(event_name, context, rules)
     if not rule:
