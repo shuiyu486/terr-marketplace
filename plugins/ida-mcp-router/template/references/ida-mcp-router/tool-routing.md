@@ -42,7 +42,7 @@
 | 大范围 `analyze_function` | 可能包含太多细节 | 摘要，不贴完整伪代码 |
 | `callgraph` | 节点/边爆炸 | `max_depth <= 2` 起步，返回关键边 |
 | `list_funcs` / `list_globals` / `imports` | 枚举型结果 | 返回匹配候选，不返回完整列表 |
-| `find_regex` / `find_bytes` / `find` / `search_text` | 搜索结果可能很多 | `limit <= 50`，返回最相关命中 |
+| `find_regex` / `find_bytes` / `find` / `search_text` | 搜索结果可能很多；`search_text` 会扫描渲染 listing，尤其容易过宽 | `limit <= 50`，优先用结构化搜索；`search_text` 不作为第一步全局扫描，必要时先读 `search-narrowing.md` |
 | `type_query` / `search_structs` | 类型/结构枚举可能很大 | 返回候选类型和判断依据 |
 | `ida://types` / `ida://structs` | 资源 dump 大 | 避免主会话直接读 |
 | 多函数 `decompile` / `disasm` | 直接撑大上下文 | 子 agent 摘要后主会话精读单点 |

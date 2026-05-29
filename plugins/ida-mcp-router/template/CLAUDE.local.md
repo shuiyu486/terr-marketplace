@@ -20,7 +20,13 @@
 | 判断某个 IDA MCP tool 应该在主会话还是子 agent 中跑 | `references/ida-mcp-router/tool-routing.md` |
 | 准备启动子 agent 做 IDA MCP 探索 | `references/ida-mcp-router/agent-prompts.md` |
 | 任务范围较大，需要规划逆向分析路径 | `references/ida-mcp-router/progressive-analysis.md` |
+| 搜索过宽、`search_text` 中断、需要把全局搜索收敛为候选地址精读 | `references/ida-mcp-router/search-narrowing.md` |
 | 上下文膨胀、`/compact` 失败、需要裁剪或新会话恢复 | `references/ida-mcp-router/context-recovery.md` |
+
+## 仓库同步
+
+- 当前工作目录 `C:\AI\m_projects\RE\cdm` 不是远程 git 仓库；插件仓库在 `C:\Users\terrapin\.claude\plugins\marketplaces\terr-marketplace\plugins\ida-mcp-router`。
+- 修改当前目录的记忆模板后，需要同步到上述插件仓库的对应文件，再在插件仓库中提交和推送。
 
 ## 默认决策
 
