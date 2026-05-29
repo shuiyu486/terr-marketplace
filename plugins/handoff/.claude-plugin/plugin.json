@@ -1,9 +1,9 @@
 {
   "name": "handoff",
-  "version": "1.0.0",
-  "description": "Compact the current conversation into a handoff document for another agent to pick up.",
+  "version": "1.0.1",
+  "description": "Slash command that creates a handoff document for another Claude Code session.",
   "author": { "name": "Matt Pocock" },
   "repository": "https://github.com/mattpocock/skills",
   "license": "MIT",
-  "keywords": ["handoff", "context", "summarization", "productivity", "skill"]
+  "keywords": ["handoff", "context", "summarization", "productivity", "slash-command"]
 }
