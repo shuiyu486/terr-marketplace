@@ -10,7 +10,7 @@
    - 当前用户名
 4. **备份本地配置** — 将现有配置文件备份到 `~\ccNovaTerm-backup\yyyyMMdd_HHmmss\`
 5. **替换占位符** — 将模板中的占位符替换为实际值。**内置保护规则**：env.nu 代理行自动保留本地版本。**用户排除规则**：对于字段级排除，替换占位符后从备份中恢复被排除的行
-6. **写入本地** — 写入本地配置路径，自动创建所需目录。**必须使用 UTF-8 编码**（`New-Object System.Text.UTF8Encoding $false`），`starship.toml` 尤其敏感。**跳过文件级排除的文件**（不覆盖）。文件路径见 `paths.md`——CLAUDE.local.md 写入 `Join-Path $PWD.Path "CLAUDE.local.md"`（路径不可写则跳过）。
+6. **写入本地** — 写入本地配置路径，自动创建所需目录。**必须使用 UTF-8 编码**（`New-Object System.Text.UTF8Encoding $false`），`starship.toml` 尤其敏感。**跳过文件级排除的文件**（不覆盖）。文件路径见 `paths.md`——CLAUDE.local.md 写入 `Join-Path $PWD.Path "CLAUDE.local.md"`（路径不可写则跳过）。Yazi 文件写入 `$env:APPDATA\yazi\config\`。
 7. **同步参考文档** — 将远程 `docs/` 下的 `.md` 文档拷贝到本地项目目录 `docs/`：
    ```powershell
    $docFiles = @("config-sync-workflow.md", "compatibility-constraints.md")
@@ -31,8 +31,9 @@
    }
    ```
    文档是纯参考性质，无需占位符替换或排除规则处理。
-8. **运行验证** — 执行语法、Unicode 完整性、文件大小和文档完整性检查
-9. **报告结果** — 列出写入的文件（含文档）、跳过的文件（含排除原因）、备份位置、下一步操作（重启 WezTerm 等）
+8. **恢复 Yazi 插件** — 如果写入了 `yazi/package.toml` 且检测到 `ya` 命令，临时设置 `YAZI_CONFIG_HOME=$env:APPDATA\yazi\config` 后运行 `ya pkg install`；失败时提示用户手动运行，不阻塞配置写入
+9. **运行验证** — 执行语法、Unicode 完整性、文件大小和文档完整性检查
+10. **报告结果** — 列出写入的文件（含文档）、跳过的文件（含排除原因）、备份位置、下一步操作（重启 WezTerm、必要时运行 `ya pkg install` 等）
 
 ## 字段级排除的行级合并
 

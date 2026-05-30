@@ -8,6 +8,9 @@
 | Nushell config | `$env:APPDATA\nushell\config.nu` (i.e., `~\AppData\Roaming\nushell\config.nu`) |
 | Nushell env | `$env:APPDATA\nushell\env.nu` |
 | Starship | `$env:USERPROFILE\.config\starship.toml` |
+| Yazi config | `$env:APPDATA\yazi\config\yazi.toml` |
+| Yazi keymap | `$env:APPDATA\yazi\config\keymap.toml` |
+| Yazi packages | `$env:APPDATA\yazi\config\package.toml` |
 | CLAUDE.local.md | `Join-Path $PWD.Path "CLAUDE.local.md"`（当前工作目录，文件不存在则跳过） |
 
 ### 参考文档路径
@@ -35,6 +38,9 @@ All under `<repo-root>/config/`:
 | Nushell config | `config/config.nu` |
 | Nushell env | `config/env.nu` |
 | Starship | `config/starship.toml` |
+| Yazi config | `config/yazi/yazi.toml` |
+| Yazi keymap | `config/yazi/keymap.toml` |
+| Yazi packages | `config/yazi/package.toml` |
 | CLAUDE.local.md | `config/CLAUDE.local.md` |
 
 ## Template Source

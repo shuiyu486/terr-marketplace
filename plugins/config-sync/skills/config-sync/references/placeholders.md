@@ -31,6 +31,9 @@ When syncing local environment to templates, detect and replace:
 - `config.nu` — contains `alias cc = claude` and yazi wrapper. Copy as-is both directions.
 - `starship.toml` — Pastel Powerline preset. Copy as-is both directions.
 - `CLAUDE.local.md` — Project instructions. Copy as-is both directions.
+- `yazi/yazi.toml` — Yazi layout and preview config. Copy as-is both directions.
+- `yazi/keymap.toml` — Yazi keybindings. Copy as-is both directions.
+- `yazi/package.toml` — Yazi plugin lockfile. Copy as-is both directions; run `ya pkg install` on target machines to restore plugins.
 
 ## Nu.exe Path — Double Backslash Rule
 

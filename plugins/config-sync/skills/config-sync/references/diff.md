@@ -16,7 +16,7 @@
 
 ## 第三步：Hash 级预检
 
-对 5 个配置文件 + 2 个参考文档计算本地和模板的 SHA256 hash。hash 一致直接跳过，只有 hash 不同的文件才展开占位符做内容对比：
+对 8 个配置文件 + 2 个参考文档计算本地和模板的 SHA256 hash。hash 一致直接跳过，只有 hash 不同的文件才展开占位符做内容对比：
 
 ```powershell
 # 路径映射（CLAUDE.local.md 由 $PWD 确定）
@@ -25,6 +25,9 @@ $fileMap = @{
     "config.nu"        = "$env:APPDATA\nushell\config.nu"
     "env.nu"           = "$env:APPDATA\nushell\env.nu"
     "starship.toml"    = "$env:USERPROFILE\.config\starship.toml"
+    "yazi/yazi.toml"   = "$env:APPDATA\yazi\config\yazi.toml"
+    "yazi/keymap.toml" = "$env:APPDATA\yazi\config\keymap.toml"
+    "yazi/package.toml"= "$env:APPDATA\yazi\config\package.toml"
     "CLAUDE.local.md"  = (Join-Path $PWD.Path "CLAUDE.local.md")
 }
 
@@ -149,7 +152,7 @@ starship.toml    ⚠️ 有差异
   L12: 模板='format = "$all"' → 本地='format = "$directory$git_branch"'
 CLAUDE.local.md ✅ 一致
 
-结果: 4/5 一致, 1 个文件有差异
+结果: 7/8 一致, 1 个文件有差异
 建议: starship.toml 需要同步 → "同步到项目" 或 "同步到本地"
 ```
 

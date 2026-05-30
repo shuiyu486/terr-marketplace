@@ -7,7 +7,7 @@
 ## 第一步：准备模板化的本地配置
 
 1. **读取排除规则** — 解析 `~/.configsyncignore`（如存在），构建 `$excludeRules`
-2. **读取本地文件** — 用 UTF-8 编码读取所有 5 个配置文件 + 2 个参考文档。**跳过文件级排除的文件**（`Test-FileExcluded` 返回 `$true` 的文件不参与后续步骤）。文件路径见 `paths.md`——CLAUDE.local.md 从 `Join-Path $PWD.Path "CLAUDE.local.md"` 读取（文件不存在则跳过）。参考文档从 `Join-Path $PWD.Path "docs\<filename>"` 读取（文件不存在则跳过）。
+2. **读取本地文件** — 用 UTF-8 编码读取所有 8 个配置文件 + 2 个参考文档。**跳过文件级排除的文件**（`Test-FileExcluded` 返回 `$true` 的文件不参与后续步骤）。文件路径见 `paths.md`——CLAUDE.local.md 从 `Join-Path $PWD.Path "CLAUDE.local.md"` 读取（文件不存在则跳过）。参考文档从 `Join-Path $PWD.Path "docs\<filename>"` 读取（文件不存在则跳过）。
 3. **检测系统特定值** — 自动识别：
    - nu.exe 路径（`Get-Command nu.exe` → `~\AppData\Local\Programs\nu\bin\nu.exe` → `${env:ProgramFiles}\nu\bin\nu.exe`）
    - Git usr/bin 路径（从 `git.exe` 推断 → `C:\Program Files\Git\usr\bin`）
@@ -17,6 +17,7 @@
    - Git usr/bin 路径 → `__GIT_USR_BIN__`
    - `load-env { http_proxy: ... }` → 注释掉
    - `.wezterm.lua`：`config.default_prog` 用操作系统检测包裹（如模板已有则保持）
+   - config/yazi/*.toml：无需占位符替换，直接拷贝原内容；package.toml 负责锁定插件依赖
    - **参考文档**：无需模板化，直接拷贝原内容
 
 ## 第二步：展示差异并确认

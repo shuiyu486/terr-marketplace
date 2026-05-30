@@ -64,21 +64,23 @@ try {
 }
 ```
 
-**逐个获取 5 个模板文件**，使用 `WebClient.DownloadData` 获取原始字节（避免 PowerShell 的文本编码干扰）：
+**逐个获取 8 个模板文件**，使用 `WebClient.DownloadData` 获取原始字节（避免 PowerShell 的文本编码干扰）：
 
 ```powershell
 $cacheDir = "$env:TEMP\ccNovaTerm-remote-config"
 New-Item -ItemType Directory -Force $cacheDir | Out-Null
 
 $wc = New-Object System.Net.WebClient
-$files = @(".wezterm.lua", "config.nu", "env.nu", "starship.toml", "CLAUDE.local.md")
+$files = @(".wezterm.lua", "config.nu", "env.nu", "starship.toml", "CLAUDE.local.md", "yazi/yazi.toml", "yazi/keymap.toml", "yazi/package.toml")
 $docFiles = @("config-sync-workflow.md", "compatibility-constraints.md")
 $remoteOk = $true
 foreach ($f in $files) {
     $url = "$rawBase/$branch/config/$f"
     try {
         $bytes = $wc.DownloadData($url)
-        [System.IO.File]::WriteAllBytes("$cacheDir\$f", $bytes)
+        $outPath = Join-Path $cacheDir $f
+        New-Item -ItemType Directory -Force (Split-Path -Parent $outPath) | Out-Null
+        [System.IO.File]::WriteAllBytes($outPath, $bytes)
     } catch {
         Write-Output "无法从远程获取 $f （$_）"
         $remoteOk = $false
@@ -118,6 +120,9 @@ $wc.Dispose()
 | `~\AppData\Roaming\nushell\config.nu` | `config/config.nu` | 无 |
 | `~\AppData\Roaming\nushell\env.nu` | `config/env.nu` | `__GIT_USR_BIN__` → Git usr/bin 目录 |
 | `~/.config/starship.toml` | `config/starship.toml` | 无 |
+| `~\AppData\Roaming\yazi\config\yazi.toml` | `config/yazi/yazi.toml` | 无 |
+| `~\AppData\Roaming\yazi\config\keymap.toml` | `config/yazi/keymap.toml` | 无 |
+| `~\AppData\Roaming\yazi\config\package.toml` | `config/yazi/package.toml` | 无（插件锁定文件，目标机器运行 `ya pkg install` 恢复） |
 | `${PWD}/CLAUDE.local.md` | `config/CLAUDE.local.md` | 无（文件不存在则跳过） |
 | `${PWD}/docs/config-sync-workflow.md` | `docs/config-sync-workflow.md` | 无（纯参考文档） |
 | `${PWD}/docs/compatibility-constraints.md` | `docs/compatibility-constraints.md` | 无（纯参考文档） |
@@ -164,7 +169,7 @@ config-sync 有两层排除规则：
 
 1. **PowerShell 语法** — 用 `[System.Management.Automation.Language.Parser]::ParseFile()` 检查 `.wezterm.lua`（基本结构）
 2. **TOML 格式** — 检查 `starship.toml` 含 schema reference
-3. **文件大小** — 确认所有写入文件 > 10 字节
+3. **文件大小** — 确认所有写入文件 > 10 字节（含 config/yazi/*.toml）
 4. **Unicode 完整性** — 检查 `starship.toml` 是否含有预期的 Nerd Font 字符。如果文件中出现 `顐` `禲` `癩` 等 CJK 替代字符，说明编码已损坏
 5. **文档完整性** — 检查 `docs/` 下的 `.md` 文件是否存在且 > 10 字节
 6. **WezTerm 状态** — 运行 `wezterm cli list` 确认 WezTerm 在运行
