@@ -8,7 +8,7 @@ from core.models import HookContext
 def send(title: str, message: str, context: HookContext, config: Dict[str, Any]):
     if platform.system() != "Windows":
         raise RuntimeError("popup is only supported on Windows")
-    popup_title = str(config.get("title") or title)
+    popup_title = str(title or config.get("title") or "hook-terr")
     icon = str(config.get("icon", "info")).lower()
     icon_name = {
         "info": "Information",

@@ -71,6 +71,15 @@ class RuleSchemaTests(unittest.TestCase):
 
         self.assertIn("rule.json: notify.channels must contain only strings", errors)
 
+    def test_agent_context_fields_are_allowed_in_conditions(self):
+        rule = self.base_rule()
+        rule["when"] = [
+            {"field": "is_subagent", "op": "equals", "value": False},
+            {"field": "agent_type", "op": "equals", "value": "main"},
+        ]
+
+        self.assertEqual(validate_rule(rule, "rule.json"), [])
+
     def test_condition_operator_must_be_string(self):
         rule = self.base_rule()
         rule["when"] = [{"field": "cwd", "op": [], "value": "x"}]

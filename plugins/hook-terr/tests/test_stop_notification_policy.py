@@ -26,6 +26,72 @@ class StopNotificationPolicyTests(unittest.TestCase):
             self.assertIn("准备结束本轮回复前", response["systemMessage"])
             send_notification.assert_not_called()
 
+    def test_default_stop_rule_ignores_subagent_transcript_path(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            os.makedirs(cwd)
+            transcript_path = os.path.join(home, "session", "subagents", "agent.jsonl")
+
+            with patch("core.action_executor.send_notification") as send_notification:
+                response = run("Stop", {"cwd": cwd, "transcript_path": transcript_path})
+
+            self.assertEqual(response, {})
+            send_notification.assert_not_called()
+
+    def test_user_rule_can_match_subagent_stop_by_is_subagent(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            rules_dir = os.path.join(home, ".claude", "hook-terr", "rules")
+            os.makedirs(rules_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(rules_dir, "subagent.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "version": 1,
+                        "id": "subagent",
+                        "enabled": True,
+                        "event": "Stop",
+                        "priority": 200,
+                        "decision": "warn",
+                        "when": [{"field": "is_subagent", "op": "equals", "value": True}],
+                        "message": {"text": "subagent stop"},
+                        "notify": {"enabled": False},
+                    },
+                    handle,
+                )
+            transcript_path = os.path.join(home, "session", "subagents", "agent.jsonl")
+
+            response = run("Stop", {"cwd": cwd, "transcript_path": transcript_path})
+
+            self.assertEqual(response, {"systemMessage": "subagent stop"})
+
+    def test_user_rule_can_match_subagent_stop_by_agent_type(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            rules_dir = os.path.join(home, ".claude", "hook-terr", "rules")
+            os.makedirs(rules_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(rules_dir, "agent-type.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "version": 1,
+                        "id": "agent-type",
+                        "enabled": True,
+                        "event": "Stop",
+                        "priority": 200,
+                        "decision": "warn",
+                        "when": [{"field": "agent_type", "op": "equals", "value": "subagent"}],
+                        "message": {"text": "subagent type"},
+                        "notify": {"enabled": False},
+                    },
+                    handle,
+                )
+            transcript_path = os.path.join(home, "session", "subagents", "agent.jsonl")
+
+            response = run("Stop", {"cwd": cwd, "transcript_path": transcript_path})
+
+            self.assertEqual(response, {"systemMessage": "subagent type"})
+
     def test_legacy_custom_command_template_settings_are_rejected(self):
         with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
             cwd = os.path.join(home, "project")

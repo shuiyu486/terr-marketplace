@@ -9,6 +9,8 @@ class HookContext:
     tool_input: Dict[str, Any] = field(default_factory=dict)
     reason: str = ""
     transcript_path: str = ""
+    is_subagent: bool = False
+    agent_type: str = "main"
     user_prompt: str = ""
     cwd: str = ""
     raw_input: Dict[str, Any] = field(default_factory=dict)

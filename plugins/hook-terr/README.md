@@ -6,6 +6,7 @@
 
 - 注册 `Stop`、`SubagentStop`、`PreToolUse`、`PostToolUse`、`UserPromptSubmit` 五类 hook 入口。
 - 默认只启用主会话 Stop 自检规则；`SubagentStop` 默认关闭，避免子 agent 结束时弹提示音。
+- 规则可匹配 `is_subagent` 与 `agent_type`，用于区分主会话和子 agent。
 - 默认启用文档收尾提醒：项目内使用 `Write`、`Edit`、`MultiEdit` 或 `NotebookEdit` 修改文件后，首次 Stop 会提醒 Claude 更新相关文档并完成 commit/push。
 - 支持插件内默认配置、用户全局覆盖和项目覆盖。
 - Stop 外部通知需要通过用户或项目规则显式启用，避免每次 Stop 都误触发。
@@ -57,6 +58,7 @@ defaults/rules/*.json
 默认 Stop 规则会：
 
 - 返回 `systemMessage`，提醒 Claude 检查是否需要通知用户。
+- 仅在 `is_subagent == "false"` 的主会话 Stop 中生效。
 - 不直接触发 Windows `.wav` sound、popup 或 toast，避免非完成/非求助场景误打扰。
 
 默认文档收尾提醒会：
@@ -83,6 +85,6 @@ Windows notification 仍然可用，但不再由默认 Stop 自检规则触发�
 <project>/.claude/hook-terr/rules/*.json
 ```
 
-规则以 `id` 为覆盖键。项目规则覆盖全局规则，全局规则覆盖插件默认规则。同一 `id` 且 `enabled: false` 可禁用上层规则。
+规则以 `id` 为覆盖键。项目规则覆盖全局规则，全局规则覆盖插件默认规则。同一 `id` 且 `enabled: false` 可禁用上层规则。自定义 Stop 规则如果不希望命中子 agent，可添加 `is_subagent == "false"` 条件；如果需要专门匹配子 agent，可使用 `is_subagent == "true"` 或 `agent_type == "subagent"`。
 
 更多说明见 `references/`。

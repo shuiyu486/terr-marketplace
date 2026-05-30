@@ -6,12 +6,16 @@
 
 1. `hooks/hooks.json` 注册 Claude Code hook 事件。
 2. `hooks/*.py` 读取 stdin JSON，并调用 `core.event_runner.run(event, input_data)`。
-3. `context_builder` 将原始 payload 规范化为 `HookContext`。
+3. `context_builder` 将原始 payload 规范化为 `HookContext`，并推导 `is_subagent` 与 `agent_type` 规则字段。
 4. `config_loader` 加载 settings 和 rules。
 5. `documentation_reminder` 在启用时处理项目修改后的文档收尾提醒：`PostToolUse` 记录项目文件修改，`Stop` 首次返回 block，`UserPromptSubmit` 重置本轮状态。
 6. `rule_matcher` 找到当前事件最高优先级命中规则。
 7. `action_executor` 解析有效通知通道并执行通知器。
 8. `response_builder` 输出 Claude Code hook JSON。
+
+## Agent 上下文字段
+
+`context_builder` 会暴露 `is_subagent` 和 `agent_type` 供规则匹配。`SubagentStop` 事件总是视为子 agent；`Stop` 事件优先使用 payload 显式 `is_subagent` / `agent_type` 字段，其次识别 `isSidechain` / `agentId`，缺失时用 `transcript_path` 中独立的 `subagents` 路径段作为 fallback。无法判断时按主会话 fail open。
 
 ## 新增事件规则
 

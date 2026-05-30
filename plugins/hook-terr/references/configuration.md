@@ -26,7 +26,7 @@ defaults/rules/*.json
 
 `settings.events.<Event>.notifications` 是默认通知通道来源。`rule.notify.channels` 是可选的规则级覆盖；未设置时回退到事件默认通道。
 
-内置 `stop-notify` 默认不执行外部通知，只返回自检 `systemMessage`。`/hook-terr:configure` 只修改 settings 中的通道选择；这些通道会被启用 `notify` 的用户或项目规则使用。`SubagentStop` 默认关闭且不配置通知，避免子 agent 结束时弹提示音。
+内置 `stop-notify` 默认不执行外部通知，只在 `is_subagent == "false"` 的主会话 Stop 中返回自检 `systemMessage`。`/hook-terr:configure` 只修改 settings 中的通道选择；这些通道会被启用 `notify` 的用户或项目规则使用。`SubagentStop` 默认关闭且不配置通知，避免子 agent 结束时弹提示音。
 
 ## Slash commands
 

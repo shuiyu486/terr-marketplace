@@ -47,7 +47,9 @@
 
 通用字段：`event`、`cwd`。
 
-Stop/SubagentStop：`reason`、`transcript_path`。
+Stop/SubagentStop：`reason`、`transcript_path`、`is_subagent`、`agent_type`。
+
+`is_subagent` 在规则匹配中返回字符串 `"true"` 或 `"false"`；条件 `value` 可写字符串或 JSON boolean。`agent_type` 当前返回 `"main"` 或 `"subagent"`。runtime 会优先使用 hook payload 中的显式 `is_subagent` / `agent_type` 字段；缺失时，`SubagentStop` 事件、`isSidechain` 或 `agentId` 会视为子 agent，`Stop` 事件还会用 `transcript_path` 中独立的 `subagents` 路径段作为 fallback。
 
 工具事件：`tool_name`、`command`、`file_path`、`content`、`new_text`、`old_text`。
 
