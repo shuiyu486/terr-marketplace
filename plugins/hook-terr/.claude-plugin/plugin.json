@@ -1,6 +1,6 @@
 {
   "name": "hook-terr",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "Personal workflow hook runtime with configurable Stop notifications, selectable Windows sound, toast, popup, and extensible hook rules.",
   "author": {
     "name": "terrapin"

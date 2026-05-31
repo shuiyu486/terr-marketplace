@@ -26,19 +26,26 @@ defaults/rules/*.json
 
 `settings.events.<Event>.notifications` 是默认通知通道来源。`rule.notify.channels` 是可选的规则级覆盖；未设置时回退到事件默认通道。
 
-内置 `stop-notify` 默认不执行外部通知，只在 `is_subagent == "false"` 的主会话 Stop 中返回自检 `systemMessage`。`/hook-terr:configure` 只修改 settings 中的通道选择；这些通道会被启用 `notify` 的用户或项目规则使用。`SubagentStop` 默认关闭且不配置通知，避免子 agent 结束时弹提示音。
+settings 中的 Stop channels 只是“通道偏好”，不会单独触发外部通知。真正触发通知的开关是命中规则中的 `notify.enabled=true`。内置 `stop-notify` 默认不执行外部通知，只在 `is_subagent == "false"` 的主会话 Stop 中返回自检 `systemMessage`。`SubagentStop` 默认关闭且不配置通知，避免子 agent 结束时弹提示音。
 
 ## Slash commands
 
 - `/hook-terr` 只读取并显示当前生效配置。
-- `/hook-terr:configure` 会先询问写入全局还是项目 settings，然后更新启用 notify 的 Stop 规则可使用的通知通道。选择 `sound` 时，会在目标 settings 层显式初始化 `notifications.sound.wavPath` 为 `C:\\Windows\\Media\\tada.wav`，除非该层已有自定义 wavPath。
+- `/hook-terr:configure` 会先询问写入全局还是项目 settings，然后更新 Stop 通知通道。随后会询问是否创建/更新 explicit Stop notify rule：选择 `立即生效` 时写入对应 scope 的 `rules/stop.notify.explicit.json`；当主会话 Stop 未先被 documentationReminder 等 runtime feature 拦截并命中该 rule 时，会触发外部通知。选择 `仅保存通道` 时只修改 settings，内置默认 `stop-notify` 仍不会触发外部通知。选择 `sound` 时，会在目标 settings 层显式初始化 `notifications.sound.wavPath` 为 `C:\\Windows\\Media\\tada.wav`，除非该层已有自定义 wavPath。
 - `/hook-terr:sound` 可直接保存默认提示音，或打开外部 PowerShell picker 试听后，将所选 sound 提示音写入全局 settings。
 
-`/hook-terr:configure` 写入位置：
+`/hook-terr:configure` settings 写入位置：
 
 ```text
 ~/.claude/hook-terr/settings.json
 <project>/.claude/hook-terr/settings.json
+```
+
+`/hook-terr:configure` 选择 `立即生效` 时的 explicit rule 写入位置：
+
+```text
+~/.claude/hook-terr/rules/stop.notify.explicit.json
+<project>/.claude/hook-terr/rules/stop.notify.explicit.json
 ```
 
 `/hook-terr:sound` 始终写入：

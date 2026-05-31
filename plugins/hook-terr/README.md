@@ -16,7 +16,7 @@
 ## Commands
 
 - `/hook-terr` — 显示当前生效的 hook-terr 配置。
-- `/hook-terr:configure` — 交互式配置启用 notify 的 Stop 规则所使用的通知通道，并选择写入全局或项目 settings 覆盖层；启用 `sound` 时会补齐默认提示音。
+- `/hook-terr:configure` — 交互式配置 Stop 通知通道，并可选择创建 explicit Stop notify rule 让配置立即生效；启用 `sound` 时会补齐默认提示音。
 - `/hook-terr:sound` — 直接保存默认 sound 提示音，或打开外部 PowerShell picker 试听后保存全局偏好。
 
 ## 配置来源
@@ -68,7 +68,7 @@ defaults/rules/*.json
 - 在同一会话首次 Stop 时返回 `decision: block`，要求 Claude 更新相关文档，并在验证后 commit/push。
 - 同一轮只提醒一次；再次 Stop 会放行。用户或项目 settings 可通过 `features.documentationReminder.enabled=false` 关闭。
 
-Windows notification 仍然可用，但不再由默认 Stop 自检规则触发。启用 notify 的自定义规则可以通过 `/hook-terr:configure` 选择通道；通知进程会独立启动，hook 本身不会等待通知关闭。
+Windows notification 仍然可用，但不再由默认 Stop 自检规则触发。`/hook-terr:configure` 可以只保存 Stop 通知通道，也可以在用户确认后创建 explicit Stop notify rule。选择“立即生效”时，会创建 explicit Stop notify rule；当主会话 Stop 未先被 documentationReminder 等 runtime feature 拦截并命中该 rule 时，会使用所选通道触发外部通知。选择“仅保存通道”时，默认 Stop 自检规则仍然不会播放 sound、popup 或 toast。通知进程会独立启动，hook 本身不会等待通知关闭。
 
 ## 通知通道
 

@@ -27,6 +27,8 @@
 
 内置 `stop-notify` 默认 `notify.enabled=false`，只返回自检 `systemMessage`；需要外部通知时，用用户或项目规则显式启用 `notify`。
 
+`/hook-terr:configure` 的 `立即生效` 模式会创建或更新 `stop-notify-explicit` 规则，而不是修改内置 `stop-notify` 默认规则。该 explicit rule 只匹配主会话 Stop，并启用 `notify.enabled=true`；默认不写 `notify.channels`，因此会使用 settings 中的 `events.Stop.notifications`。如果 Stop 先被 documentationReminder 等 runtime feature 拦截，runtime 会先返回该 feature 的响应，不会继续匹配 explicit rule。
+
 ## 文档收尾提醒不是规则
 
 项目修改后的文档收尾提醒由 runtime feature `features.documentationReminder` 实现，不是 `defaults/rules/*.json` 规则。它需要跨 `PostToolUse`、`Stop` 和 `UserPromptSubmit` 共享会话状态，因此不能通过创建同 `id` 规则禁用；请在 settings 中设置 `features.documentationReminder.enabled=false`。
