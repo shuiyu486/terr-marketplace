@@ -33,7 +33,7 @@ Claude Code stdin StatusLineData
 | 标签 | 含义 | 来源 | 生命周期 |
 |------|------|------|----------|
 | `in/out` | 当前上下文窗口 token 快照 | stdin `context_window.total_*_tokens` | 实时变化 |
-| `ses` | 当前 Claude Code session 内 API token 累计 | transcript 增量解析 + `sessionKey` | SessionStart 变化后归零 |
+| `ses` | 当前 Claude Code session 内 API token 累计 | transcript 增量解析 + `sessionKey` | transcript `sessionId` 变化后归零 |
 | `api` | 当前 transcript 历史 API token 累计 | transcript 增量解析 + cache | 按 transcript UUID 持久 |
 
 注意：`in/out`、`ses`、`api` 是三种不同口径，不能相互替代。
@@ -43,10 +43,12 @@ Claude Code stdin StatusLineData
 1. feature extraction 必须在 token 去重 `continue` 前运行，否则重复 usage 行上的 tool 事件会丢失。
 2. usage 字段累加用 `|| 0` 防 NaN；不要用 `?? 0` 处理可能已污染的数值链。
 3. `SessionCacheV2` 写 JSON v2，缓存键来自 transcript 文件名/UUID，读取兼容旧 CSV。
-4. `ses` 会写入 cache，并通过 `sessionKey` 判断是否可复用；`api` 始终按 transcript 历史累计。
-5. Codex usage fallback 只在本地代理且 stdin 没有 `rate_limits` 时探测；必须限频、复用 in-flight，并让一次性 stdin 调用等待 pending handler。
-6. `colors.ts` 保持独立，避免 `render.ts ↔ features/*.ts` 循环依赖。
-7. 修改 `src/`、`commands/`、`references/` 或用户可见行为时，按 `references/publish.md` bump patch/minor 并同步版本文件。
+4. `ses` 会写入 cache，并通过 `sessionKey` 判断是否可复用；`sessionKey` 优先用 transcript 顶层 `sessionId`，禁止退回不稳定的 `ppid`。
+5. `api` 始终按 transcript 历史累计；usage 去重必须包含 `server_tool_use_input_tokens`。
+6. `lineNum` 只记录最后成功处理的非空 JSONL 物理行号，尾部空行不能推进缓存。
+7. Codex usage fallback 只在本地代理且 stdin 没有 `rate_limits` 时探测；必须限频、复用 in-flight，并让一次性 stdin 调用等待 pending handler。
+8. `colors.ts` 保持独立，避免 `render.ts ↔ features/*.ts` 循环依赖。
+9. 修改 `src/`、`commands/`、`references/` 或用户可见行为时，按 `references/publish.md` bump patch/minor 并同步版本文件。
 
 ## 文档维护原则
 

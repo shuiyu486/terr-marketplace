@@ -1,6 +1,6 @@
 {
   "name": "cc-statusline",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "A feature-rich status line for Claude Code",
   "main": "dist/index.js",
   "scripts": {

@@ -55,6 +55,12 @@ export interface ContentBlock {
 
 export interface TranscriptMessage {
   type: string;
+  sessionId?: string;
+  uuid?: string;
+  timestamp?: string;
+  attachment?: {
+    hookEvent?: string;
+  };
   message?: {
     type?: string;
     role?: string;
@@ -89,14 +95,18 @@ export interface TodoItem {
   status: string;
 }
 
+export type SessionKeySource = "transcript-session-id" | "session-start" | "transcript-uuid-fallback";
+
 export interface SessionCacheV2 {
   version: 2;
   sessionKey?: string;
+  sessionKeySource?: SessionKeySource;
   lineNum: number;
   lastIn: number;
   lastOut: number;
   lastCacheCreate: number;
   lastCacheRead: number;
+  lastServerToolUseInput?: number;
   sesIn: number;
   sesOut: number;
   apiIn: number;

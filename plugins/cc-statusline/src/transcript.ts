@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import type { TranscriptMessage, SessionCacheV2, ParseResult } from "./types";
+import type { TranscriptMessage, SessionCacheV2, ParseResult, SessionKeySource } from "./types";
 import { extractToolEvent } from "./features/tools";
 import { extractAgentEvent } from "./features/agents";
 import { extractTodoEvent } from "./features/todos";
@@ -10,23 +10,55 @@ import type { TodoState } from "./features/todos";
 const CACHE_DIR = path.join(os.tmpdir(), "cc-statusline-cache");
 const sessionTokenTotals = new Map<string, { sessionKey: string; sesIn: number; sesOut: number }>();
 
-function sessionMarker(lines: string[]): string | null {
+type SessionKeyInfo = {
+  key: string;
+  source: SessionKeySource;
+  sessionId?: string;
+};
+
+function parseLine(line: string): TranscriptMessage | null {
+  try {
+    return JSON.parse(line) as TranscriptMessage;
+  } catch {
+    return null;
+  }
+}
+
+function sessionMarker(lines: string[], transcriptPath: string): SessionKeyInfo {
+  let sessionStart: string | null = null;
+
   for (let i = lines.length - 1; i >= 0; i--) {
     const line = lines[i].trim();
     if (!line) continue;
-    try {
-      const msg = JSON.parse(line);
-      if (msg?.attachment?.hookEvent === "SessionStart") {
-        return msg.uuid || msg.timestamp || null;
-      }
-    } catch { /* skip malformed JSON lines */ }
+    const msg = parseLine(line);
+    if (!msg) continue;
+
+    if (typeof msg.sessionId === "string" && msg.sessionId) {
+      return {
+        key: `session:${msg.sessionId}`,
+        source: "transcript-session-id",
+        sessionId: msg.sessionId,
+      };
+    }
+
+    if (!sessionStart && msg.attachment?.hookEvent === "SessionStart") {
+      sessionStart = msg.uuid || msg.timestamp || null;
+    }
   }
-  return null;
+
+  if (sessionStart) {
+    return { key: `session:${sessionStart}`, source: "session-start" };
+  }
+
+  const name = path.basename(transcriptPath, path.extname(transcriptPath));
+  return { key: `transcript:${name}`, source: "transcript-uuid-fallback" };
 }
 
-function currentSessionKey(lines?: string[]): string {
-  const marker = lines ? sessionMarker(lines) : null;
-  return marker ? `session:${marker}` : `ppid:${process.ppid || "unknown"}`;
+function currentSessionKey(lines: string[] | undefined, transcriptPath: string): SessionKeyInfo {
+  return lines ? sessionMarker(lines, transcriptPath) : {
+    key: `transcript:${path.basename(transcriptPath, path.extname(transcriptPath))}`,
+    source: "transcript-uuid-fallback",
+  };
 }
 
 function ensureCacheDir(): void {
@@ -48,6 +80,7 @@ function newCacheV2(): SessionCacheV2 {
     lastOut: 0,
     lastCacheCreate: 0,
     lastCacheRead: 0,
+    lastServerToolUseInput: 0,
     sesIn: 0,
     sesOut: 0,
     apiIn: 0,
@@ -105,6 +138,33 @@ function writeCache(transcriptPath: string, cache: SessionCacheV2): void {
   fs.writeFileSync(p, JSON.stringify(cache), "utf8");
 }
 
+function startLineFromCache(cache: SessionCacheV2, lines: string[]): number {
+  const lineNum = cache.lineNum || 0;
+
+  // Legacy caches stored split("\n").length, which includes a trailing empty
+  // item. When one JSONL line is appended after that, re-read that boundary.
+  if (!cache.sessionKeySource && lineNum > 0) {
+    if (lines.length > lineNum && lines[lines.length - 1].trim() === "" && lineNum === lines.length - 1) {
+      return lineNum - 1;
+    }
+    if (lineNum === lines.length && lines[lines.length - 1]?.trim() !== "") {
+      return lineNum - 1;
+    }
+  }
+
+  return Math.max(0, lineNum);
+}
+
+function shouldRebuildCache(cache: SessionCacheV2, session: SessionKeyInfo): boolean {
+  if (!cache.sessionKey) return session.source === "transcript-session-id";
+  return cache.sessionKey !== session.key;
+}
+
+function shouldCountForSession(msg: TranscriptMessage, session: SessionKeyInfo): boolean {
+  if (session.source !== "transcript-session-id") return true;
+  return msg.sessionId === session.sessionId;
+}
+
 export function parseTranscript(transcriptPath: string): ParseResult {
   if (!transcriptPath) {
     return {
@@ -122,51 +182,55 @@ export function parseTranscript(transcriptPath: string): ParseResult {
 
   const cache = readCache(transcriptPath);
 
-  const startLine = cache.lineNum;
-  let apiIn = cache.apiIn || 0;
-  let apiOut = cache.apiOut || 0;
-  let lastIn = cache.lastIn || 0;
-  let lastOut = cache.lastOut || 0;
-  let lastCacheCreate = cache.lastCacheCreate || 0;
-  let lastCacheRead = cache.lastCacheRead || 0;
-
-  const tools = cache.tools;
-  const agents = cache.agents;
-  const todoState: TodoState = {
-    items: cache.todos,
-    completed: cache.todoCompleted,
-    total: cache.todoTotal,
-  };
-
   let lines: string[];
 
   try {
     const content = fs.readFileSync(transcriptPath, "utf8");
     lines = content.split("\n");
   } catch {
-    const sessionKey = currentSessionKey();
-    const sessionTotals = cache.sessionKey === sessionKey
+    const session = currentSessionKey(undefined, transcriptPath);
+    const sessionTotals = cache.sessionKey === session.key
       ? { sesIn: cache.sesIn || 0, sesOut: cache.sesOut || 0 }
       : { sesIn: 0, sesOut: 0 };
     return {
       sesIn: sessionTotals.sesIn,
       sesOut: sessionTotals.sesOut,
-      apiIn,
-      apiOut,
-      tools,
-      agents,
-      todos: todoState.items,
-      todoCompleted: todoState.completed,
-      todoTotal: todoState.total,
+      apiIn: cache.apiIn || 0,
+      apiOut: cache.apiOut || 0,
+      tools: cache.tools || [],
+      agents: cache.agents || [],
+      todos: cache.todos || [],
+      todoCompleted: cache.todoCompleted || 0,
+      todoTotal: cache.todoTotal || 0,
     };
   }
 
-  const sessionKey = currentSessionKey(lines);
-  const cachedSessionTotals = cache.sessionKey === sessionKey
+  const session = currentSessionKey(lines, transcriptPath);
+  const rebuildCache = shouldRebuildCache(cache, session);
+  const startLine = rebuildCache ? 0 : startLineFromCache(cache, lines);
+  let maxProcessedLineNum = startLine;
+
+  let apiIn = rebuildCache ? 0 : cache.apiIn || 0;
+  let apiOut = rebuildCache ? 0 : cache.apiOut || 0;
+  let lastIn = rebuildCache ? 0 : cache.lastIn || 0;
+  let lastOut = rebuildCache ? 0 : cache.lastOut || 0;
+  let lastCacheCreate = rebuildCache ? 0 : cache.lastCacheCreate || 0;
+  let lastCacheRead = rebuildCache ? 0 : cache.lastCacheRead || 0;
+  let lastServerToolUseInput = rebuildCache ? 0 : cache.lastServerToolUseInput || 0;
+
+  const tools = rebuildCache ? [] : cache.tools || [];
+  const agents = rebuildCache ? [] : cache.agents || [];
+  const todoState: TodoState = {
+    items: rebuildCache ? [] : cache.todos || [],
+    completed: rebuildCache ? 0 : cache.todoCompleted || 0,
+    total: rebuildCache ? 0 : cache.todoTotal || 0,
+  };
+
+  const memorySessionTotals = rebuildCache ? null : sessionTokenTotals.get(transcriptPath);
+  const cachedSessionTotals = !rebuildCache && cache.sessionKey === session.key
     ? { sesIn: cache.sesIn || 0, sesOut: cache.sesOut || 0 }
     : { sesIn: 0, sesOut: 0 };
-  const memorySessionTotals = sessionTokenTotals.get(transcriptPath);
-  const sessionTotals = memorySessionTotals?.sessionKey === sessionKey
+  const sessionTotals = memorySessionTotals?.sessionKey === session.key
     ? memorySessionTotals
     : cachedSessionTotals;
   let sesIn = sessionTotals.sesIn;
@@ -176,12 +240,8 @@ export function parseTranscript(transcriptPath: string): ParseResult {
     const line = lines[i].trim();
     if (!line) continue;
 
-    let msg: TranscriptMessage;
-    try {
-      msg = JSON.parse(line);
-    } catch {
-      continue;
-    }
+    const msg = parseLine(line);
+    if (!msg) continue;
 
     // Feature extraction — must run BEFORE token dedup to avoid losing events
     try {
@@ -192,14 +252,18 @@ export function parseTranscript(transcriptPath: string): ParseResult {
       // Feature extraction errors are non-fatal — skip this message
     }
 
+    maxProcessedLineNum = i + 1;
+
     // Token accumulation (existing logic)
     if (msg.type === "assistant" && msg.message?.usage) {
       const u = msg.message.usage;
+      const serverToolUseInput = u.server_tool_use_input_tokens || 0;
       if (
         u.input_tokens === lastIn &&
         u.output_tokens === lastOut &&
         u.cache_creation_input_tokens === lastCacheCreate &&
-        u.cache_read_input_tokens === lastCacheRead
+        u.cache_read_input_tokens === lastCacheRead &&
+        serverToolUseInput === lastServerToolUseInput
       ) {
         continue;
       }
@@ -208,18 +272,21 @@ export function parseTranscript(transcriptPath: string): ParseResult {
         (u.input_tokens || 0) +
         (u.cache_creation_input_tokens || 0) +
         (u.cache_read_input_tokens || 0) +
-        (u.server_tool_use_input_tokens || 0);
+        serverToolUseInput;
       const deltaOut = u.output_tokens || 0;
 
       apiIn += deltaIn;
       apiOut += deltaOut;
-      sesIn += deltaIn;
-      sesOut += deltaOut;
+      if (shouldCountForSession(msg, session)) {
+        sesIn += deltaIn;
+        sesOut += deltaOut;
+      }
 
       lastIn = u.input_tokens || 0;
       lastOut = u.output_tokens || 0;
       lastCacheCreate = u.cache_creation_input_tokens || 0;
       lastCacheRead = u.cache_read_input_tokens || 0;
+      lastServerToolUseInput = serverToolUseInput;
     }
   }
 
@@ -252,16 +319,18 @@ export function parseTranscript(transcriptPath: string): ParseResult {
     }
   }
 
-  sessionTokenTotals.set(transcriptPath, { sessionKey, sesIn, sesOut });
+  sessionTokenTotals.set(transcriptPath, { sessionKey: session.key, sesIn, sesOut });
 
   const newCache: SessionCacheV2 = {
     version: 2,
-    sessionKey,
-    lineNum: lines.length,
+    sessionKey: session.key,
+    sessionKeySource: session.source,
+    lineNum: maxProcessedLineNum,
     lastIn,
     lastOut,
     lastCacheCreate,
     lastCacheRead,
+    lastServerToolUseInput,
     sesIn,
     sesOut,
     apiIn,

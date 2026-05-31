@@ -43,9 +43,10 @@ stdin StatusLineData
 | 字段 | 用途 |
 |------|------|
 | `version` | JSON cache 版本，当前为 `2` |
-| `sessionKey` | 当前 Claude Code session 标识，优先取 transcript 中最近的 SessionStart |
-| `lineNum` | 已解析到的 JSONL 行号 |
-| `lastIn/lastOut/lastCacheCreate/lastCacheRead` | usage 去重快照 |
+| `sessionKey` | 当前 Claude Code session 标识，优先取 transcript 顶层 `sessionId`；缺失时兼容最近 `SessionStart`，最后用 transcript UUID fallback |
+| `sessionKeySource` | `sessionKey` 来源：`transcript-session-id` / `session-start` / `transcript-uuid-fallback` |
+| `lineNum` | 最后成功处理的非空 JSONL 物理行号；尾部空行不计入 |
+| `lastIn/lastOut/lastCacheCreate/lastCacheRead/lastServerToolUseInput` | usage 去重快照 |
 | `sesIn/sesOut` | 当前 session 累计 API token，`sessionKey` 匹配时复用 |
 | `apiIn/apiOut` | transcript 历史累计 API token |
 | `tools/agents/todos` | feature 状态缓存 |
@@ -58,15 +59,15 @@ stdin StatusLineData
 解析每条 JSONL message 时：
 1. 先运行 `extractToolEvent` / `extractAgentEvent` / `extractTodoEvent`
 2. 再判断 `msg.type === "assistant" && msg.message?.usage`
-3. 如果 4 个 usage 字段与上次完全相同，跳过 token 累加
+3. 如果 5 个 usage 字段与上次完全相同，跳过 token 累加：`input_tokens`、`output_tokens`、`cache_creation_input_tokens`、`cache_read_input_tokens`、`server_tool_use_input_tokens`
 4. 使用 `|| 0` 计算 delta，包含 `server_tool_use_input_tokens`
-5. 同时累加到 `api*` 和 `ses*`
+5. 同时累加到 `api*`；只在 message 属于当前 transcript `sessionId` 时累加到 `ses*`
 
 不能把 feature extraction 放到 token 去重之后，否则重复 usage 行中的 `tool_use` / `tool_result` 会丢失。
 
 ## ses vs api
 
-- `ses`：当前 Claude Code session 内累计；`sessionKey` 相同则从 cache / memory map 继续，SessionStart 变化则归零。
+- `ses`：当前 Claude Code session 内累计；优先按 transcript 顶层 `sessionId` 区分，`sessionKey` 相同则从 cache / memory map 继续，`sessionId` 变化则归零。
 - `api`：当前 transcript 历史累计；按 transcript UUID cache 持久。
 - 两者共用同一 delta 计算，但生命周期不同。
 
