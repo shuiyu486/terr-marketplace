@@ -15,9 +15,10 @@
 ## Tool Activity (`features/tools.ts`)
 
 - 数据源：assistant content 中的 `tool_use` 和 `tool_result`
-- `tool_use` 创建 running；`tool_result` 标记 completed
+- `tool_use` 创建 running；`tool_result` 标记 completed，并累加 `toolCompletedCounts`
 - target 提取：Read/Write/Edit→`file_path`，Grep/Glob→`pattern`，Bash→`command[0:30]`，其它→input JSON 摘要
-- 按 `tool_use_id` 去重，保留最近 20 条
+- 最近事件按 `tool_use_id` 去重，保留最近 20 条；completed 摘要按 session 累计计数并显示所有已完成工具类型，避免旧事件被截断后消失
+- MCP 工具名渲染为 `server:tool`（如 `mcp__codegraph__codegraph_explore` → `codegraph:explore`）以缩短栏宽
 - 渲染受 `showToolActivity`、`showRunningTools`、`showCompletedTools` 控制
 
 示例：`◐ Edit: auth.ts │ ✓ Read ×3 │ ✓ Grep ×2`

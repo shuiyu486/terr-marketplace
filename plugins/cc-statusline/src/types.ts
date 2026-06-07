@@ -71,6 +71,8 @@ export interface TranscriptMessage {
 }
 
 // --- v2 cache (JSON with version marker) ---
+export type ToolCompletedCounts = Record<string, number>;
+
 export interface ToolEvent {
   id: string;
   name: string;
@@ -112,6 +114,7 @@ export interface SessionCacheV2 {
   apiIn: number;
   apiOut: number;
   tools: ToolEvent[];
+  toolCompletedCounts: ToolCompletedCounts;
   agents: AgentEvent[];
   todos: TodoItem[];
   todoCompleted: number;
@@ -124,6 +127,7 @@ export interface ParseResult {
   apiIn: number;
   apiOut: number;
   tools: ToolEvent[];
+  toolCompletedCounts: ToolCompletedCounts;
   agents: AgentEvent[];
   todos: TodoItem[];
   todoCompleted: number;

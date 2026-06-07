@@ -133,7 +133,7 @@ export function render(
   if (limitLine) lines.push(limitLine);
 
   // Line 4: tool activity
-  const toolLine = renderTools(ctx.tools, cfg);
+  const toolLine = renderTools(ctx.tools, cfg, ctx.toolCompletedCounts);
   if (toolLine) lines.push(`${color("tools", 74)}: ${toolLine}`);
 
   // Line 5: agent tracking

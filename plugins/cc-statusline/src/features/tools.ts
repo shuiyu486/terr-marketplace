@@ -1,9 +1,8 @@
-import type { ToolEvent, Config, TranscriptMessage } from "../types";
+import type { ToolCompletedCounts, ToolEvent, Config, TranscriptMessage } from "../types";
 import { color } from "../colors";
 
 const MAX_TOOLS = 20;
 const MAX_RUNNING_SHOWN = 2;
-const MAX_COMPLETED_TYPES = 4;
 
 function getTarget(name: string, input?: Record<string, unknown>): string {
   if (!input) return "";
@@ -22,7 +21,35 @@ function getTarget(name: string, input?: Record<string, unknown>): string {
   }
 }
 
-export function extractToolEvent(events: ToolEvent[], msg: TranscriptMessage): void {
+function displayToolName(name: string): string {
+  if (!name.startsWith("mcp__")) return name;
+  const parts = name.split("__");
+  if (parts.length < 3) return name;
+
+  const server = parts[1];
+  const rawTool = parts.slice(2).join("__");
+  const tool = rawTool.startsWith(`${server}_`) ? rawTool.slice(server.length + 1) : rawTool;
+  return `${server}:${tool}`;
+}
+
+function incrementCompletedCount(counts: ToolCompletedCounts, name: string): void {
+  counts[name] = (counts[name] ?? 0) + 1;
+}
+
+function completedCountsFromEvents(events: ToolEvent[]): ToolCompletedCounts {
+  const counts: ToolCompletedCounts = {};
+  for (const t of events) {
+    if (t.status !== "completed") continue;
+    incrementCompletedCount(counts, t.name);
+  }
+  return counts;
+}
+
+export function extractToolEvent(
+  events: ToolEvent[],
+  msg: TranscriptMessage,
+  completedCounts?: ToolCompletedCounts,
+): void {
   const content = msg?.message?.content;
   if (!Array.isArray(content)) return;
 
@@ -43,13 +70,20 @@ export function extractToolEvent(events: ToolEvent[], msg: TranscriptMessage): v
 
     if (block.type === "tool_result" && block.tool_use_id) {
       const ev = events.find((e) => e.id === block.tool_use_id);
-      if (ev) ev.status = "completed";
+      if (ev && ev.status !== "completed") {
+        ev.status = "completed";
+        if (completedCounts) incrementCompletedCount(completedCounts, ev.name);
+      }
     }
   }
 }
 
-export function renderTools(events: ToolEvent[], cfg: Config): string | null {
-  if (!cfg.showToolActivity || events.length === 0) return null;
+export function renderTools(
+  events: ToolEvent[],
+  cfg: Config,
+  completedCounts?: ToolCompletedCounts,
+): string | null {
+  if (!cfg.showToolActivity) return null;
 
   const parts: string[] = [];
 
@@ -57,22 +91,18 @@ export function renderTools(events: ToolEvent[], cfg: Config): string | null {
     const running = events.filter((e) => e.status === "running");
     for (let i = 0; i < Math.min(running.length, MAX_RUNNING_SHOWN); i++) {
       const t = running[i];
-      parts.push(`${color("◐", 108)} ${color(t.name, 117)}${t.target ? ` ${color(t.target, 252)}` : ""}`);
+      parts.push(`${color("◐", 108)} ${color(displayToolName(t.name), 117)}${t.target ? ` ${color(t.target, 252)}` : ""}`);
     }
   }
 
   if (cfg.showCompletedTools) {
-    const completed = events.filter((e) => e.status === "completed");
-    const counts: Record<string, number> = {};
-    for (const t of completed) {
-      counts[t.name] = (counts[t.name] ?? 0) + 1;
-    }
+    const counts = completedCounts ?? completedCountsFromEvents(events);
     const sorted = Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, MAX_COMPLETED_TYPES);
+      .filter(([, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1]);
 
     for (const [name, count] of sorted) {
-      parts.push(`${color("✓", 108)} ${color(name, 117)} ${color(`×${count}`, 244)}`);
+      parts.push(`${color("✓", 108)} ${color(displayToolName(name), 117)} ${color(`×${count}`, 244)}`);
     }
   }
 

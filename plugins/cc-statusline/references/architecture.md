@@ -49,7 +49,8 @@ stdin StatusLineData
 | `lastIn/lastOut/lastCacheCreate/lastCacheRead/lastServerToolUseInput` | usage 去重快照 |
 | `sesIn/sesOut` | 当前 session 累计 API token，`sessionKey` 匹配时复用 |
 | `apiIn/apiOut` | transcript 历史累计 API token |
-| `tools/agents/todos` | feature 状态缓存 |
+| `tools/agents/todos` | feature 状态缓存；`tools` 只保留最近事件 |
+| `toolCompletedCounts` | tool completed 摘要的 session 累计计数；旧 JSON cache 缺失时按 `lineNum` 前历史重建 |
 | `todoCompleted/todoTotal` | todo 统计缓存 |
 
 读取兼容旧 CSV；写入始终使用 JSON v2。

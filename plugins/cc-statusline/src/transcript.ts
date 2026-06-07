@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import type { TranscriptMessage, SessionCacheV2, ParseResult, SessionKeySource } from "./types";
+import type { TranscriptMessage, SessionCacheV2, ParseResult, SessionKeySource, ToolCompletedCounts, ToolEvent } from "./types";
 import { extractToolEvent } from "./features/tools";
 import { extractAgentEvent } from "./features/agents";
 import { extractTodoEvent } from "./features/todos";
@@ -86,6 +86,7 @@ function newCacheV2(): SessionCacheV2 {
     apiIn: 0,
     apiOut: 0,
     tools: [],
+    toolCompletedCounts: {},
     agents: [],
     todos: [],
     todoCompleted: 0,
@@ -165,6 +166,47 @@ function shouldCountForSession(msg: TranscriptMessage, session: SessionKeyInfo):
   return msg.sessionId === session.sessionId;
 }
 
+function completedCountsFromEvents(events: ToolEvent[] | undefined): ToolCompletedCounts {
+  const counts: ToolCompletedCounts = {};
+  for (const event of events || []) {
+    if (event.status !== "completed") continue;
+    counts[event.name] = (counts[event.name] ?? 0) + 1;
+  }
+  return counts;
+}
+
+function rebuildToolCompletedCounts(lines: string[], limitLine: number): ToolCompletedCounts {
+  const counts: ToolCompletedCounts = {};
+  const namesById = new Map<string, string>();
+  const countedIds = new Set<string>();
+  const end = Math.min(limitLine, lines.length);
+
+  for (let i = 0; i < end; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const msg = parseLine(line);
+    if (!msg) continue;
+
+    const content = msg.message?.content;
+    if (!Array.isArray(content)) continue;
+
+    for (const block of content) {
+      if (block.type === "tool_use" && block.id && block.name) {
+        namesById.set(block.id, block.name);
+      }
+
+      if (block.type === "tool_result" && block.tool_use_id && !countedIds.has(block.tool_use_id)) {
+        const name = namesById.get(block.tool_use_id);
+        if (!name) continue;
+        counts[name] = (counts[name] ?? 0) + 1;
+        countedIds.add(block.tool_use_id);
+      }
+    }
+  }
+
+  return counts;
+}
+
 export function parseTranscript(transcriptPath: string): ParseResult {
   if (!transcriptPath) {
     return {
@@ -173,6 +215,7 @@ export function parseTranscript(transcriptPath: string): ParseResult {
       apiIn: 0,
       apiOut: 0,
       tools: [],
+      toolCompletedCounts: {},
       agents: [],
       todos: [],
       todoCompleted: 0,
@@ -198,6 +241,7 @@ export function parseTranscript(transcriptPath: string): ParseResult {
       apiIn: cache.apiIn || 0,
       apiOut: cache.apiOut || 0,
       tools: cache.tools || [],
+      toolCompletedCounts: cache.toolCompletedCounts || completedCountsFromEvents(cache.tools),
       agents: cache.agents || [],
       todos: cache.todos || [],
       todoCompleted: cache.todoCompleted || 0,
@@ -219,6 +263,9 @@ export function parseTranscript(transcriptPath: string): ParseResult {
   let lastServerToolUseInput = rebuildCache ? 0 : cache.lastServerToolUseInput || 0;
 
   const tools = rebuildCache ? [] : cache.tools || [];
+  const toolCompletedCounts = rebuildCache
+    ? {}
+    : cache.toolCompletedCounts || rebuildToolCompletedCounts(lines, startLine);
   const agents = rebuildCache ? [] : cache.agents || [];
   const todoState: TodoState = {
     items: rebuildCache ? [] : cache.todos || [],
@@ -245,7 +292,7 @@ export function parseTranscript(transcriptPath: string): ParseResult {
 
     // Feature extraction — must run BEFORE token dedup to avoid losing events
     try {
-      extractToolEvent(tools, msg);
+      extractToolEvent(tools, msg, toolCompletedCounts);
       extractAgentEvent(agents, msg);
       extractTodoEvent(todoState, msg);
     } catch {
@@ -336,6 +383,7 @@ export function parseTranscript(transcriptPath: string): ParseResult {
     apiIn,
     apiOut,
     tools,
+    toolCompletedCounts,
     agents,
     todos: todoState.items,
     todoCompleted: todoState.completed,
@@ -349,6 +397,7 @@ export function parseTranscript(transcriptPath: string): ParseResult {
     apiIn,
     apiOut,
     tools,
+    toolCompletedCounts,
     agents,
     todos: todoState.items,
     todoCompleted: todoState.completed,
