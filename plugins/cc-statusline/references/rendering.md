@@ -8,7 +8,8 @@
 Line 1: model │ effort │ ctx:inTok/ctxSize pct%                          [始终显示]
 Line 2: in:inTok out:outTok │ ses:sesIn/sesOut │ api:apiTotal │ ts        [showTokensLine]
 Line 3: usage: 5h ███░░░░░░░ 30% (4h 40m) │ 7d █░░░░░░░░░ 5% (5d 12h)    [showUsageLimits, 有数据]
-Line 4: tools: ◐ Read file.ts │ ✓ Read ×3                                [showToolActivity]
+Line 4: tools: ◐ Read file.ts │ ✓ Read ×3 │ ✓ codegraph:explore ×2        [showToolActivity]
+        ✓ Edit ×2 │ … +4                                                 [tools 超宽时最多第二行]
 Line 5: agent: ◷ code-reviewer: desc 2m │ ✓ code-reviewer ×2              [showAgentTracking, compact]
         agent: 3 tracked                                                   [showAgentTracking, multiline]
                ├─ ◷ code-reviewer(sonnet): desc 2m 15s
@@ -18,6 +19,8 @@ Line 7: path: /dir                                                        [showP
 ```
 
 每行仅在配置启用且有数据时渲染。
+
+`tools` 行会按终端宽度自动包装为最多两行；第二行用 `tools: ` 等宽空格缩进。两行仍放不下时，最后显示灰色 `… +N`，其中 `N` 是未显示的 tool item 数。宽度优先读取 stdin 中的终端字段、TTY columns 和 `COLUMNS`，不可用时 fallback 为 120 列。
 
 ## Line 2 数据来源
 

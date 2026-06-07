@@ -11,7 +11,7 @@ A feature-rich status line for Claude Code.
 - Model name with ANSI colors
 - Effort level (max/xhigh/high/medium/low) with color coding
 - Context window usage percentage with color thresholds
-- **Tool activity** — watch Claude read, edit, search, and call MCP tools; completed tool counts are accumulated for the session so older tool types do not disappear when recent events rotate out
+- **Tool activity** — watch Claude read, edit, search, and call MCP tools; completed tool counts are accumulated for the session and wrap to two lines with `… +N` overflow when needed
 - **Agent tracking** — see which subagents are running and what they're doing
 - **Todo progress** — track task completion in real-time
 - **Usage limits** — display 5-hour and 7-day usage bars with reset countdowns (Claude `rate_limits` or Codex header fallback)

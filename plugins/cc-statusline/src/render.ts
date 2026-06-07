@@ -5,7 +5,8 @@ import * as path from "path";
 import type { StatusLineData, Config, ParseResult } from "./types";
 import { fmtW } from "./format";
 import { color } from "./colors";
-import { renderTools } from "./features/tools";
+import { terminalColumns, wrapAnsiParts } from "./layout";
+import { renderToolParts, TOOL_SEPARATOR } from "./features/tools";
 import { renderAgents } from "./features/agents";
 import { renderTodos } from "./features/todos";
 import { renderLimits } from "./features/limits";
@@ -133,8 +134,18 @@ export function render(
   if (limitLine) lines.push(limitLine);
 
   // Line 4: tool activity
-  const toolLine = renderTools(ctx.tools, cfg, ctx.toolCompletedCounts);
-  if (toolLine) lines.push(`${color("tools", 74)}: ${toolLine}`);
+  const toolParts = renderToolParts(ctx.tools, cfg, ctx.toolCompletedCounts);
+  if (toolParts.length > 0) {
+    const label = "tools";
+    const contentWidth = Math.max(1, terminalColumns(data) - (label.length + 2));
+    const toolLine = wrapAnsiParts(toolParts, {
+      firstLineWidth: contentWidth,
+      nextLineWidth: contentWidth,
+      maxLines: 2,
+      separator: TOOL_SEPARATOR,
+    }).join("\n");
+    pushLabeledLines(lines, label, 74, toolLine);
+  }
 
   // Line 5: agent tracking
   pushLabeledLines(lines, "agent", 141, renderAgents(ctx.agents, cfg));

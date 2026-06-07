@@ -3,6 +3,7 @@ import { color } from "../colors";
 
 const MAX_TOOLS = 20;
 const MAX_RUNNING_SHOWN = 2;
+export const TOOL_SEPARATOR = "  │  ";
 
 function getTarget(name: string, input?: Record<string, unknown>): string {
   if (!input) return "";
@@ -78,12 +79,12 @@ export function extractToolEvent(
   }
 }
 
-export function renderTools(
+export function renderToolParts(
   events: ToolEvent[],
   cfg: Config,
   completedCounts?: ToolCompletedCounts,
-): string | null {
-  if (!cfg.showToolActivity) return null;
+): string[] {
+  if (!cfg.showToolActivity) return [];
 
   const parts: string[] = [];
 
@@ -106,5 +107,14 @@ export function renderTools(
     }
   }
 
-  return parts.length > 0 ? parts.join("  │  ") : null;
+  return parts;
+}
+
+export function renderTools(
+  events: ToolEvent[],
+  cfg: Config,
+  completedCounts?: ToolCompletedCounts,
+): string | null {
+  const parts = renderToolParts(events, cfg, completedCounts);
+  return parts.length > 0 ? parts.join(TOOL_SEPARATOR) : null;
 }
