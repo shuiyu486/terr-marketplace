@@ -58,7 +58,7 @@ settings 中的 Stop channels 只是“通道偏好”，不会单独触发外�
 
 `features.documentationReminder` 默认启用，随插件默认 settings 分发；更新插件后，未显式覆盖该配置的机器会自动应用。
 
-默认行为：当当前 `cwd` 看起来像项目，且本会话通过 `Write`、`Edit`、`MultiEdit` 或 `NotebookEdit` 修改了项目目录内文件时，首次 Stop 会 block 一次，提醒 Claude 更新相关文档并在验证后 commit/push。状态按 `session_id` 或 `transcript_path` 隔离，避免同一项目内多个 Claude Code 会话互相污染。
+默认行为：当当前 `cwd` 看起来像项目，且本会话通过 `Write`、`Edit`、`MultiEdit` 或 `NotebookEdit` 修改了项目目录内文件时，首次 Stop 会 block 一次，提醒 Claude 更新相关文档并执行必要的测试/验证。状态按 `session_id` 或 `transcript_path` 隔离，避免同一项目内多个 Claude Code 会话互相污染。
 
 禁用方式：
 

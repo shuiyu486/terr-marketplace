@@ -22,7 +22,8 @@ class DocumentationReminderTests(unittest.TestCase):
 
             self.assertEqual(first.get("decision"), "block")
             self.assertIn("更新相关", first.get("reason", ""))
-            self.assertIn("commit/push", first.get("reason", ""))
+            self.assertIn("测试/验证", first.get("reason", ""))
+            self.assertNotIn("commit/push", first.get("reason", ""))
             self.assertNotEqual(second.get("decision"), "block")
 
     def test_supported_modify_tools_trigger(self):
