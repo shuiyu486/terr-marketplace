@@ -2,7 +2,6 @@
 
 Claude Code 状态栏插件：从 stdin 读取 `StatusLineData`，解析 transcript JSONL，渲染 ANSI 状态栏。
 
-本文件可能存在于开发副本、marketplace 副本或运行时副本；修改任一副本后，同步到其它 cc-statusline 副本，避免会话读取到过期指令。不要在本文件中写死某个副本的绝对路径。
 
 ## 按需读取参考
 

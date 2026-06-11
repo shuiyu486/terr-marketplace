@@ -25,10 +25,6 @@
 | IDA MCP 卡住、并发/worker/GUI-headless 状态、分页 cursor 或稳定性问题 | `references/ida-mcp-router/mcp-stability.md` |
 | 上下文膨胀、`/compact` 失败、需要裁剪或新会话恢复 | `references/ida-mcp-router/context-recovery.md` |
 
-## 仓库同步
-
-- 当前分析工作目录通常不是远程 git 仓库；可提交的源仓库在 Claude 插件 marketplace 的 `plugins/ida-mcp-router` 目录。
-- 修改当前目录的记忆模板后，需要同步到已安装 marketplace 仓库的对应 `template/` 文件，再在该插件仓库中提交和推送。
 
 ## 默认决策
 
