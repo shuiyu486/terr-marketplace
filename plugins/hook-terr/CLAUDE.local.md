@@ -5,30 +5,10 @@
 ## 重要原则
 
 - `hook-terr` 是 `shuiyu486/terr-marketplace` 中的 Claude Code 插件，源码、默认配置、presets 和文档都通过 `terr-marketplace` 分发。
-- 本地开发仓库应是用户自行 clone 的 `terr-marketplace` 仓库；不要依赖某台电脑的固定绝对路径。
-- 真正修改 marketplace 或插件时，在 `terr-marketplace` 仓库根目录操作；`hook-terr` 插件路径为 `plugins/hook-terr`。
-- 不要维护多个入口副本；共享文档和插件源码只通过 `terr-marketplace` 的 git 历史同步到其它电脑。
-- `~/.claude/plugins/marketplaces/terr-marketplace` 只应视为 Claude Code 插件管理器缓存/安装位置，不作为开发仓库维护。
-- 用户全局目录和项目目录只作为覆盖层，不是发布源。
 - 修改 hook 协议、规则 schema、通知命令或 marketplace 注册前，按下方路由读取对应 reference。
 - 只读取当前任务命中的 reference 文件；不要预读整套 references。
 
-## 仓库定位
 
-本地开发仓库根目录由用户自行选择。判断真实仓库时优先检查：
-
-```text
-.claude-plugin/marketplace.json
-plugins/
-```
-
-维护 `hook-terr` 时优先进入：
-
-```text
-plugins/hook-terr
-```
-
-其它电脑获取最新维护文档时，clone/pull `shuiyu486/terr-marketplace` 到本机约定的开发目录即可。
 
 ## 按需加载路由
 
