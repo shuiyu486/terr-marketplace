@@ -5,15 +5,15 @@ allowed-tools: ["Bash", "PowerShell", "Read", "Edit", "Write"]
 
 # cc-statusline Update
 
-One-click repair-style update for already-installed users. Pulls the latest plugin from the remote marketplace, rebuilds the runtime cache even when the version is unchanged, migrates `cc-statusline.json`, updates `settings.json`, updates the plugin registry, and restarts the status line.
+One-click repair-style update for already-installed users. Pulls the latest plugin into Claude Code's installed marketplace clone, rebuilds the runtime cache even when the version is unchanged, migrates `cc-statusline.json`, updates `settings.json`, updates the plugin registry, and restarts the status line.
 
 Existing config values are preserved when valid. Missing config files are created with complete defaults; corrupt config JSON is backed up before defaults are written.
 
-No git push/commit — this is a user-side update, not a maintainer publish.
+No git push/commit and no maintainer working tree changes — this is a user-side update, not a maintainer publish.
 
-## Step 1: Git Pull Marketplace
+## Step 1: Git Pull Installed Marketplace Clone
 
-Pull the latest plugin code from the remote marketplace repo:
+Pull the latest plugin code in Claude Code's installed marketplace clone:
 
 **Windows (PowerShell):**
 
@@ -86,7 +86,7 @@ echo "CURRENT_VERSION=$CURRENT_VERSION"
 
 ## Step 4: Decide Update Mode
 
-Always continue. Version equality does not skip copy/build/relink/restart because marketplace source may have changed after `git pull`, or cache/runtime may still contain an older build.
+Always continue. Version equality does not skip copy/build/relink/restart because the installed marketplace clone may have changed after `git pull`, or cache/runtime may still contain an older build.
 
 **Windows (PowerShell):**
 
@@ -114,7 +114,7 @@ fi
 
 ## Step 5: Copy to Temporary Cache
 
-Copy the plugin source from marketplace to a temporary cache directory, excluding build artifacts. The final cache directory is replaced only after the build succeeds.
+Copy the plugin source from the installed marketplace clone to a temporary cache directory, excluding build artifacts. The final cache directory is replaced only after the build succeeds.
 
 **Windows (PowerShell):**
 

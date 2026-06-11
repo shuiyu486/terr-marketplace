@@ -37,7 +37,7 @@ Then run the setup command:
 /cc-statusline:update
 ```
 
-One-click update: pulls the latest from remote marketplace, builds, relinks, and restarts the running status line. No git push/commit needed.
+One-click update: pulls the latest into Claude Code's installed marketplace clone, builds the runtime cache, relinks, and restarts the running status line. It does not touch the maintainer working tree.
 
 ## Restart
 
