@@ -3,7 +3,10 @@ from typing import Dict, List, Optional
 from core.models import Rule
 
 
-def build_response(event_name: str, rule: Rule, message: str, diagnostics: Optional[List[str]] = None) -> Dict:
+def build_response(event_name: str, rule: Rule, message: str, diagnostics: Optional[List[str]] = None, suppress_message: bool = False) -> Dict:
+    if suppress_message:
+        return {}
+
     final_message = append_diagnostic_text(message, diagnostics or [])
 
     if rule.decision == "allow":

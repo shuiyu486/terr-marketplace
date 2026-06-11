@@ -2,7 +2,7 @@
 
 `hook-terr` 支持四类通知器：`sound`、`windows_toast`、`popup`、`custom_command`。
 
-默认 Stop 自检规则不执行外部通知；只有启用 `notify` 的规则才会调用通知器。通知失败 fail open，不会阻断 Claude Code 主流程，但简要诊断会追加到 hook `systemMessage`。
+默认 Stop 自检规则不执行外部通知；Stop 外部通知需要启用 `notify` 的规则，且 runtime 护栏只允许主会话 Stop 触发。主会话 `AskUserQuestion` 求助场景由 runtime guard 复用 Stop 通道触发外部通知。通知失败 fail open，不会阻断 Claude Code 主流程；普通规则通知诊断会追加到 hook `systemMessage`，求助通知诊断只写入 stderr。
 
 ## sound
 

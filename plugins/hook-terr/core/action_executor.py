@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Tuple
 
 from core.models import HookContext, NotificationResult, Rule
+from core.notification_policy import can_send_external_notification, is_pure_stop_notification, notification_channel_event
 from notifiers.registry import send_notification
 
 
@@ -10,7 +11,7 @@ def execute(rule: Rule, context: HookContext, settings: Dict[str, Any]) -> Tuple
     diagnostics: List[str] = []
 
     notify = rule.notify if isinstance(rule.notify, dict) else {}
-    if notify.get("enabled", False):
+    if notify.get("enabled", False) and can_send_external_notification(rule, context):
         channels = resolve_channels(rule, context, settings)
         explicit_channels = "channels" in notify
         if not channels and not explicit_channels:
@@ -25,12 +26,40 @@ def execute(rule: Rule, context: HookContext, settings: Dict[str, Any]) -> Tuple
     return response_text, results, diagnostics
 
 
+def execute_assistance_notification(context: HookContext, settings: Dict[str, Any]) -> Tuple[List[NotificationResult], List[str]]:
+    results: List[NotificationResult] = []
+    diagnostics: List[str] = []
+    channels = stop_channels(settings)
+    if not channels:
+        return results, diagnostics
+    for channel in channels:
+        channel_config = settings.get("notifications", {}).get(channel, {})
+        if not channel_config.get("enabled", False):
+            diagnostics.append(f"{channel}: 通道已配置但 notifications.{channel}.enabled=false")
+            continue
+        results.append(send_notification(channel, "Claude Code 需要你协助", "Claude Code 正在等待你的输入或选择。", context, channel_config))
+    return results, diagnostics
+
+
+def should_suppress_response(rule: Rule, context: HookContext, settings: Dict[str, Any]) -> bool:
+    notify = rule.notify if isinstance(rule.notify, dict) else {}
+    if notify.get("channels") == []:
+        return False
+    return is_pure_stop_notification(rule, context.hook_event_name) and can_send_external_notification(rule, context) and bool(resolve_channels(rule, context, settings))
+
+
 def resolve_channels(rule: Rule, context: HookContext, settings: Dict[str, Any]) -> List[str]:
     notify = rule.notify if isinstance(rule.notify, dict) else {}
     if "channels" in notify:
         channels = notify.get("channels")
         return channels if isinstance(channels, list) else []
-    event_config = settings.get("events", {}).get(context.hook_event_name, {})
+    event_config = settings.get("events", {}).get(notification_channel_event(context), {})
+    channels = event_config.get("notifications", []) if isinstance(event_config, dict) else []
+    return channels if isinstance(channels, list) else []
+
+
+def stop_channels(settings: Dict[str, Any]) -> List[str]:
+    event_config = settings.get("events", {}).get("Stop", {})
     channels = event_config.get("notifications", []) if isinstance(event_config, dict) else []
     return channels if isinstance(channels, list) else []
 

@@ -5,11 +5,12 @@
 ## 特性
 
 - 注册 `Stop`、`SubagentStop`、`PreToolUse`、`PostToolUse`、`UserPromptSubmit` 五类 hook 入口。
+- 当主会话调用 `AskUserQuestion` 等待用户选择或输入时，复用 Stop 通知通道触发外部通知。
 - 默认只启用主会话 Stop 自检规则；`SubagentStop` 默认关闭，避免子 agent 结束时弹提示音。
 - 规则可匹配 `is_subagent` 与 `agent_type`，用于区分主会话和子 agent。
 - 默认启用文档收尾提醒：项目内使用 `Write`、`Edit`、`MultiEdit` 或 `NotebookEdit` 修改文件后，首次 Stop 会提醒 Claude 更新相关文档并完成必要验证。
 - 支持插件内默认配置、用户全局覆盖和项目覆盖。
-- Stop 外部通知需要通过用户或项目规则显式启用，避免每次 Stop 都误触发。
+- Stop 外部通知需要通过用户或项目规则显式启用，避免每次 Stop 都误触发；外部通知在 runtime 层只允许主会话 Stop 和主会话 `AskUserQuestion` 求助场景。
 - 支持 Windows tray 通知、提示音、结构化弹窗和高级自定义命令。
 - hook 异常 fail open，通知失败不会阻断 Claude Code 主流程，并会把简要诊断追加到 `systemMessage`。
 
@@ -68,7 +69,7 @@ defaults/rules/*.json
 - 在同一会话首次 Stop 时返回 `decision: block`，要求 Claude 更新相关文档，并执行必要的测试/验证。
 - 同一轮只提醒一次；再次 Stop 会放行。用户或项目 settings 可通过 `features.documentationReminder.enabled=false` 关闭。
 
-Windows notification 仍然可用，但不再由默认 Stop 自检规则触发。`/hook-terr:configure` 可以只保存 Stop 通知通道，也可以在用户确认后创建 explicit Stop notify rule。选择“立即生效”时，会创建 explicit Stop notify rule；当主会话 Stop 未先被 documentationReminder 等 runtime feature 拦截并命中该 rule 时，会使用所选通道触发外部通知。选择“仅保存通道”时，默认 Stop 自检规则仍然不会播放 sound、popup 或 toast。通知进程会独立启动，hook 本身不会等待通知关闭。
+Windows notification 仍然可用，但不再由默认 Stop 自检规则触发。`/hook-terr:configure` 可以只保存 Stop 通知通道，也可以在用户确认后创建 explicit Stop notify rule。选择“立即生效”时，会创建 pure external explicit Stop notify rule；当主会话 Stop 未先被 documentationReminder 等 runtime feature 拦截并命中该 rule 时，会使用所选通道触发外部通知，但不会再向 Claude 返回可能导致继续工作的 Stop `systemMessage`。选择“仅保存通道”时，默认 Stop 自检规则仍然不会播放 sound、popup 或 toast；但主会话 `AskUserQuestion` 求助场景会复用保存的 Stop 通道。通知进程会独立启动，hook 本身不会等待通知关闭。
 
 ## 通知通道
 

@@ -112,7 +112,7 @@ If the target rule file already exists, `Read` it first and ask whether to overw
 
 Recommend `保留现有` unless the user explicitly wants the standard rule.
 
-If creating or overwriting, write this JSON. Do not include `notify.channels`; that intentionally lets the rule use `settings.events.Stop.notifications` written in Step 5.
+If creating or overwriting, write this JSON. Do not include `notify.channels`; that intentionally lets the rule use `settings.events.Stop.notifications` written in Step 5. The rule is a pure external notification rule: it must not return a Stop `systemMessage` that could make Claude continue after notifying.
 
 ```json
 {
@@ -121,7 +121,7 @@ If creating or overwriting, write this JSON. Do not include `notify.channels`; t
   "enabled": true,
   "event": "Stop",
   "priority": 200,
-  "decision": "warn",
+  "decision": "allow",
   "when": [
     {
       "field": "is_subagent",
@@ -131,12 +131,12 @@ If creating or overwriting, write this JSON. Do not include `notify.channels`; t
   ],
   "message": {
     "system": true,
-    "text": "准备结束本轮回复前，请确认是否需要通知用户或等待用户协助。"
+    "text": ""
   },
   "notify": {
     "enabled": true,
     "title": "Claude Code 提醒",
-    "text": "Claude Code 本轮任务准备结束或需要你协助。"
+    "text": "Claude Code 本轮任务已停止或正在等待你协助。"
   }
 }
 ```
@@ -166,6 +166,8 @@ If the user chose `立即生效` and the rule was created or overwritten, check 
 
 - `stopRule.id` should be `stop-notify-explicit`.
 - `stopRule.notify.enabled` should be `true`.
+- `stopRule.decision` should be `allow`.
+- `stopRule.message.text` should be empty.
 - `stopChannels` should match the selected channels.
 
 If a different rule still wins, or `stopChannels` does not match, report that the files were written but the effective Stop configuration is not the expected one. Include the status diagnostics and do not say the rule is active.

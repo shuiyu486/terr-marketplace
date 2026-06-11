@@ -177,7 +177,7 @@ class StopNotificationPolicyTests(unittest.TestCase):
             with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
                 response = run("Stop", {"cwd": cwd})
 
-            self.assertEqual(response, {"systemMessage": "event channels"})
+            self.assertEqual(response, {})
             send_notification.assert_called_once()
             self.assertEqual(send_notification.call_args.args[0], "sound")
 
@@ -206,8 +206,120 @@ class StopNotificationPolicyTests(unittest.TestCase):
             with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
                 response = run("Stop", {"cwd": cwd})
 
-            self.assertEqual(response, {"systemMessage": "explicit notify"})
+            self.assertEqual(response, {})
             send_notification.assert_called_once()
+
+    def test_overbroad_stop_notify_rule_does_not_notify_subagent(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            rules_dir = os.path.join(home, ".claude", "hook-terr", "rules")
+            os.makedirs(rules_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(rules_dir, "always-notify.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "version": 1,
+                        "id": "always-notify",
+                        "enabled": True,
+                        "event": "Stop",
+                        "priority": 200,
+                        "decision": "warn",
+                        "when": [],
+                        "message": {"text": "explicit notify"},
+                        "notify": {"enabled": True, "channels": ["sound"], "title": "title", "text": "text"},
+                    },
+                    handle,
+                )
+            transcript_path = os.path.join(home, "session", "subagents", "agent.jsonl")
+
+            with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
+                response = run("Stop", {"cwd": cwd, "transcript_path": transcript_path})
+
+            self.assertEqual(response, {"systemMessage": "explicit notify"})
+            send_notification.assert_not_called()
+
+    def test_overbroad_post_tool_notify_rule_does_not_notify_regular_tool(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            rules_dir = os.path.join(home, ".claude", "hook-terr", "rules")
+            os.makedirs(rules_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(rules_dir, "post-tool.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "version": 1,
+                        "id": "post-tool",
+                        "enabled": True,
+                        "event": "PostToolUse",
+                        "priority": 200,
+                        "decision": "warn",
+                        "when": [],
+                        "message": {"text": "tool used"},
+                        "notify": {"enabled": True, "channels": ["sound"], "title": "title", "text": "text"},
+                    },
+                    handle,
+                )
+
+            with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
+                response = run("PostToolUse", {"cwd": cwd, "tool_name": "Edit", "tool_input": {"file_path": os.path.join(cwd, "app.py")}})
+
+            self.assertEqual(response, {"systemMessage": "tool used"})
+            send_notification.assert_not_called()
+
+    def test_ask_user_question_sends_assistance_notification_using_stop_channels(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            config_dir = os.path.join(home, ".claude", "hook-terr")
+            os.makedirs(config_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(config_dir, "settings.json"), "w", encoding="utf-8") as handle:
+                json.dump({"events": {"Stop": {"notifications": ["sound"]}, "PreToolUse": {"notifications": ["popup"]}}}, handle)
+
+            with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
+                response = run("PreToolUse", {"cwd": cwd, "tool_name": "AskUserQuestion", "tool_input": {"question": "请选择"}})
+
+            self.assertEqual(response, {})
+            send_notification.assert_called_once()
+            self.assertEqual(send_notification.call_args.args[0], "sound")
+
+    def test_ask_user_question_does_not_notify_when_blocked(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            rules_dir = os.path.join(home, ".claude", "hook-terr", "rules")
+            os.makedirs(rules_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(rules_dir, "block-question.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "version": 1,
+                        "id": "block-question",
+                        "enabled": True,
+                        "event": "PreToolUse",
+                        "priority": 200,
+                        "decision": "block",
+                        "when": [{"field": "tool_name", "op": "equals", "value": "AskUserQuestion"}],
+                        "message": {"text": "blocked"},
+                        "notify": {"enabled": True, "channels": ["sound"]},
+                    },
+                    handle,
+                )
+
+            with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
+                response = run("PreToolUse", {"cwd": cwd, "tool_name": "AskUserQuestion"})
+
+            self.assertEqual(response.get("hookSpecificOutput", {}).get("permissionDecision"), "deny")
+            send_notification.assert_not_called()
+
+    def test_ask_user_question_does_not_notify_subagent(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            os.makedirs(cwd)
+
+            with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
+                response = run("PreToolUse", {"cwd": cwd, "tool_name": "AskUserQuestion", "isSidechain": True})
+
+            self.assertEqual(response, {})
+            send_notification.assert_not_called()
 
 
 if __name__ == "__main__":

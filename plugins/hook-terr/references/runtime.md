@@ -10,8 +10,8 @@
 4. `config_loader` 加载 settings 和 rules。
 5. `documentation_reminder` 在启用时处理项目修改后的文档收尾提醒：`PostToolUse` 记录项目文件修改，`Stop` 首次返回 block，`UserPromptSubmit` 重置本轮状态。
 6. `rule_matcher` 找到当前事件最高优先级命中规则。
-7. `action_executor` 解析有效通知通道并执行通知器。
-8. `response_builder` 输出 Claude Code hook JSON。
+7. `action_executor` 解析有效通知通道并执行通知器；runtime 通知护栏只允许主会话 Stop 和主会话 `PreToolUse`/`AskUserQuestion` 求助场景发出外部通知。
+8. `response_builder` 输出 Claude Code hook JSON；Stop 外部通知规则是 pure external notification，不再返回可能促使 Claude 继续工作的 Stop `systemMessage`。
 
 ## Agent 上下文字段
 
@@ -46,4 +46,4 @@
 - PreToolUse/PostToolUse block 使用 `hookSpecificOutput.permissionDecision: deny`。
 - warn 使用 `systemMessage`。
 - allow 返回 `{}`。
-- 通知失败和文档提醒状态异常都 fail open；通知诊断会追加到 hook `systemMessage`，文档提醒诊断会写入 stderr。
+- 通知失败和文档提醒状态异常都 fail open；普通规则通知诊断会追加到 hook `systemMessage`，文档提醒和 `AskUserQuestion` 求助通知诊断会写入 stderr。

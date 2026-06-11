@@ -17,7 +17,7 @@
 
 ## notify
 
-`notify.enabled` 为 true 时会执行外部通知。`notify.title` 和 `notify.text` 控制通知文案；返回给 Claude 的 `systemMessage` 来自 `message.text`。
+`notify.enabled` 为 true 时会请求执行外部通知，但 runtime 护栏只允许主会话 Stop 和主会话 `PreToolUse`/`AskUserQuestion` 求助场景真正调用通知器。`notify.title` 和 `notify.text` 控制通知文案；返回给 Claude 的 `systemMessage` 来自 `message.text`。
 
 `notify.channels` 是可选的规则级覆盖：
 
@@ -27,7 +27,7 @@
 
 内置 `stop-notify` 默认 `notify.enabled=false`，只返回自检 `systemMessage`；需要外部通知时，用用户或项目规则显式启用 `notify`。
 
-`/hook-terr:configure` 的 `立即生效` 模式会创建或更新 `stop-notify-explicit` 规则，而不是修改内置 `stop-notify` 默认规则。该 explicit rule 只匹配主会话 Stop，并启用 `notify.enabled=true`；默认不写 `notify.channels`，因此会使用 settings 中的 `events.Stop.notifications`。如果 Stop 先被 documentationReminder 等 runtime feature 拦截，runtime 会先返回该 feature 的响应，不会继续匹配 explicit rule。
+`/hook-terr:configure` 的 `立即生效` 模式会创建或更新 `stop-notify-explicit` 规则，而不是修改内置 `stop-notify` 默认规则。该 explicit rule 只匹配主会话 Stop，并启用 `notify.enabled=true`；默认不写 `notify.channels`，因此会使用 settings 中的 `events.Stop.notifications`。Stop 外部通知规则会被视为 pure external notification，不返回可能让 Claude 继续工作的 Stop `systemMessage`。如果 Stop 先被 documentationReminder 等 runtime feature 拦截，runtime 会先返回该 feature 的响应，不会继续匹配 explicit rule。
 
 ## 文档收尾提醒不是规则
 
@@ -53,6 +53,6 @@ Stop/SubagentStop：`reason`、`transcript_path`、`is_subagent`、`agent_type`�
 
 `is_subagent` 在规则匹配中返回字符串 `"true"` 或 `"false"`；条件 `value` 可写字符串或 JSON boolean。`agent_type` 当前返回 `"main"` 或 `"subagent"`。runtime 会优先使用 hook payload 中的显式 `is_subagent` / `agent_type` 字段；缺失时，`SubagentStop` 事件、`isSidechain` 或 `agentId` 会视为子 agent，`Stop` 事件还会用 `transcript_path` 中独立的 `subagents` 路径段作为 fallback。
 
-工具事件：`tool_name`、`command`、`file_path`、`content`、`new_text`、`old_text`。
+工具事件：`tool_name`、`command`、`file_path`、`content`、`new_text`、`old_text`。主会话 `PreToolUse` 且 `tool_name == "AskUserQuestion"` 是内置求助通知场景，会复用 Stop 通知通道；普通工具事件即使命中 `notify.enabled=true` 规则也会被 runtime 护栏阻止外部通知。
 
 Prompt：`user_prompt`。

@@ -4,16 +4,22 @@
   "enabled": true,
   "event": "Stop",
   "priority": 200,
-  "decision": "warn",
-  "when": [],
+  "decision": "allow",
+  "when": [
+    {
+      "field": "is_subagent",
+      "op": "equals",
+      "value": "false"
+    }
+  ],
   "message": {
     "system": true,
-    "text": "结束前请确认是否需要通知用户或等待用户协助。"
+    "text": ""
   },
   "notify": {
     "enabled": true,
     "channels": ["popup"],
     "title": "项目 Stop 提醒",
-    "text": "Claude Code 本轮任务准备结束。"
+    "text": "Claude Code 本轮任务已停止。"
   }
 }
