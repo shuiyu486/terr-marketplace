@@ -46,7 +46,7 @@ Claude Code stdin StatusLineData
 4. `ses` 会写入 cache，并通过 `sessionKey` 判断是否可复用；`sessionKey` 优先用 transcript 顶层 `sessionId`，禁止退回不稳定的 `ppid`。
 5. `api` 始终按 transcript 历史累计；usage 去重必须包含 `server_tool_use_input_tokens`。
 6. `lineNum` 只记录最后成功处理的非空 JSONL 物理行号，尾部空行不能推进缓存。
-7. Codex usage fallback 只在本地代理且 stdin 没有 `rate_limits` 时探测；必须限频、复用 in-flight，并让一次性 stdin 调用等待 pending handler。
+7. Codex usage fallback 只在 stdin 没有 `rate_limits`，且 `ANTHROPIC_BASE_URL` host 是内建本地或显式 allowlist 时探测；必须限频、按 host 复用 in-flight、按 host 隔离缓存，并让一次性 stdin 调用等待 pending handler。
 8. `colors.ts` 保持独立，避免 `render.ts ↔ features/*.ts` 循环依赖。
 9. 修改 `src/`、`commands/`、`references/` 或用户可见行为时，按 `references/publish.md` bump patch/minor 并同步版本文件。
 

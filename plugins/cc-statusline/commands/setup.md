@@ -1,11 +1,11 @@
 ---
-description: Set up cc-statusline in Claude Code settings (find path, write statusLine config)
+description: Set up cc-statusline in Claude Code settings (find path, write statusLine config, optionally authorize current Codex probe host)
 allowed-tools: ["Bash", "PowerShell", "Read", "Edit", "Write", "AskUserQuestion"]
 ---
 
 # cc-statusline Setup
 
-Configure Claude Code's status line to use cc-statusline. After finding the plugin path, verify the build exists and build if needed, then write the config.
+Configure Claude Code's status line to use cc-statusline. After finding the plugin path, verify the build exists and build if needed, migrate cc-statusline config, optionally authorize the current remote Codex probe host, then write the status line command.
 
 ## Step 1: Find Plugin Path
 
@@ -35,22 +35,26 @@ If a path is found, set the variable for later steps:
 
 ## Step 2: Ensure Build Exists
 
-Check if `dist/index.js` exists in the plugin path. If not, build the plugin:
+Check if `dist/index.js` and `dist/configCli.js` exist in the plugin path. If not, build the plugin:
 
 **Windows (PowerShell):**
 
 ```powershell
 $distFile = Join-Path $pluginPath 'dist\index.js'
-if (-not (Test-Path $distFile)) {
+$configCli = Join-Path $pluginPath 'dist\configCli.js'
+if ((-not (Test-Path $distFile)) -or (-not (Test-Path $configCli))) {
     Write-Output "Build not found. Running npm install && npm run build..."
-    cd $pluginPath
+    Push-Location $pluginPath
     npm install 2>&1
     if ($LASTEXITCODE -ne 0) {
+        Pop-Location
         Write-Output "ERROR: npm install failed. Check Node.js and network."
         exit 1
     }
     npm run build 2>&1
-    if ($LASTEXITCODE -ne 0) {
+    $buildCode = $LASTEXITCODE
+    Pop-Location
+    if ($buildCode -ne 0) {
         Write-Output "ERROR: npm run build failed."
         exit 1
     }
@@ -63,7 +67,8 @@ if (-not (Test-Path $distFile)) {
 **macOS / Linux:**
 
 ```bash
-if [ ! -f "$PLUGIN_PATH/dist/index.js" ]; then
+CONFIG_CLI="$PLUGIN_PATH/dist/configCli.js"
+if [ ! -f "$PLUGIN_PATH/dist/index.js" ] || [ ! -f "$CONFIG_CLI" ]; then
     echo "Build not found. Running npm install && npm run build..."
     cd "$PLUGIN_PATH"
     npm install && npm run build || { echo "ERROR: build failed. Check Node.js and network."; exit 1; }
@@ -73,13 +78,92 @@ else
 fi
 ```
 
-## Step 3: Write Configuration
+## Step 3: Migrate cc-statusline Config
+
+Use the shared config CLI to create, repair, or backfill `${CLAUDE_CONFIG_DIR:-~/.claude}/cc-statusline.json`.
+
+**Windows (PowerShell):**
+
+```powershell
+$configCli = Join-Path $pluginPath 'dist\configCli.js'
+node $configCli migrate
+if ($LASTEXITCODE -ne 0) {
+    Write-Output "ERROR: config migration failed"
+    exit 1
+}
+```
+
+**macOS / Linux:**
+
+```bash
+node "$CONFIG_CLI" migrate || { echo "ERROR: config migration failed"; exit 1; }
+```
+
+## Step 4: Optionally Authorize Current Codex Probe Host
+
+cc-statusline only sends Codex header fallback probes to built-in local hosts (`localhost`, `127.0.0.1`, `::1`) or hosts explicitly listed in `codexProbeAllowedHosts`.
+
+Use the shared config CLI to inspect the current effective `ANTHROPIC_BASE_URL`. It follows runtime precedence: `settings.json.env` first, then current process environment overrides it.
+
+**Windows (PowerShell):**
+
+```powershell
+$probeSuggestionJson = node $configCli suggest-probe-host
+if ($LASTEXITCODE -ne 0) {
+    Write-Output "WARN: could not inspect ANTHROPIC_BASE_URL for Codex probe authorization"
+    $probeSuggestion = $null
+} else {
+    $probeSuggestion = $probeSuggestionJson | ConvertFrom-Json
+    Write-Output $probeSuggestionJson
+}
+```
+
+**macOS / Linux:**
+
+```bash
+PROBE_SUGGESTION_JSON=$(node "$CONFIG_CLI" suggest-probe-host) || PROBE_SUGGESTION_JSON=''
+[ -n "$PROBE_SUGGESTION_JSON" ] && echo "$PROBE_SUGGESTION_JSON"
+```
+
+If the result has `shouldAsk: true`, use AskUserQuestion:
+
+Question: `Allow cc-statusline to probe Codex usage headers from <HOST>?`
+
+Options:
+1. label: `Allow`, description: `Add <HOST> to codexProbeAllowedHosts. cc-statusline may send a minimal /v1/messages probe to this host when Claude Code stdin lacks rate_limits.`
+2. label: `Skip`, description: `Do not authorize this remote host. Setup continues, but Codex usage fallback will remain hidden for this host unless Claude Code provides rate_limits.`
+
+If the user chooses `Allow`, run:
+
+**Windows (PowerShell):**
+
+```powershell
+node $configCli allow-probe-host $probeSuggestion.host
+if ($LASTEXITCODE -ne 0) {
+    Write-Output "ERROR: failed to authorize Codex probe host"
+    exit 1
+}
+```
+
+**macOS / Linux:**
+
+```bash
+HOST=$(node -e "const s=JSON.parse(process.argv[1]); process.stdout.write(s.host || '')" "$PROBE_SUGGESTION_JSON")
+node "$CONFIG_CLI" allow-probe-host "$HOST" || { echo "ERROR: failed to authorize Codex probe host"; exit 1; }
+```
+
+If `shouldAsk` is false:
+- `status: "builtin"` means the host is local and already allowed by default.
+- `status: "already_allowed"` means it is already listed in `codexProbeAllowedHosts`.
+- `status: "no_base_url"` or `status: "invalid_base_url"` means there is no remote host to authorize; continue setup.
+
+## Step 5: Write Status Line Configuration
 
 Merge the `statusLine` field into `~/.claude/settings.json`, preserving all existing settings.
 
 The command string uses forward slashes (Claude Code handles this correctly on all platforms):
 
-```
+```text
 node "<PLUGIN_PATH>/dist/index.js"
 ```
 
@@ -129,6 +213,7 @@ $json = $json -replace '\\/', '/'  # unescape forward slashes
 **macOS/Linux — use Node.js for JSON merge:**
 
 ```bash
+COMMAND_STRING="node \"${PLUGIN_PATH%/}/dist/index.js\""
 node -e "
 const fs = require('fs');
 const path = require('path');
@@ -136,8 +221,8 @@ const p = path.join(process.env.CLAUDE_CONFIG_DIR || require('os').homedir() + '
 let s = {};
 try { s = JSON.parse(fs.readFileSync(p, 'utf8')); } catch {}
 s.statusLine = { type: 'command', command: process.argv[1] };
-fs.writeFileSync(p, JSON.stringify(s, null, 2));
-" "<COMMAND_STRING>"
+fs.writeFileSync(p, JSON.stringify(s, null, 2) + '\n');
+" "$COMMAND_STRING"
 ```
 
 **Verify** — read settings.json and confirm `statusLine.command` is set:
@@ -148,4 +233,4 @@ cat ~/.claude/settings.json | grep -A2 statusLine
 
 Tell the user:
 
-> Setup complete! Restart Claude Code (exit and re-enter) to see the status line. If the build was missing, it has been built automatically. If it doesn't appear, run `/cc-statusline:setup` again to verify.
+> Setup complete! Restart Claude Code (exit and re-enter) to see the status line. If you authorized a remote Codex probe host, usage fallback takes effect after restart. If it doesn't appear, run `/cc-statusline:setup` again to verify.

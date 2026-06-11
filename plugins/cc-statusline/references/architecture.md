@@ -22,7 +22,8 @@ stdin StatusLineData
 2. `loadConfig()` 读取并 normalize 配置，失败时使用 `DEFAULT_CONFIG`
 3. `createCodexLimitsService(cfg)` 创建 usage fallback 服务
 4. `readStdinLoop(async data => ...)` 读取本次命令 stdin 中的完整 JSON frame
-5. `ensureFresh(data, { maxWaitMs: 3000 })` 可选补齐 `rate_limits`
+5. 每帧检查配置文件 mtime；变化时重新 `loadConfig()` 并重建 usage fallback 服务
+6. `ensureFresh(data, { maxWaitMs: 3000 })` 可选补齐 `rate_limits`
 6. `parseTranscript(data.transcript_path)` 得到 `ParseResult`
 7. `render(...)` 生成 ANSI 字符串并持久化最后可信 context 快照
 8. `fs.writeSync(1, msg + "\n")` 即时输出
@@ -84,10 +85,11 @@ stdin StatusLineData
 
 `features/codexLimits.ts` 只在这些条件下探测：
 - stdin 没有可用 `rate_limits.five_hour`
-- `ANTHROPIC_BASE_URL` 指向 `localhost` / `127.0.0.1` / `::1`
+- `ANTHROPIC_BASE_URL` 的 host 是内建本地 host（`localhost` / `127.0.0.1` / `::1`）或显式配置在 `codexProbeAllowedHosts`
 - 有可用 token 和 model
 
 服务要求：
 - `codexProbeIntervalMinutes` 限频，默认 3 分钟，范围 1–10 分钟。
-- `inflight` promise 必须复用，避免并发探测。
-- 24 小时内旧缓存可作为 fallback snapshot。
+- `inflight` promise 必须按 host 复用，避免并发探测。
+- 24 小时内当前 host 的旧缓存可作为 fallback snapshot。
+- Codex fallback 缓存按 host 隔离，避免切换代理后串用额度。

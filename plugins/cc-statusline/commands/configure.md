@@ -7,77 +7,58 @@ allowed-tools: ["Bash", "PowerShell", "Read", "Edit", "Write", "AskUserQuestion"
 
 Configure which elements the status line displays. Settings are saved to `${CLAUDE_CONFIG_DIR}/cc-statusline.json`, or `~/.claude/cc-statusline.json` when `CLAUDE_CONFIG_DIR` is unset.
 
-## Read Current Config
+`codexProbeAllowedHosts` is preserved by this command but not edited here. Remote Codex probe hosts are authorized by `/cc-statusline:setup`.
 
-Read and normalize the config file if it exists. If it is missing, use the full defaults below. If it is invalid JSON, back it up as `cc-statusline.json.bak-*`, write defaults, and continue from those defaults.
+## Find Plugin Path
+
+Use the same installed plugin path discovery as `/cc-statusline:setup`, then ensure `dist/configCli.js` exists. If the build is missing, run `npm install && npm run build` from the plugin path.
+
+**Windows (PowerShell):**
+
+```powershell
+$claudeDir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }
+$pluginPath = (Get-ChildItem (Join-Path $claudeDir 'plugins\cache\*\cc-statusline\*') -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^\d+(\.\d+)+$' } | Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1).FullName
+if (-not $pluginPath) { Write-Output 'ERROR: cc-statusline plugin not found. Run /plugin install cc-statusline first.'; exit 1 }
+$configCli = Join-Path $pluginPath 'dist\configCli.js'
+if (-not (Test-Path $configCli)) { Push-Location $pluginPath; npm install; if ($LASTEXITCODE -ne 0) { exit 1 }; npm run build; $code = $LASTEXITCODE; Pop-Location; if ($code -ne 0) { exit $code } }
+```
+
+**macOS/Linux:**
 
 ```bash
-node -e "
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-const dir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
-const p = path.join(dir, 'cc-statusline.json');
-const defaults = {
-  showEffort: true,
-  showTokensLine: true,
-  showPath: true,
-  ctxWarnThreshold: 70,
-  ctxDangerThreshold: 90,
-  showToolActivity: true,
-  showRunningTools: true,
-  showCompletedTools: true,
-  showAgentTracking: true,
-  agentDisplayMode: 'compact',
-  showTodoProgress: true,
-  showUsageLimits: true,
-  codexProbeIntervalMinutes: 3
-};
-fs.mkdirSync(dir, { recursive: true });
-let parsed = {};
-try {
-  parsed = JSON.parse(fs.readFileSync(p, 'utf8'));
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('config root must be object');
-} catch (error) {
-  if (fs.existsSync(p)) {
-    const backup = p + '.bak-' + new Date().toISOString().replace(/[:.]/g, '-');
-    fs.copyFileSync(p, backup);
-    console.log('Backed up corrupt config to', backup);
-  }
-}
-const config = { ...defaults, ...parsed };
-if (config.agentDisplayMode !== 'compact' && config.agentDisplayMode !== 'multiline') config.agentDisplayMode = 'compact';
-config.codexProbeIntervalMinutes = Math.min(10, Math.max(1, parseInt(config.codexProbeIntervalMinutes, 10) || 3));
-fs.writeFileSync(p, JSON.stringify(config, null, 2) + '\n', 'utf8');
-console.log(JSON.stringify(config, null, 2));
-" 
+PLUGIN_PATH=$(ls -d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/*/cc-statusline/*/ 2>/dev/null | sort -V | tail -1)
+[ -n "$PLUGIN_PATH" ] || { echo 'ERROR: cc-statusline plugin not found. Run /plugin install cc-statusline first.'; exit 1; }
+CONFIG_CLI="$PLUGIN_PATH/dist/configCli.js"
+if [ ! -f "$CONFIG_CLI" ]; then
+    cd "$PLUGIN_PATH" && npm install && npm run build || exit 1
+fi
 ```
 
-These are the defaults:
+## Read Current Config
 
-```json
-{
-  "showEffort": true,
-  "showTokensLine": true,
-  "showPath": true,
-  "ctxWarnThreshold": 70,
-  "ctxDangerThreshold": 90,
-  "showToolActivity": true,
-  "showRunningTools": true,
-  "showCompletedTools": true,
-  "showAgentTracking": true,
-  "agentDisplayMode": "compact",
-  "showTodoProgress": true,
-  "showUsageLimits": true,
-  "codexProbeIntervalMinutes": 3
-}
+Use the shared config CLI so this command does not duplicate schema/default/normalize logic.
+
+**Windows:**
+
+```powershell
+$configJson = node $configCli read
+if ($LASTEXITCODE -ne 0) { Write-Output 'ERROR: failed to read config'; exit 1 }
+$config = ($configJson | ConvertFrom-Json).config
 ```
+
+**macOS/Linux:**
+
+```bash
+CONFIG_JSON=$(node "$CONFIG_CLI" read) || { echo 'ERROR: failed to read config'; exit 1; }
+```
+
+Default values and normalization come from `src/config.ts` via `dist/configCli.js`; do not duplicate the full schema in this command.
 
 ## Show Current State
 
 Summarize the current config to the user. For each toggle, show its state with a symbol (✓ enabled, ✗ disabled):
 
-```
+```text
 当前配置:
   ✓ Effort 级别    ✓ Token 统计    ✓ 当前路径
   ✓ Tool 主开关    ✓ Running tools    ✓ Completed tools
@@ -85,11 +66,12 @@ Summarize the current config to the user. For each toggle, show its state with a
   Agent 显示: compact
   上下文阈值: 警告 70% / 危险 90%
   Codex 用量刷新: 3 分钟
+  Codex 远程探测域名: 未配置（由 /cc-statusline:setup 管理）
 ```
 
 ## Ask the User
 
-Use AskUserQuestion. The first question uses **toggle semantics**: the user checks items whose state they want to **flip** (on→off or off→on). Items the user leaves unchecked keep their current state. This avoids the "re-check everything" problem since AskUserQuestion multiSelect does not support pre-selected checkboxes (`additionalProperties: false` on options).
+Use AskUserQuestion. The first question uses **toggle semantics**: the user checks items whose state they want to **flip** (on→off or off→on). Items the user leaves unchecked keep their current state.
 
 **Question 1** (multiSelect): split across 3 sub-questions (max 4 options each per API limit):
 
@@ -98,20 +80,6 @@ Sub-question 1b "工具与追踪 — 选择要切换开关的功能": Running to
 Sub-question 1c "其他 — 选择要切换开关的功能": Todo 进度, 用量限制
 
 For each option, describe current state AND what checking it will do. Format: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
-
-9 toggle options with descriptions:
-
-1. label: "Effort 级别", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
-2. label: "Token 统计", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
-3. label: "当前路径", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
-4. label: "Tool 主开关", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
-5. label: "Running tools", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
-6. label: "Completed tools", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
-7. label: "Agent 追踪", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
-8. label: "Todo 进度", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
-9. label: "用量限制", description: "当前: [开启/关闭]。勾选 = 切换为[关闭/开启]"
-
-**IMPORTANT**: The `[开启/关闭]` placeholders above must be filled in with the user's ACTUAL current config values. If showEffort is true, write "当前: 开启。勾选 = 切换为关闭".
 
 **Question 2** (single select): "上下文窗口告警阈值"
 
@@ -126,15 +94,11 @@ Because Question 1 is split into three sub-questions and AskUserQuestion support
 
 **Question 3** (single select): "Agent 显示模式"
 
-Present display mode options. Mark the current mode as "(Recommended)":
-
 1. label: "compact", description: "默认值，单行摘要：运行中 agent 明细 + 已完成 agent 按类型聚合"
 2. label: "multiline", description: "多行展开：显示最近保留的全部 agent，包含 model"
 3. label: "保持当前", description: "当前: {MODE}"
 
 **Question 4** (single select): "Codex 用量刷新间隔"
-
-Present interval preset options. Mark the current or closest value as "(Recommended)":
 
 1. label: "1 分钟", description: "刷新更快，请求更频繁"
 2. label: "3 分钟", description: "默认值，刷新及时且请求较少"
@@ -145,51 +109,20 @@ Present interval preset options. Mark the current or closest value as "(Recommen
 
 After the user answers:
 
-1. **Question 1**: For each item in the user's selected array, flip that feature's boolean value from the current config. Items NOT selected keep their current value.
+1. **Question 1**: For each selected item, flip that boolean value from the current config. Items NOT selected keep their current value.
 2. **Question 2**: If the user picked a preset (1-3), use those threshold values. If the user picked "保持当前不变" (4), keep the current threshold values.
 3. **Question 3**: If the user picked `compact` or `multiline`, set `agentDisplayMode` to that value. If the user picked "保持当前" (3), keep the current value.
-4. **Question 4**: If the user picked an interval preset (1-3), set `codexProbeIntervalMinutes` to 1, 3, or 5. If the user picked "保持当前" (4), keep the current value. Clamp any manually provided value to 1-10.
-5. Write the final config using the Write Config section below.
+4. **Question 4**: If the user picked an interval preset (1-3), set `codexProbeIntervalMinutes` to 1, 3, or 5. If the user picked "保持当前" (4), keep the current value.
+5. Write only the changed display fields as a patch using the shared config CLI. Do not include `codexProbeAllowedHosts` in the patch; it will be preserved automatically.
 
 ## Write Config
 
-After the user confirms their choices, write the config file. Pass `agentDisplayMode` as `compact` or `multiline`:
-
-**macOS/Linux:**
-
-```bash
-node -e "
-const fs = require('fs');
-const path = require('path');
-const p = path.join(process.env.CLAUDE_CONFIG_DIR || require('os').homedir() + '/.claude', 'cc-statusline.json');
-const config = {
-  showEffort: process.argv[1] === 'true',
-  showTokensLine: process.argv[2] === 'true',
-  showPath: process.argv[3] === 'true',
-  showToolActivity: process.argv[4] === 'true',
-  showRunningTools: process.argv[5] === 'true',
-  showCompletedTools: process.argv[6] === 'true',
-  showAgentTracking: process.argv[7] === 'true',
-  agentDisplayMode: ['compact', 'multiline'].includes(process.argv[8]) ? process.argv[8] : 'compact',
-  showTodoProgress: process.argv[9] === 'true',
-  showUsageLimits: process.argv[10] === 'true',
-  codexProbeIntervalMinutes: Math.min(10, Math.max(1, parseInt(process.argv[11], 10) || 3)),
-  ctxWarnThreshold: parseInt(process.argv[12], 10),
-  ctxDangerThreshold: parseInt(process.argv[13], 10)
-};
-fs.mkdirSync(path.dirname(p), { recursive: true });
-fs.writeFileSync(p, JSON.stringify(config, null, 2) + '\n');
-console.log('Config saved to', p);
-" "<showEffort>" "<showTokensLine>" "<showPath>" "<showToolActivity>" "<showRunningTools>" "<showCompletedTools>" "<showAgentTracking>" "<agentDisplayMode>" "<showTodoProgress>" "<showUsageLimits>" "<codexProbeIntervalMinutes>" "<ctxWarn>" "<ctxDanger>"
-```
+Build a JSON patch containing only the display/configuration fields managed by this command, then call `configCli patch`.
 
 **Windows (PowerShell):**
 
 ```powershell
-$claudeDir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }
-$configPath = Join-Path $claudeDir 'cc-statusline.json'
-New-Item -ItemType Directory -Force $claudeDir | Out-Null
-$config = @{
+$patch = @{
     showEffort = $showEffort
     showTokensLine = $showTokensLine
     showPath = $showPath
@@ -203,12 +136,18 @@ $config = @{
     codexProbeIntervalMinutes = [Math]::Min(10, [Math]::Max(1, [int]$codexProbeIntervalMinutes))
     ctxWarnThreshold = $ctxWarn
     ctxDangerThreshold = $ctxDanger
-}
-$json = $config | ConvertTo-Json
-[System.IO.File]::WriteAllText($configPath, $json + "`n", (New-Object System.Text.UTF8Encoding $false))
-Write-Output "Config saved to $configPath"
+} | ConvertTo-Json -Compress
+node $configCli patch $patch
+if ($LASTEXITCODE -ne 0) { Write-Output 'ERROR: config save failed'; exit 1 }
+```
+
+**macOS/Linux:**
+
+```bash
+PATCH=$(node -e "process.stdout.write(JSON.stringify({showEffort:process.argv[1]==='true',showTokensLine:process.argv[2]==='true',showPath:process.argv[3]==='true',showToolActivity:process.argv[4]==='true',showRunningTools:process.argv[5]==='true',showCompletedTools:process.argv[6]==='true',showAgentTracking:process.argv[7]==='true',agentDisplayMode:process.argv[8]==='multiline'?'multiline':'compact',showTodoProgress:process.argv[9]==='true',showUsageLimits:process.argv[10]==='true',codexProbeIntervalMinutes:parseInt(process.argv[11],10)||3,ctxWarnThreshold:parseInt(process.argv[12],10),ctxDangerThreshold:parseInt(process.argv[13],10)}))" "<showEffort>" "<showTokensLine>" "<showPath>" "<showToolActivity>" "<showRunningTools>" "<showCompletedTools>" "<showAgentTracking>" "<agentDisplayMode>" "<showTodoProgress>" "<showUsageLimits>" "<codexProbeIntervalMinutes>" "<ctxWarn>" "<ctxDanger>")
+node "$CONFIG_CLI" patch "$PATCH" || { echo 'ERROR: config save failed'; exit 1; }
 ```
 
 Tell the user:
 
-> Configuration saved. Changes take effect immediately on the next status line update.
+> Configuration saved. Changes take effect immediately on the next status line update. Remote Codex probe hosts are managed by `/cc-statusline:setup` and were preserved.

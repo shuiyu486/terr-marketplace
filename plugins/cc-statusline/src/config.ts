@@ -2,6 +2,8 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
+const BUILTIN_CODEX_PROBE_HOSTS = ["127.0.0.1", "localhost", "::1"] as const;
+
 export interface Config {
   showEffort: boolean;
   showTokensLine: boolean;
@@ -16,6 +18,7 @@ export interface Config {
   showTodoProgress: boolean;
   showUsageLimits: boolean;
   codexProbeIntervalMinutes: number;
+  codexProbeAllowedHosts: string[];
 }
 
 export const DEFAULT_CONFIG: Readonly<Config> = {
@@ -32,12 +35,20 @@ export const DEFAULT_CONFIG: Readonly<Config> = {
   showTodoProgress: true,
   showUsageLimits: true,
   codexProbeIntervalMinutes: 3,
+  codexProbeAllowedHosts: [],
 };
 
 export interface ConfigMigrationResult {
   status: "created" | "migrated" | "reset_corrupt";
   configPath: string;
   backupPath?: string;
+}
+
+export interface AllowCodexProbeHostResult {
+  status: "added" | "already_allowed" | "builtin" | "invalid";
+  host?: string;
+  config: Config;
+  configPath: string;
 }
 
 export function getClaudeConfigDir(env: NodeJS.ProcessEnv = process.env): string {
@@ -69,16 +80,13 @@ export function normalizeConfig(input: unknown): Config {
     1,
     10,
   );
+  config.codexProbeAllowedHosts = normalizeHostList(source.codexProbeAllowedHosts);
 
   return config;
 }
 
 export function loadConfig(): Config {
-  try {
-    return normalizeConfig(JSON.parse(fs.readFileSync(getConfigPath(), "utf8")));
-  } catch {
-    return { ...DEFAULT_CONFIG };
-  }
+  return loadConfigFromPath(getConfigPath());
 }
 
 export function writeCompleteConfig(config: Config, configPath = getConfigPath()): void {
@@ -104,6 +112,96 @@ export function migrateConfigFile(configPath = getConfigPath()): ConfigMigration
     fs.copyFileSync(configPath, backupPath);
     writeCompleteConfig({ ...DEFAULT_CONFIG }, configPath);
     return { status: "reset_corrupt", configPath, backupPath };
+  }
+}
+
+export function updateConfigFile(patch: Partial<Config>, configPath = getConfigPath()): Config {
+  try {
+    migrateConfigFile(configPath);
+  } catch {}
+  const current = loadConfigFromPath(configPath);
+  const next = normalizeConfig({ ...current, ...patch });
+  writeCompleteConfig(next, configPath);
+  return next;
+}
+
+export function allowCodexProbeHost(hostOrUrl: string, configPath = getConfigPath()): AllowCodexProbeHostResult {
+  try {
+    migrateConfigFile(configPath);
+  } catch {}
+  const config = loadConfigFromPath(configPath);
+  const host = normalizeHostname(hostOrUrl);
+  if (!host) return { status: "invalid", config, configPath };
+  if (isBuiltinCodexProbeHost(host)) return { status: "builtin", host, config, configPath };
+  if (config.codexProbeAllowedHosts.includes(host)) {
+    return { status: "already_allowed", host, config, configPath };
+  }
+
+  const next = updateConfigFile({ codexProbeAllowedHosts: [...config.codexProbeAllowedHosts, host] }, configPath);
+  return { status: "added", host, config: next, configPath };
+}
+
+export function normalizeHostname(input: unknown): string | null {
+  if (typeof input !== "string") return null;
+  let raw = input.trim().toLowerCase();
+  if (!raw) return null;
+
+  if (raw === "::1") return raw;
+  if (raw.startsWith("[") && raw.includes("]")) {
+    raw = raw.slice(1, raw.indexOf("]"));
+    return raw || null;
+  }
+
+  let host = parseUrlHostname(raw);
+  if (!host && !raw.includes("://")) host = parseUrlHostname(`http://${raw}`);
+  if (!host) return null;
+
+  host = host.trim().toLowerCase();
+  if (host.startsWith("[") && host.endsWith("]")) host = host.slice(1, -1);
+  host = host.replace(/\.+$/g, "");
+  return host || null;
+}
+
+export function normalizeHostList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const hosts: string[] = [];
+  const seen = new Set<string>();
+  for (const item of value) {
+    const host = normalizeHostname(item);
+    if (!host || seen.has(host)) continue;
+    seen.add(host);
+    hosts.push(host);
+  }
+  return hosts;
+}
+
+export function getBuiltinCodexProbeHosts(): readonly string[] {
+  return BUILTIN_CODEX_PROBE_HOSTS;
+}
+
+export function isBuiltinCodexProbeHost(host: string): boolean {
+  return BUILTIN_CODEX_PROBE_HOSTS.includes(normalizeHostname(host) as typeof BUILTIN_CODEX_PROBE_HOSTS[number]);
+}
+
+export function isCodexProbeAllowedHost(config: Config, host: string): boolean {
+  const normalized = normalizeHostname(host);
+  if (!normalized) return false;
+  return isBuiltinCodexProbeHost(normalized) || config.codexProbeAllowedHosts.includes(normalized);
+}
+
+function loadConfigFromPath(configPath: string): Config {
+  try {
+    return normalizeConfig(JSON.parse(fs.readFileSync(configPath, "utf8")));
+  } catch {
+    return { ...DEFAULT_CONFIG };
+  }
+}
+
+function parseUrlHostname(raw: string): string | null {
+  try {
+    return new URL(raw).hostname;
+  } catch {
+    return null;
   }
 }
 

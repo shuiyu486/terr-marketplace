@@ -214,7 +214,7 @@ Use the freshly built shared config module to create, repair, or backfill the us
 **Windows (PowerShell):**
 
 ```powershell
-node -e "const { migrateConfigFile } = require(process.argv[1]); const r = migrateConfigFile(); console.log('CONFIG_' + r.status.toUpperCase()); console.log('CONFIG_PATH=' + r.configPath); if (r.backupPath) console.log('CONFIG_BACKUP=' + r.backupPath);" (Join-Path $cacheDir 'dist\config.js')
+node (Join-Path $cacheDir 'dist\configCli.js') migrate
 if ($LASTEXITCODE -ne 0) {
     Write-Output "ERROR: config migration failed"
     exit 1
@@ -224,7 +224,7 @@ if ($LASTEXITCODE -ne 0) {
 **macOS / Linux:**
 
 ```bash
-node -e "const { migrateConfigFile } = require(process.argv[1]); const r = migrateConfigFile(); console.log('CONFIG_' + r.status.toUpperCase()); console.log('CONFIG_PATH=' + r.configPath); if (r.backupPath) console.log('CONFIG_BACKUP=' + r.backupPath);" "$CACHE_DIR/dist/config.js" || { echo "ERROR: config migration failed"; exit 1; }
+node "$CACHE_DIR/dist/configCli.js" migrate || { echo "ERROR: config migration failed"; exit 1; }
 ```
 
 ## Step 9: Update settings.json
