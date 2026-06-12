@@ -13,6 +13,7 @@ Building features requires more than writing code. You need to:
 - **Understand user intent** before choosing implementation details
 - **Bound the scope** so the work stays focused
 - **Match process depth to risk** instead of overusing heavyweight workflows
+- **Choose solution fit over patch size** so recommendations favor concise, maintainable architecture unless a hotfix or minimum-change patch is requested
 - **Understand the codebase** before making changes
 - **Ask questions** only when answers materially affect the outcome
 - **Design thoughtfully** before implementing
@@ -38,6 +39,36 @@ Or simply:
 
 The command will guide you through the process interactively.
 
+## Request Modes and Approval Boundaries
+
+The workflow first distinguishes what kind of help you are asking for.
+
+| Mode | Use when | Boundary |
+|---|---|---|
+| Advisory | You want ideas, analysis, options, or an optimization plan | Claude gives concise guidance and does not write repository files unless separately asked |
+| Planning Artifact | You want a design document, implementation plan, handoff, or ADR | Claude names the target file and asks before writing it; document approval does not approve code changes |
+| Implementation | You want Claude to build, fix, refactor, or modify behavior | Claude follows the phased workflow and waits for explicit implementation approval before changing code |
+
+Approvals are scoped to the next named step. Approving a Design Seed only moves the workflow into exploration. Approving architecture only moves it toward an implementation plan. Words like "continue", "confirm", or "approved" do not silently expand into permission to modify code unless the next step was explicitly described as implementation.
+
+For large recommendations, Claude should keep chat output short. Detailed reports belong in an approved `.md` artifact rather than a long chat response.
+
+## Solution Preference
+
+By default, `/feature-dev` recommends the best concise, maintainable architecture rather than the smallest possible diff. It still applies YAGNI: structure should improve only when the current request and codebase evidence justify it.
+
+The default recommendation order is:
+
+1. Match the user's intent and success criteria.
+2. Preserve correctness, safety, compatibility, and project constraints.
+3. Prefer clear boundaries and simple architecture that reduce future maintenance cost.
+4. Keep the implementation as small as that architecture allows.
+5. Use a minimal patch when the user asks for a hotfix/minimum-change fix, or when risk strongly favors a narrow edit.
+
+Workflow depth is separate from solution shape: a Small task can still deserve a clean design, and a Large design can still be delivered incrementally.
+
+When recommending a solution, Claude should state the solution posture, why it fits, why a narrower patch is or is not enough, and why a larger refactor is or is not justified.
+
 ## Adaptive Workflow Depth
 
 The plugin classifies each request before launching agents:
@@ -52,8 +83,8 @@ The classification can be upgraded or downgraded after codebase exploration if t
 
 Approval expectations:
 
-- **Small** changes usually need one combined approval for the Design Seed and implementation plan.
-- **Medium** changes usually use two gates: approve the Design Seed before exploration, then approve the implementation approach before code changes.
+- **Small** implementation requests may combine Design Seed and implementation-plan approval only when the next action is explicitly named as implementation or code changes.
+- **Medium** changes usually use two gates: approve the Design Seed before exploration, then explicitly approve the implementation approach before code changes.
 - **Large** changes use the same two gates as Medium, with deeper exploration, architecture comparison, and review before completion.
 
 ## The 7-Phase Workflow
@@ -71,6 +102,7 @@ Approval expectations:
 - Detects if the request should be decomposed into smaller slices
 - Asks focused clarifying questions only when they affect scope, behavior, risk, or implementation direction
 - Proposes 1-3 high-level directions depending on workflow depth
+- States the recommended solution posture and approval boundary
 - Presents a **Design Seed** and waits for approval before moving to codebase exploration
 
 **Example:**
@@ -124,11 +156,12 @@ The approved Design Seed becomes the input for Phase 2.
 
 - Small requests usually get one direct implementation plan without architect agents
 - Medium requests use inline design or 1 `feature-dev:code-architect` when the design is not obvious
-- Large requests launch 2-3 `feature-dev:code-architect` agents with explicit perspectives:
-  - **Minimal changes**: Smallest change, maximum reuse
-  - **Clean architecture**: Maintainability, elegant abstractions
-  - **Pragmatic balance**: Speed + quality
-- Claude reviews all approaches and recommends one
+- Large requests launch 2-3 `feature-dev:code-architect` agents with explicit perspectives, such as:
+  - **Clear architecture**: concise boundaries that reduce future maintenance cost
+  - **Pragmatic incremental delivery**: a safe sequence of reviewable steps without sacrificing the target structure
+  - **Minimal-risk hotfix**: a narrow repair only when requested or when risk strongly favors it
+- Claude reviews all approaches using the Solution Preference order and recommends one
+- The recommendation explains why it is not merely a narrower patch, why it is not over-engineered, and how to land it incrementally when useful
 - The user approves the implementation approach before code changes start
 
 ### Phase 5: Implementation
@@ -193,7 +226,7 @@ The approved Design Seed becomes the input for Phase 2.
 
 ### `feature-dev:code-architect`
 
-**Purpose**: Designs feature architectures and implementation blueprints from a requested perspective, such as minimal change, clean architecture, pragmatic balance, or best overall.
+**Purpose**: Designs feature architectures and implementation blueprints from a requested perspective, such as clear maintainable architecture, pragmatic incremental delivery, minimal-risk hotfix, or best overall.
 
 **Focus areas:**
 
@@ -284,4 +317,4 @@ Sid Bidasaria (sbidasaria@anthropic.com), with local discovery workflow adaptati
 
 ## Version
 
-1.2.0
+1.2.3
