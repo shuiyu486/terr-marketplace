@@ -4,7 +4,7 @@
 - 仓库：https://github.com/anthropics/claude-code
 - 路径：plugins/feature-dev
 - 分支：main
-- 最近同步基线：39e853e4074d90f27afdfb7ea601e0fc378bd0c5
+- 最近同步基线：5754a8bd4fd286e798d9d29658b10f29832ad177
 
 ## 本地插件
 - 仓库：https://github.com/shuiyu486/terr-marketplace.git
@@ -14,11 +14,11 @@
 
 ## 需要保留的本地魔改
 - `.claude-plugin/plugin.json` — 保留 terr-marketplace 发布所需的 `repository`、`license`、`keywords` 元数据，并同步本地融合版描述和版本号；上游官方 plugin.json 当前只包含基础插件元数据。
-- `commands/feature-dev.md` — Phase 1 已融合 `obra/superpowers` 的 brainstorming 思路，保留“探索上下文、逐步提问、提出方向、形成 Design Seed、等待批准”的本地工作流；后续 Phase 2-7 仍沿用官方 feature-dev 流程。
-- `README.md` — 记录本地融合版 Phase 1 和版本信息，避免用户文档回退为官方原版描述。
+- `commands/feature-dev.md` — Phase 1 已融合 `obra/superpowers` 的 brainstorming 思路，并在全流程加入 Small/Medium/Large 自适应深度、namespaced agent 调用、轻量 approval gate、环境兼容的进度跟踪和验证要求；不要回退为官方固定重流程。
+- `agents/code-architect.md` — 支持 caller 指定 minimal change / clean architecture / pragmatic balance / best overall 等设计视角，配合 commands 中的大型任务多视角架构比较。
+- `README.md` — 记录本地融合版 discovery、自适应工作流深度和版本信息，避免用户文档回退为官方原版描述。
 
 ## 跟随上游的内容
-- `agents/code-architect.md` 默认跟随上游。
 - `agents/code-explorer.md` 默认跟随上游。
 - `agents/code-reviewer.md` 默认跟随上游。
 - 未在“需要保留的本地魔改”中列出的文件默认跟随上游。
