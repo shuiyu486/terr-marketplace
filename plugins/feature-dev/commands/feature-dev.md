@@ -60,6 +60,18 @@ Separate workflow depth from solution shape:
 - **Medium/Large** can still be delivered in incremental batches if that preserves safety and reviewability.
 - If the best maintainable design is larger than a narrow repair, recommend it, explain the maintenance payoff, and propose an incremental path.
 
+## Option Set Before Recommendation
+
+For Medium/Large work, architecture decisions, optimization plans, repair plans, or advisory requests that ask for a "方案", present 2-3 viable solution postures before committing to one recommendation.
+
+The options should differ meaningfully, not just vary in wording. Common postures include:
+
+- **Minimal-risk containment**: narrow, safe fix that reduces immediate risk.
+- **Concise maintainable architecture**: clear boundaries and structure without speculative abstraction.
+- **Broader strategic refactor**: larger reshaping when the current architecture is the source of recurring problems.
+
+Then recommend one option using the Solution Preference order. Do not present only one plan unless the task is Small, fully specified, or only one safe option exists; if only one option is viable, say why.
+
 ## Recommendation Contract
 
 When presenting a recommended direction or implementation approach, include:
@@ -116,17 +128,19 @@ Initial request: $ARGUMENTS
    - Known constraints and non-goals.
 4. Classify scope as Small, Medium, or Large using the Workflow Depth rules.
 5. Ask focused clarifying questions until the core intent is clear. Only ask questions that materially affect scope, behavior, risk, or the chosen implementation path.
-6. Propose 1-3 high-level directions depending on depth:
-   - Small: usually one recommended direction is enough.
-   - Medium: include a recommended direction and, when useful, one lightweight alternative.
-   - Large: include 2-3 directions with trade-offs.
+6. Propose candidate solution postures depending on depth and request mode:
+   - Small or fully specified implementation: usually one recommended direction is enough.
+   - Medium: include at least two meaningfully different postures when the request asks for a plan, optimization, repair strategy, or architecture choice.
+   - Large: include 2-3 postures with trade-offs before recommending one.
 7. Present a **Design Seed** and ask for approval before moving to codebase exploration. Include:
    - Request mode and approval boundary.
    - Scope classification and why.
    - Problem statement.
    - Target users/workflows.
    - In-scope and out-of-scope items.
+   - Candidate solution postures when Option Set Before Recommendation applies.
    - Recommended direction and solution posture.
+   - Why the recommended posture beats the other viable postures.
    - Why this is not merely a narrower patch, or why a narrow patch is appropriate.
    - Open questions that require codebase exploration.
    - Exploration targets for Phase 2.
@@ -186,10 +200,12 @@ If the user says "whatever you think is best", provide your recommendation and g
    - Large: launch 2-3 `feature-dev:code-architect` agents in parallel with explicit perspectives such as clear architecture, pragmatic incremental delivery, and minimal-risk hotfix only when that perspective is relevant.
 2. When launching architect agents, tell each one its perspective. Each agent should produce a blueprint for that perspective, not pretend it is the only possible final answer.
 3. Review all approaches using the Solution Preference order. Recommend the best concise, maintainable architecture by default; choose the smallest diff only when the user asked for it or the risk analysis supports it.
-4. Present to the user:
+4. Present an option set before the recommendation when Option Set Before Recommendation applies:
+   - 2-3 viable solution postures with meaningful trade-offs.
    - Recommended approach and solution posture.
    - Why it fits this request.
    - Files/components expected to change.
+   - Why the recommendation beats the other viable postures.
    - Why a narrower patch is insufficient, or why it is enough.
    - Why a larger refactor is unnecessary, or why broader architecture work is justified.
    - Incremental delivery path when applicable.

@@ -67,7 +67,9 @@ The default recommendation order is:
 
 Workflow depth is separate from solution shape: a Small task can still deserve a clean design, and a Large design can still be delivered incrementally.
 
-When recommending a solution, Claude should state the solution posture, why it fits, why a narrower patch is or is not enough, and why a larger refactor is or is not justified.
+For Medium/Large work, architecture decisions, optimization plans, repair plans, or advisory requests that ask for a "方案", `/feature-dev` should present 2-3 meaningfully different solution postures before recommending one. Typical postures are minimal-risk containment, concise maintainable architecture, and broader strategic refactor. If only one safe option exists, Claude should say why.
+
+When recommending a solution, Claude should state the solution posture, why it fits, why it beats the other viable postures, why a narrower patch is or is not enough, and why a larger refactor is or is not justified.
 
 ## Adaptive Workflow Depth
 
@@ -101,8 +103,8 @@ Approval expectations:
 - Classifies the request as Small, Medium, or Large
 - Detects if the request should be decomposed into smaller slices
 - Asks focused clarifying questions only when they affect scope, behavior, risk, or implementation direction
-- Proposes 1-3 high-level directions depending on workflow depth
-- States the recommended solution posture and approval boundary
+- Proposes 1-3 candidate solution postures depending on workflow depth and request mode
+- States the recommended solution posture, why it beats the other viable postures, and the approval boundary
 - Presents a **Design Seed** and waits for approval before moving to codebase exploration
 
 **Example:**
@@ -160,8 +162,8 @@ The approved Design Seed becomes the input for Phase 2.
   - **Clear architecture**: concise boundaries that reduce future maintenance cost
   - **Pragmatic incremental delivery**: a safe sequence of reviewable steps without sacrificing the target structure
   - **Minimal-risk hotfix**: a narrow repair only when requested or when risk strongly favors it
-- Claude reviews all approaches using the Solution Preference order and recommends one
-- The recommendation explains why it is not merely a narrower patch, why it is not over-engineered, and how to land it incrementally when useful
+- Claude reviews the option set using the Solution Preference order and recommends one
+- The recommendation explains why it beats the other viable postures, why it is not merely a narrower patch, why it is not over-engineered, and how to land it incrementally when useful
 - The user approves the implementation approach before code changes start
 
 ### Phase 5: Implementation
@@ -317,4 +319,4 @@ Sid Bidasaria (sbidasaria@anthropic.com), with local discovery workflow adaptati
 
 ## Version
 
-1.2.3
+1.2.4
