@@ -50,6 +50,12 @@ The plugin classifies each request before launching agents:
 
 The classification can be upgraded or downgraded after codebase exploration if the real complexity differs from the initial request.
 
+Approval expectations:
+
+- **Small** changes usually need one combined approval for the Design Seed and implementation plan.
+- **Medium** changes usually use two gates: approve the Design Seed before exploration, then approve the implementation approach before code changes.
+- **Large** changes use the same two gates as Medium, with deeper exploration, architecture comparison, and review before completion.
+
 ## The 7-Phase Workflow
 
 ### Phase 1: Discovery & Design Seed
@@ -237,6 +243,8 @@ Launch feature-dev:code-architect to design the caching layer
 ```text
 Launch feature-dev:code-reviewer to check my recent changes
 ```
+
+By default, `feature-dev:code-reviewer` reviews the current `git diff`. If you want it to review specific files, commits, staged changes, or a broader scope, say that explicitly in the prompt.
 
 ## Best Practices
 
