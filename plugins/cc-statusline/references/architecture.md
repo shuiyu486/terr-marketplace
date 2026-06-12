@@ -67,6 +67,16 @@ stdin StatusLineData
 
 不能把 feature extraction 放到 token 去重之后，否则重复 usage 行中的 `tool_use` / `tool_result` 会丢失。
 
+## context snapshot fallback
+
+Line 1/2 的 `ctx` 与 `in/out` 是实时快照，不是累计值。渲染层按优先级取可信来源：
+1. stdin `context_window.total_input_tokens/total_output_tokens/used_percentage`
+2. stdin `context_window.current_usage`
+3. transcript 最近一次 `assistant.message.usage`
+4. 仍无可信 usage 时显示未知态 `—`
+
+`current_usage` 和 transcript 最近 usage 只可作为显示 fallback；`ses/api` 仍必须只用 transcript 的 assistant usage delta 累计，避免 statusline 多次刷新重复计数。
+
 ## ses vs api
 
 - `ses`：当前 Claude Code session 内累计；优先按 transcript 顶层 `sessionId` 区分，`sessionKey` 相同则从 cache / memory map 继续，`sessionId` 变化则归零。

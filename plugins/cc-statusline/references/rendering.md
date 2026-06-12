@@ -26,17 +26,23 @@ Line 7: path: /dir                                                        [showP
 
 | 标签 | 变量 | 来源 | 生命周期 |
 |------|------|------|----------|
-| `in/out` | `data.context_window.total_*_tokens` | stdin 实时快照 | 实时变化 |
+| `in/out` | context snapshot | stdin `total_*_tokens` → stdin `current_usage` → transcript 最近 assistant usage | 实时快照；无可信数据时显示 `—` |
 | `ses` | `ctx.sesIn / ctx.sesOut` | transcript 增量解析 + sessionKey cache | 当前 Claude Code session |
 | `api` | `ctx.apiIn + ctx.apiOut` | transcript 增量解析 + transcript cache | 当前 transcript 历史累计 |
 
-`ses` 不是单次 parse delta；SessionStart 不变时可跨短生命周期进程恢复。`api` 不按 session 归零。
+`ses` 不是单次 parse delta；SessionStart 不变时可跨短生命周期进程恢复。`api` 不按 session 归零。`current_usage` 只代表最近一次 API 调用，不用于累计 `ses/api`，避免 statusline 刷新时重复计数。
 
 ## Context 兜底
 
 刷新期间 stdin 可能短暂给出 `context_window` 的 `0/0` 帧。渲染层应按 transcript 缓存上一帧有效 context，避免跨进程刷新时显示 `ctx:0/0 0%` 闪烁。
 
-只有 `context_window_size > 0` 且 token/百分比至少一个非零的帧会刷新缓存；坏的零帧不会覆盖最后可信值。
+可信 context 的优先级：
+1. stdin `context_window.total_input_tokens/total_output_tokens/used_percentage`
+2. stdin `context_window.current_usage`
+3. transcript 最近一次 `assistant.message.usage`
+4. 无可信 token 数据时显示未知态 `—`，而不是把缺失数据伪装成 `0`
+
+只有 `context_window_size > 0` 且 token/百分比至少一个非零，或包含非零 `current_usage` 的帧会刷新缓存；坏的零帧不会覆盖最后可信值。
 
 ## ANSI 256 色约定
 

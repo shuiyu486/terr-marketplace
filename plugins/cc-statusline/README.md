@@ -10,7 +10,7 @@ A feature-rich status line for Claude Code.
 
 - Model name with ANSI colors
 - Effort level (max/xhigh/high/medium/low) with color coding
-- Context window usage percentage with color thresholds
+- Context window usage percentage with color thresholds; when Claude Code does not provide trustworthy context usage, token fields show `—` instead of a misleading `0`
 - **Tool activity** — watch Claude read, edit, search, and call MCP tools; completed tool counts are accumulated for the session and wrap to two lines with `… +N` overflow when needed
 - **Agent tracking** — see which subagents are running and what they're doing
 - **Todo progress** — track task completion in real-time
@@ -72,6 +72,6 @@ Codex usage fallback probes are limited to built-in local hosts by default. Remo
 
 ## How It Works
 
-The status line reads JSON data from stdin (provided by Claude Code), parses the session transcript for token/cost tracking, tool activity, agent tracking, and todo progress, and renders a multi-line ANSI-colored display.
+The status line reads JSON data from stdin (provided by Claude Code), parses the session transcript for token/cost tracking, tool activity, agent tracking, and todo progress, and renders a multi-line ANSI-colored display. Context `in/out` uses Claude Code's `context_window` totals first, falls back to `current_usage` and the latest transcript usage when available, and displays `—` when no reliable token snapshot exists.
 
 The setup command automatically configures your `~/.claude/settings.json` with the correct `statusLine` command. If your `ANTHROPIC_BASE_URL` points to a remote proxy, setup can also ask whether to add that host to `codexProbeAllowedHosts` so the Codex usage fallback can read `X-Codex-*` headers.

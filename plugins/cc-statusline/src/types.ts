@@ -3,10 +3,12 @@ export interface StatusLineData {
     display_name: string;
   };
   context_window: {
-    used_percentage: number;
+    used_percentage: number | null;
+    remaining_percentage?: number | null;
     context_window_size: number;
     total_input_tokens: number;
     total_output_tokens: number;
+    current_usage?: UsageEntry | null;
   };
   effort: {
     level: string;
@@ -126,6 +128,8 @@ export interface ParseResult {
   sesOut: number;
   apiIn: number;
   apiOut: number;
+  lastUsageIn: number | null;
+  lastUsageOut: number | null;
   tools: ToolEvent[];
   toolCompletedCounts: ToolCompletedCounts;
   agents: AgentEvent[];

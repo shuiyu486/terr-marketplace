@@ -2,7 +2,7 @@ import * as crypto from "crypto";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import type { StatusLineData, Config, ParseResult } from "./types";
+import type { StatusLineData, Config, ParseResult, UsageEntry } from "./types";
 import { fmtW } from "./format";
 import { color } from "./colors";
 import { terminalColumns, wrapAnsiParts } from "./layout";
@@ -12,15 +12,41 @@ import { renderTodos } from "./features/todos";
 import { renderLimits } from "./features/limits";
 
 type ContextWindow = StatusLineData["context_window"];
+type ContextSnapshot = {
+  inputTokens: number | null;
+  outputTokens: number | null;
+  contextWindowSize: number | null;
+  usedPercentage: number | null;
+};
 
 const CACHE_DIR = path.join(os.tmpdir(), "cc-statusline-cache");
 let lastContextWindow: ContextWindow | null = null;
 
+function validNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function usageInput(usage: UsageEntry): number {
+  return (usage.input_tokens || 0) +
+    (usage.cache_creation_input_tokens || 0) +
+    (usage.cache_read_input_tokens || 0) +
+    (usage.server_tool_use_input_tokens || 0);
+}
+
+function usageSnapshot(usage: UsageEntry | null | undefined): { in: number; out: number } | null {
+  if (!usage) return null;
+  const input = usageInput(usage);
+  const output = usage.output_tokens || 0;
+  return input === 0 && output === 0 ? null : { in: input, out: output };
+}
+
 function hasContextUsage(current: ContextWindow): boolean {
+  const currentUsage = usageSnapshot(current.current_usage);
   return current.context_window_size > 0 && (
     current.total_input_tokens > 0 ||
     current.total_output_tokens > 0 ||
-    current.used_percentage > 0
+    (current.used_percentage ?? 0) > 0 ||
+    currentUsage !== null
   );
 }
 
@@ -66,7 +92,72 @@ function stableContextWindow(current: ContextWindow, transcriptPath: string): Co
   return lastContextWindow ?? readCachedContextWindow(transcriptPath) ?? current;
 }
 
-function ctxColor(pct: number, cfg: Config): string {
+function usedPercentage(current: ContextWindow, inputTokens: number | null, contextWindowSize: number | null): number | null {
+  const used = validNumber(current.used_percentage);
+  if (used !== null) return used;
+
+  const remaining = validNumber(current.remaining_percentage);
+  if (remaining !== null) return Math.max(0, Math.min(100, 100 - remaining));
+
+  if (inputTokens !== null && contextWindowSize !== null && contextWindowSize > 0) {
+    return Math.max(0, Math.min(100, (inputTokens / contextWindowSize) * 100));
+  }
+
+  return null;
+}
+
+function resolveContextSnapshot(current: ContextWindow, ctx: ParseResult): ContextSnapshot {
+  const contextWindowSize = current.context_window_size > 0 ? current.context_window_size : null;
+  const hasOfficialUsage = current.total_input_tokens > 0 ||
+    current.total_output_tokens > 0 ||
+    (current.used_percentage ?? 0) > 0;
+
+  if (hasOfficialUsage) {
+    const inputTokens = current.total_input_tokens || 0;
+    const outputTokens = current.total_output_tokens || 0;
+    return {
+      inputTokens,
+      outputTokens,
+      contextWindowSize,
+      usedPercentage: usedPercentage(current, inputTokens, contextWindowSize),
+    };
+  }
+
+  const currentUsage = usageSnapshot(current.current_usage);
+  if (currentUsage) {
+    return {
+      inputTokens: currentUsage.in,
+      outputTokens: currentUsage.out,
+      contextWindowSize,
+      usedPercentage: usedPercentage(current, currentUsage.in, contextWindowSize),
+    };
+  }
+
+  if (ctx.lastUsageIn !== null || ctx.lastUsageOut !== null) {
+    const inputTokens = ctx.lastUsageIn ?? 0;
+    const outputTokens = ctx.lastUsageOut ?? 0;
+    return {
+      inputTokens,
+      outputTokens,
+      contextWindowSize,
+      usedPercentage: usedPercentage(current, inputTokens, contextWindowSize),
+    };
+  }
+
+  return {
+    inputTokens: null,
+    outputTokens: null,
+    contextWindowSize,
+    usedPercentage: null,
+  };
+}
+
+function fmtMaybeW(n: number | null): string {
+  return n === null ? "—" : fmtW(n);
+}
+
+function ctxColor(pct: number | null, cfg: Config): string {
+  if (pct === null) return color("—%", 244);
   if (pct > cfg.ctxDangerThreshold) return color(`${pct}%`, 168, true);
   if (pct > cfg.ctxWarnThreshold) return color(`${pct}%`, 215, true);
   return color(`${pct}%`, 108);
@@ -105,12 +196,13 @@ export function render(
   cfg: Config,
 ): string {
   const contextWindow = stableContextWindow(data.context_window, data.transcript_path);
+  const context = resolveContextSnapshot(contextWindow, ctx);
   const model = color(data.model.display_name, 111);
   const effort = cfg.showEffort ? ` ${effortColor(data.effort.level)}` : "";
-  const pct = Math.round(contextWindow.used_percentage);
+  const pct = context.usedPercentage === null ? null : Math.round(context.usedPercentage);
   const ctxInfo = ctxColor(pct, cfg);
-  const inTok = fmtW(contextWindow.total_input_tokens);
-  const ctxSize = fmtW(contextWindow.context_window_size);
+  const inTok = fmtMaybeW(context.inputTokens);
+  const ctxSize = fmtMaybeW(context.contextWindowSize);
 
   const lines: string[] = [];
 
@@ -120,7 +212,7 @@ export function render(
 
   // Line 2: tokens / session / api
   if (cfg.showTokensLine) {
-    const outTok = fmtW(contextWindow.total_output_tokens);
+    const outTok = fmtMaybeW(context.outputTokens);
     const sesIn = fmtW(ctx.sesIn);
     const sesOut = fmtW(ctx.sesOut);
     const apiTotal = fmtW(ctx.apiIn + ctx.apiOut);

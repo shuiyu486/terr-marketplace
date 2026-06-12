@@ -94,6 +94,16 @@ function newCacheV2(): SessionCacheV2 {
   };
 }
 
+function lastUsageFromCache(cache: Pick<SessionCacheV2, "lastIn" | "lastOut" | "lastCacheCreate" | "lastCacheRead" | "lastServerToolUseInput">): { in: number | null; out: number | null } {
+  const input = (cache.lastIn || 0) +
+    (cache.lastCacheCreate || 0) +
+    (cache.lastCacheRead || 0) +
+    (cache.lastServerToolUseInput || 0);
+  const output = cache.lastOut || 0;
+  if (input === 0 && output === 0) return { in: null, out: null };
+  return { in: input, out: output };
+}
+
 function readCache(transcriptPath: string): SessionCacheV2 {
   const p = cachePath(transcriptPath);
   try {
@@ -214,6 +224,8 @@ export function parseTranscript(transcriptPath: string): ParseResult {
       sesOut: 0,
       apiIn: 0,
       apiOut: 0,
+      lastUsageIn: null,
+      lastUsageOut: null,
       tools: [],
       toolCompletedCounts: {},
       agents: [],
@@ -235,11 +247,14 @@ export function parseTranscript(transcriptPath: string): ParseResult {
     const sessionTotals = cache.sessionKey === session.key
       ? { sesIn: cache.sesIn || 0, sesOut: cache.sesOut || 0 }
       : { sesIn: 0, sesOut: 0 };
+    const lastUsage = lastUsageFromCache(cache);
     return {
       sesIn: sessionTotals.sesIn,
       sesOut: sessionTotals.sesOut,
       apiIn: cache.apiIn || 0,
       apiOut: cache.apiOut || 0,
+      lastUsageIn: lastUsage.in,
+      lastUsageOut: lastUsage.out,
       tools: cache.tools || [],
       toolCompletedCounts: cache.toolCompletedCounts || completedCountsFromEvents(cache.tools),
       agents: cache.agents || [],
@@ -391,11 +406,15 @@ export function parseTranscript(transcriptPath: string): ParseResult {
   };
   writeCache(transcriptPath, newCache);
 
+  const lastUsage = lastUsageFromCache(newCache);
+
   return {
     sesIn,
     sesOut,
     apiIn,
     apiOut,
+    lastUsageIn: lastUsage.in,
+    lastUsageOut: lastUsage.out,
     tools,
     toolCompletedCounts,
     agents,

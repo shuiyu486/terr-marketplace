@@ -32,11 +32,11 @@ Claude Code stdin StatusLineData
 
 | 标签 | 含义 | 来源 | 生命周期 |
 |------|------|------|----------|
-| `in/out` | 当前上下文窗口 token 快照 | stdin `context_window.total_*_tokens` | 实时变化 |
+| `in/out` | 当前上下文窗口 token 快照 | stdin `total_*_tokens` → stdin `current_usage` → transcript 最近 usage | 实时变化；无可信数据时显示未知态 |
 | `ses` | 当前 Claude Code session 内 API token 累计 | transcript 增量解析 + `sessionKey` | transcript `sessionId` 变化后归零 |
 | `api` | 当前 transcript 历史 API token 累计 | transcript 增量解析 + cache | 按 transcript UUID 持久 |
 
-注意：`in/out`、`ses`、`api` 是三种不同口径，不能相互替代。
+注意：`in/out`、`ses`、`api` 是三种不同口径，不能相互替代。`current_usage` 只可作为显示 fallback，不能累计到 `ses/api`。
 
 ## 必守不变量
 
