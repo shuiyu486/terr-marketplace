@@ -1,10 +1,10 @@
 # Feature Development Plugin
 
-A comprehensive, structured workflow for feature development with adaptive discovery, codebase exploration, architecture design, implementation, and quality review.
+A comprehensive, structured workflow for feature development with adaptive discovery, codebase exploration, architecture design, implementation, and integrated high-signal quality review.
 
 ## Overview
 
-The Feature Development Plugin provides a systematic 7-phase approach to building new features. Instead of jumping straight into code, it first turns the initial idea into an approved Design Seed, classifies the work as Small/Medium/Large, then scales exploration, architecture design, implementation, and review to the actual risk and complexity of the request.
+The Feature Development Plugin provides a systematic 7-phase approach to building new features. Instead of jumping straight into code, it first turns the initial idea into an approved Design Seed, classifies the work as Small/Medium/Large, then scales exploration, architecture design, implementation, and integrated review to the actual risk and complexity of the request.
 
 ## Philosophy
 
@@ -47,9 +47,10 @@ The workflow first distinguishes what kind of help you are asking for.
 |---|---|---|
 | Advisory | You want ideas, analysis, options, or an optimization plan | Claude gives concise guidance and does not write repository files unless separately asked |
 | Planning Artifact | You want a design document, implementation plan, handoff, or ADR | Claude names the target file and asks before writing it; document approval does not approve code changes |
+| Review-only | You want Claude to review current diff, staged changes, commits, files, or an existing implementation | Claude skips feature implementation phases, runs Phase 6 review for the named scope, and does not fix files without separate implementation approval |
 | Implementation | You want Claude to build, fix, refactor, or modify behavior | Claude follows the phased workflow and waits for explicit implementation approval before changing code |
 
-Approvals are scoped to the next named step. Approving a Design Seed only moves the workflow into exploration. Approving architecture only moves it toward an implementation plan. Words like "continue", "confirm", or "approved" do not silently expand into permission to modify code unless the next step was explicitly described as implementation.
+Approvals are scoped to the next named step. Approving a Design Seed only moves the workflow into exploration. Approving architecture only moves it toward an implementation plan. Review-only approval allows read-only inspection, local verification, and review output for the named scope, not fixes. Words like "continue", "confirm", or "approved" do not silently expand into permission to modify code unless the next step was explicitly described as implementation.
 
 For large recommendations, Claude should keep chat output short. Detailed reports belong in an approved `.md` artifact rather than a long chat response.
 
@@ -82,6 +83,29 @@ The plugin classifies each request before launching agents:
 | Large | Cross-cutting, ambiguous, high-risk, or involves public APIs, data/schema migrations, auth, permissions, billing, security, background jobs, or new abstractions | 2-3 `feature-dev:code-explorer`, 2-3 `feature-dev:code-architect`, reviewer panel |
 
 The classification can be upgraded or downgraded after codebase exploration if the real complexity differs from the initial request.
+
+## Integrated Review Panel
+
+Phase 6 includes a self-contained review panel inspired by high-signal code review workflows. It does not require installing the separate official `code-review` plugin and does not post GitHub comments by default.
+
+You can set the review level in natural language:
+
+```text
+/feature-dev Add OAuth login. Review Panel 用 medium。
+/feature-dev Refactor billing permissions. Review Panel 用 full。
+/feature-dev Fix settings copy. Review Panel 用 light。
+```
+
+If omitted, the default is `auto`:
+
+| Review Panel | Default mapping | What happens |
+|---|---|---|
+| `light` | Small | Local verification plus inline self-review; launches a reviewer only for risk-sensitive logic |
+| `medium` | Medium | Local verification plus 2 reviewer lenses: diff-only bug scan and project guidelines / simplicity |
+| `full` | Large | Local verification plus 3-4 first-pass reviewer lenses, with optional validation reviewers for borderline or high-impact candidate issues after consolidation |
+| `auto` | Default | Maps Small -> light, Medium -> medium, Large -> full, upgrading for high-risk changes |
+
+The panel reports only high-signal issues: introduced by the current change, actionable, tied to a narrow code region, and confidence >= 80 or separately validated. It filters out pre-existing issues, subjective style nits, broad refactor ideas, linter-only items, and speculative edge cases.
 
 Approval expectations:
 
@@ -182,19 +206,26 @@ The approved Design Seed becomes the input for Phase 2.
 
 ### Phase 6: Quality Review
 
-**Goal**: Ensure code is correct, simple, maintainable, and consistent with project conventions.
+**Goal**: Ensure code is correct, simple, maintainable, and consistent with project conventions through local verification plus the Integrated Review Panel.
 
 **What happens:**
 
 - Runs appropriate verification: tests, lint, type-check, build, or targeted commands
 - For frontend/UI changes, starts the dev server and verifies in browser when available
-- Small changes use inline self-review unless they touch risk-sensitive logic
-- Medium changes may launch 1-2 `feature-dev:code-reviewer` agents
-- Large changes launch 3 `feature-dev:code-reviewer` agents in parallel with different focuses:
-  - **Simplicity/DRY/Elegance**
-  - **Bugs/Correctness**
-  - **Conventions/Abstractions**
-- Fixes clear implementation bugs and reruns relevant verification
+- Chooses the Integrated Review Panel level from the user request or the default `auto` mapping
+- Builds a review packet with changed files, diff or change summary, project instructions, verification results, and approved design intent
+- Small/light changes use inline self-review unless they touch risk-sensitive logic
+- Medium review launches 2 `feature-dev:code-reviewer` agents in parallel:
+  - **Diff-only bug scan**
+  - **Project guidelines / simplicity**
+- Full review launches 3-4 first-pass `feature-dev:code-reviewer` agents with lenses such as:
+  - **Project guidelines**
+  - **Diff-only correctness**
+  - **Context-aware correctness**
+  - **Simplicity / abstraction fit**
+- Optionally launches validation reviewers after consolidation for borderline or high-impact candidate issues
+- Reports only high-signal issues introduced by the current change
+- Fixes clear implementation bugs and reruns relevant verification; in Review-only mode, asks before editing files
 - Asks the user about trade-off or scope decisions
 
 ### Phase 7: Summary
@@ -240,13 +271,15 @@ The approved Design Seed becomes the input for Phase 2.
 
 ### `feature-dev:code-reviewer`
 
-**Purpose**: Reviews code for bugs, quality issues, and project conventions.
+**Purpose**: Reviews the current change with high-signal, caller-specified lenses for bugs, project rules, simplicity, and validation.
 
 **Focus areas:**
 
+- Diff-only bug detection
 - Project guideline compliance
-- Bug detection
-- Code quality issues
+- Context-aware correctness
+- Simplicity / abstraction fit
+- Validation of candidate findings
 - Confidence-based filtering
 
 ## Usage Patterns
@@ -276,10 +309,16 @@ Launch feature-dev:code-architect to design the caching layer
 **Review code:**
 
 ```text
-Launch feature-dev:code-reviewer to check my recent changes
+/feature-dev Review my current git diff only. Review Panel 用 medium。不要实现新功能，除非发现明确 bug 后先问我。
 ```
 
-By default, `feature-dev:code-reviewer` reviews the current `git diff`. If you want it to review specific files, commits, staged changes, or a broader scope, say that explicitly in the prompt.
+Or invoke a specific lens manually:
+
+```text
+Launch feature-dev:code-reviewer to review my recent changes with the diff-only bug scan lens
+```
+
+When launched by `/feature-dev`, the reviewer receives a review packet with changed files, diff or change summary, project instructions, verification results, and the requested lens. For manual invocation, specify the target files, diff, commits, staged changes, or review lens explicitly when useful.
 
 ## Best Practices
 
@@ -288,7 +327,8 @@ By default, `feature-dev:code-reviewer` reviews the current `git diff`. If you w
 3. **Treat the Design Seed seriously**: it guides exploration and design.
 4. **Answer clarifying questions thoughtfully**: Phase 1 and Phase 3 prevent future confusion.
 5. **Choose architecture deliberately**: Phase 4 gives options only when they are useful.
-6. **Don't skip verification**: Phase 6 should run the relevant tests, lint, type-check, build, or UI checks.
+6. **Don't skip verification**: Phase 6 should run the relevant tests, lint, type-check, build, or UI checks before review panel consolidation.
+7. **Tune review depth deliberately**: use `Review Panel 用 light`, `medium`, or `full` when the default `auto` mapping is not the rigor you want.
 
 ## When to Use This Plugin
 
@@ -319,4 +359,4 @@ Sid Bidasaria (sbidasaria@anthropic.com), with local discovery workflow adaptati
 
 ## Version
 
-1.2.4
+1.3.0

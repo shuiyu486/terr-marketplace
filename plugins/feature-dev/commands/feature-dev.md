@@ -1,5 +1,5 @@
 ---
-description: Guided feature development with adaptive discovery, codebase understanding, architecture focus, and quality review
+description: Guided feature development with adaptive discovery, codebase understanding, architecture focus, and integrated quality review
 argument-hint: Optional feature description
 ---
 
@@ -28,6 +28,7 @@ Before choosing workflow depth, classify what the user is asking for. State the 
 
 - **Advisory**: The user asks for ideas, options, analysis, or an optimization plan. Do not edit files, scaffold code, or create planning documents in the repository unless the user separately asks for a written artifact. Provide a concise recommendation and stop at the requested advice.
 - **Planning Artifact**: The user asks for a proposal, design document, implementation plan, handoff, ADR, or other written artifact. Before writing to the repository, name the intended file path and get explicit approval for that file write. The approval to write a planning artifact does not approve code implementation.
+- **Review-only**: The user asks to review current diff, staged changes, commits, files, or an implementation without building a new feature. Skip Phases 1-5, do not modify files unless the user later gives explicit implementation approval, and run the Phase 6 Quality Review path directly with the requested Review Panel level.
 - **Implementation**: The user asks to build, implement, fix, modify, refactor, or otherwise change behavior. Follow the phased workflow and do not start implementation until the user explicitly approves the implementation approach.
 
 Approval scope is narrow:
@@ -35,6 +36,7 @@ Approval scope is narrow:
 - Design Seed approval only authorizes the next discovery/exploration phase.
 - Exploration or architecture approval only authorizes producing the next plan, not code changes.
 - Planning artifact approval only authorizes the named document or file write.
+- Review-only approval authorizes read-only inspection, local verification, and review output for the named scope; it does not authorize fixes or implementation changes.
 - Implementation approval must clearly authorize implementation or code changes. Words like "continue", "confirm", or "approved" continue only the currently described next step; do not silently expand them into permission to modify code.
 
 For long outputs, keep the chat response short. If a detailed report would exceed roughly 500 words, write it to an approved `.md` file when in Planning Artifact mode; otherwise provide an executive summary and ask whether the user wants a written artifact.
@@ -104,6 +106,27 @@ Depth guide:
 - **Large**: cross-cutting, ambiguous, high-risk, or involves public APIs, data/schema migrations, auth, permissions, billing, security, background jobs, or new abstractions. Use 2-3 `feature-dev:code-explorer` agents, 2-3 `feature-dev:code-architect` agents, and a reviewer panel.
 
 Workflow depth controls how much discovery, design, and review to do; it does not force the solution to be a narrow patch. Default to the lighter classification when risk is low and the path is obvious. Default to the heavier classification when security, data loss, migrations, public APIs, or cross-system behavior are involved.
+
+---
+
+## Integrated Review Panel
+
+Phase 6 uses an integrated review panel inspired by high-signal code review workflows, adapted for local feature development. It is self-contained in this plugin: do not require an external `code-review` plugin, do not assume a GitHub pull request, and do not post GitHub comments unless the user separately asks for a PR review workflow.
+
+Determine the Review Panel level from the user's request. Accept natural language such as "Review Panel 用 medium", "Phase 6 使用 full review", "light review only", or "auto". If unspecified, default to `auto`.
+
+Review Panel levels:
+
+- **auto**: Map workflow depth to review depth: Small -> light, Medium -> medium, Large -> full. Upgrade one level for risk-sensitive changes involving security, auth, permissions, billing, data migrations, public APIs, background jobs, or cross-system behavior.
+- **light**: Run local verification and do an inline self-review. Launch `feature-dev:code-reviewer` only when the change touches risk-sensitive logic or verification reveals suspicious behavior.
+- **medium**: Run local verification, then launch 2 `feature-dev:code-reviewer` agents with different lenses:
+  - **Diff-only bug scan**: clear bugs introduced by the change itself.
+  - **Project guidelines / simplicity**: explicit CLAUDE.md or project-rule violations, plus important simplicity or abstraction-fit issues.
+- **full**: Run local verification, then launch 3-4 first-pass `feature-dev:code-reviewer` agents with lenses such as project guidelines, diff-only correctness, context-aware correctness, and simplicity/abstraction fit. After consolidating first-pass findings, optionally launch validation reviewers for borderline or high-impact candidate issues.
+
+Before launching reviewers, prepare a review packet containing the changed files, relevant diff or change summary, applicable project instructions, local verification results, approved design intent, and requested lens. Reviewers should not rerun tests, lint, type-check, or build; the main workflow owns verification.
+
+Report only high-signal issues: introduced by the current change, actionable, tied to a file/line or narrow code region, and confidence >= 80 or validated by a separate lens. Discard pre-existing issues, subjective style preferences, broad refactor suggestions, linter-only items, and speculative edge cases.
 
 ---
 
@@ -232,17 +255,20 @@ If the user says "whatever you think is best", provide your recommendation and g
 
 ## Phase 6: Quality Review
 
-**Goal**: Verify the change is correct, simple, maintainable, and consistent with project conventions.
+**Goal**: Verify the change is correct, simple, maintainable, and consistent with project conventions through local verification plus the Integrated Review Panel.
 
 **Actions**:
 1. Run appropriate local verification: tests, lint, type-check, build, or targeted commands. For frontend/UI changes, start the dev server and verify in browser when available.
-2. Choose review depth:
-   - Small: self-review inline unless the change touches risk-sensitive logic.
-   - Medium: optionally launch 1-2 `feature-dev:code-reviewer` agents for correctness and conventions.
-   - Large: launch 3 `feature-dev:code-reviewer` agents in parallel with focuses: simplicity/DRY/elegance, bugs/functional correctness, and project conventions/abstractions.
-3. Consolidate findings and report only issues that matter.
-4. For clear bugs introduced by the implementation, fix them directly and rerun relevant verification.
-5. For trade-off or scope decisions, present findings to the user and ask whether to fix now, defer, or proceed as-is.
+2. Determine the Integrated Review Panel level from the user request or default `auto` mapping.
+3. Prepare a review packet: changed files, relevant diff or change summary, applicable project instructions, local verification results, approved design intent, and review level.
+4. Run the selected review depth:
+   - **light**: inline self-review; launch a reviewer only for risk-sensitive logic or suspicious verification results.
+   - **medium**: launch 2 `feature-dev:code-reviewer` agents in parallel with lenses: diff-only bug scan, and project guidelines / simplicity.
+   - **full**: launch 3-4 first-pass `feature-dev:code-reviewer` agents in parallel with lenses such as project guidelines, diff-only correctness, context-aware correctness, and simplicity/abstraction fit.
+5. Consolidate findings with high-signal filtering: keep only issues introduced by this change, actionable, tied to a narrow code region, and confidence >= 80 or separately validated.
+6. For borderline, disputed, or high-impact candidate issues, launch validation reviewers before reporting or fixing them.
+7. For clear bugs introduced by the implementation, fix them directly and rerun relevant verification. In Review-only mode, ask for implementation approval before editing files.
+8. For trade-off, scope, or product decisions, present findings to the user and ask whether to fix now, defer, or proceed as-is.
 
 ---
 

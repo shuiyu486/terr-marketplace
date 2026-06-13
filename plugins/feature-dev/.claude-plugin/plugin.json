@@ -1,7 +1,7 @@
 {
   "name": "feature-dev",
-  "version": "1.2.4",
-  "description": "Adaptive feature development workflow with collaborative discovery, scope-aware agent orchestration, architecture design, and quality review",
+  "version": "1.3.0",
+  "description": "Adaptive feature development workflow with collaborative discovery, scope-aware agent orchestration, architecture design, and integrated high-signal code review",
   "author": {
     "name": "Sid Bidasaria",
     "email": "sbidasaria@anthropic.com"
