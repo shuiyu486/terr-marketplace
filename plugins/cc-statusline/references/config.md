@@ -48,13 +48,13 @@ runtime 启动时会先执行一次幂等配置迁移，再通过 `loadConfig()`
 | `ctxWarnThreshold` | number | 70 | 上下文黄色阈值 |
 | `ctxDangerThreshold` | number | 90 | 上下文红色阈值 |
 | `codexProbeIntervalMinutes` | number | 3 | Codex headers fallback 探测间隔，运行时夹在 1–10 分钟 |
-| `codexProbeAllowedHosts` | string[] | [] | 允许 Codex fallback 主动探测的非本地域名 allowlist；本地 `localhost` / `127.0.0.1` / `::1` 始终内建允许 |
+| `codexProbeAllowedHosts` | string[] | [] | 允许 Codex fallback 主动探测的非本地 host 或 `host:port` allowlist；本地 `localhost` / `127.0.0.1` / `::1` 始终内建允许 |
 
 ## Codex probe hosts
 
-`codexProbeAllowedHosts` 只保存用户显式允许的远程 host，不包含 protocol、port、path 或 query。normalize 会接受裸 host 或 URL，最终保存小写 hostname 并去重。
+`codexProbeAllowedHosts` 只保存用户显式允许的远程 host identity，不包含 protocol、path 或 query；如果 `ANTHROPIC_BASE_URL` 显式带端口，则保存并按 `host:port` 匹配。normalize 会接受裸 host、`host:port` 或 URL，最终保存小写 hostname / `hostname:port` 并去重。
 
-`/cc-statusline:setup` 会读取当前有效 `ANTHROPIC_BASE_URL`（`settings.json.env` + `process.env`，后者覆盖前者），如果解析到非本地且未授权的 host，会询问用户是否加入 allowlist。`/cc-statusline:configure` 只保留该字段，不做域名交互。
+`/cc-statusline:setup` 会读取当前有效 `ANTHROPIC_BASE_URL`（`settings.json.env` + `process.env`，后者覆盖前者），如果解析到非本地且未授权的 host identity，会询问用户是否加入 allowlist。`/cc-statusline:configure` 只保留该字段，不做域名交互。
 
 ## settings.json
 

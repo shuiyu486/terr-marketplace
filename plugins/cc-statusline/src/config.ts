@@ -130,7 +130,7 @@ export function allowCodexProbeHost(hostOrUrl: string, configPath = getConfigPat
     migrateConfigFile(configPath);
   } catch {}
   const config = loadConfigFromPath(configPath);
-  const host = normalizeHostname(hostOrUrl);
+  const host = normalizeCodexProbeHost(hostOrUrl);
   if (!host) return { status: "invalid", config, configPath };
   if (isBuiltinCodexProbeHost(host)) return { status: "builtin", host, config, configPath };
   if (config.codexProbeAllowedHosts.includes(host)) {
@@ -142,24 +142,13 @@ export function allowCodexProbeHost(hostOrUrl: string, configPath = getConfigPat
 }
 
 export function normalizeHostname(input: unknown): string | null {
-  if (typeof input !== "string") return null;
-  let raw = input.trim().toLowerCase();
-  if (!raw) return null;
+  return parseHostParts(input)?.hostname ?? null;
+}
 
-  if (raw === "::1") return raw;
-  if (raw.startsWith("[") && raw.includes("]")) {
-    raw = raw.slice(1, raw.indexOf("]"));
-    return raw || null;
-  }
-
-  let host = parseUrlHostname(raw);
-  if (!host && !raw.includes("://")) host = parseUrlHostname(`http://${raw}`);
-  if (!host) return null;
-
-  host = host.trim().toLowerCase();
-  if (host.startsWith("[") && host.endsWith("]")) host = host.slice(1, -1);
-  host = host.replace(/\.+$/g, "");
-  return host || null;
+export function normalizeCodexProbeHost(input: unknown): string | null {
+  const parts = parseHostParts(input);
+  if (!parts) return null;
+  return parts.port ? formatHostWithPort(parts.hostname, parts.port) : parts.hostname;
 }
 
 export function normalizeHostList(value: unknown): string[] {
@@ -167,7 +156,7 @@ export function normalizeHostList(value: unknown): string[] {
   const hosts: string[] = [];
   const seen = new Set<string>();
   for (const item of value) {
-    const host = normalizeHostname(item);
+    const host = normalizeCodexProbeHost(item);
     if (!host || seen.has(host)) continue;
     seen.add(host);
     hosts.push(host);
@@ -184,9 +173,11 @@ export function isBuiltinCodexProbeHost(host: string): boolean {
 }
 
 export function isCodexProbeAllowedHost(config: Config, host: string): boolean {
-  const normalized = normalizeHostname(host);
-  if (!normalized) return false;
-  return isBuiltinCodexProbeHost(normalized) || config.codexProbeAllowedHosts.includes(normalized);
+  const normalizedHost = normalizeHostname(host);
+  const normalizedHostPort = normalizeCodexProbeHost(host);
+  if (!normalizedHost || !normalizedHostPort) return false;
+  return isBuiltinCodexProbeHost(normalizedHost)
+    || config.codexProbeAllowedHosts.includes(normalizedHostPort);
 }
 
 function loadConfigFromPath(configPath: string): Config {
@@ -197,12 +188,73 @@ function loadConfigFromPath(configPath: string): Config {
   }
 }
 
-function parseUrlHostname(raw: string): string | null {
+interface HostParts {
+  hostname: string;
+  port: string;
+}
+
+function parseHostParts(input: unknown): HostParts | null {
+  if (typeof input !== "string") return null;
+  let raw = input.trim().toLowerCase();
+  if (!raw) return null;
+
+  if (raw === "::1") return { hostname: raw, port: "" };
+  if (raw.startsWith("[") && raw.includes("]") && !raw.includes("://")) {
+    const bracketEnd = raw.indexOf("]");
+    const hostname = normalizeParsedHostname(raw.slice(1, bracketEnd));
+    const rest = raw.slice(bracketEnd + 1);
+    const port = rest.startsWith(":") ? normalizePort(rest.slice(1)) : "";
+    return hostname ? { hostname, port } : null;
+  }
+
+  let rawForUrl = raw;
+  let url = parseUrl(rawForUrl);
+  if ((!url || !url.hostname) && !raw.includes("://")) {
+    rawForUrl = `http://${raw}`;
+    url = parseUrl(rawForUrl);
+  }
+  if (!url) return null;
+
+  const hostname = normalizeParsedHostname(url.hostname);
+  if (!hostname) return null;
+  return { hostname, port: extractExplicitPort(rawForUrl) || normalizePort(url.port) };
+}
+
+function parseUrl(raw: string): URL | null {
   try {
-    return new URL(raw).hostname;
+    return new URL(raw);
   } catch {
     return null;
   }
+}
+
+function normalizeParsedHostname(hostname: string): string | null {
+  let host = hostname.trim().toLowerCase();
+  if (host.startsWith("[") && host.endsWith("]")) host = host.slice(1, -1);
+  host = host.replace(/\.+$/g, "");
+  return host || null;
+}
+
+function extractExplicitPort(rawUrl: string): string {
+  const authority = rawUrl.replace(/^[a-z][a-z\d+.-]*:\/\//i, "").split(/[/?#]/, 1)[0];
+  if (authority.startsWith("[")) {
+    const bracketEnd = authority.indexOf("]");
+    return bracketEnd >= 0 && authority[bracketEnd + 1] === ":"
+      ? normalizePort(authority.slice(bracketEnd + 2))
+      : "";
+  }
+
+  const colon = authority.lastIndexOf(":");
+  if (colon < 0 || authority.indexOf(":") !== colon) return "";
+  return normalizePort(authority.slice(colon + 1));
+}
+
+function normalizePort(port: string): string {
+  return /^\d+$/.test(port) ? port : "";
+}
+
+function formatHostWithPort(hostname: string, port: string): string {
+  return hostname.includes(":") ? `[${hostname}]:${port}` : `${hostname}:${port}`;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

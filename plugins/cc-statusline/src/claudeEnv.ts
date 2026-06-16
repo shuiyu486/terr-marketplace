@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { getClaudeConfigDir, normalizeHostname } from "./config";
+import { getClaudeConfigDir, normalizeCodexProbeHost } from "./config";
 
 export function getClaudeSettingsPath(env: NodeJS.ProcessEnv = process.env): string {
   return path.join(getClaudeConfigDir(env), "settings.json");
@@ -20,5 +20,5 @@ export function getEffectiveClaudeEnv(env: NodeJS.ProcessEnv = process.env): Nod
 }
 
 export function getCurrentAnthropicBaseUrlHost(env: NodeJS.ProcessEnv = process.env): string | null {
-  return normalizeHostname(getEffectiveClaudeEnv(env).ANTHROPIC_BASE_URL);
+  return normalizeCodexProbeHost(getEffectiveClaudeEnv(env).ANTHROPIC_BASE_URL);
 }

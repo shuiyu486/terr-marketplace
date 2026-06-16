@@ -63,7 +63,7 @@ Toggle display options:
 - Usage limits
 - Context percentage thresholds
 
-Codex usage fallback probes are limited to built-in local hosts by default. Remote proxy hosts must be explicitly authorized in `codexProbeAllowedHosts`; `/cc-statusline:setup` can add the current `ANTHROPIC_BASE_URL` host after confirmation.
+Codex usage fallback probes are limited to built-in local hosts by default. Remote proxy hosts must be explicitly authorized in `codexProbeAllowedHosts`; `/cc-statusline:setup` can add the current `ANTHROPIC_BASE_URL` host identity, including an explicit port, after confirmation.
 
 ## Requirements
 
@@ -74,4 +74,4 @@ Codex usage fallback probes are limited to built-in local hosts by default. Remo
 
 The status line reads JSON data from stdin (provided by Claude Code), parses the session transcript for token/cost tracking, tool activity, agent tracking, and todo progress, and renders a multi-line ANSI-colored display. Context `in/out` uses Claude Code's `context_window` totals first, falls back to `current_usage` and the latest transcript usage when available, and displays `—` when no reliable token snapshot exists.
 
-The setup command automatically configures your `~/.claude/settings.json` with the correct `statusLine` command. If your `ANTHROPIC_BASE_URL` points to a remote proxy, setup can also ask whether to add that host to `codexProbeAllowedHosts` so the Codex usage fallback can read `X-Codex-*` headers.
+The setup command automatically configures your `~/.claude/settings.json` with the correct `statusLine` command. If your `ANTHROPIC_BASE_URL` points to a remote proxy, setup can also ask whether to add that host identity to `codexProbeAllowedHosts` so the Codex usage fallback can read `X-Codex-*` headers.

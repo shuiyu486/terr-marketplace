@@ -66,9 +66,9 @@ agent: 3 tracked
 这是 service 型 feature，不直接渲染。它在 stdin 缺少 `rate_limits` 时，尝试从允许 host 返回的 `X-Codex-*` headers 构造 `rate_limits`。
 
 关键约束：
-- 默认只允许内建本地 host：`localhost` / `127.0.0.1` / `::1`；非本地 host 必须显式配置到 `codexProbeAllowedHosts`，避免对任意远程端点发探测请求。
+- 默认只允许内建本地 host：`localhost` / `127.0.0.1` / `::1`；非本地 host identity（包含显式端口，如 `47.88.92.24:8080`）必须配置到 `codexProbeAllowedHosts`，避免对任意远程端点发探测请求。
 - `codexProbeIntervalMinutes` 控制探测间隔，运行时限制在 1–10 分钟。
-- `inflight` promise 必须按 host 复用，避免多帧并发探测。
+- `inflight` promise 必须按 host identity 复用，避免多帧并发探测。
 - 首次可等待最多 3000ms；已有缓存时先显示当前 host 的 snapshot。
 - 缓存最长可兜底 24 小时，并按 host 隔离，避免切换代理后串用额度。
 

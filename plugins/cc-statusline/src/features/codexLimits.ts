@@ -5,7 +5,7 @@ import * as https from "https";
 import * as os from "os";
 import * as path from "path";
 import { getEffectiveClaudeEnv } from "../claudeEnv";
-import { isCodexProbeAllowedHost, normalizeHostname } from "../config";
+import { isCodexProbeAllowedHost, normalizeCodexProbeHost } from "../config";
 import type { Config, StatusLineData } from "../types";
 
 const DEFAULT_PROBE_INTERVAL_MINUTES = 3;
@@ -153,7 +153,7 @@ function probeIntervalMs(cfg: Config): number {
 }
 
 function currentAllowedHost(cfg: Config): string | null {
-  const host = normalizeHostname(getEffectiveClaudeEnv().ANTHROPIC_BASE_URL);
+  const host = normalizeCodexProbeHost(getEffectiveClaudeEnv().ANTHROPIC_BASE_URL);
   if (!host || !isCodexProbeAllowedHost(cfg, host)) return null;
   return host;
 }
@@ -161,7 +161,7 @@ function currentAllowedHost(cfg: Config): string | null {
 function probeEnv(data: StatusLineData, cfg: Config): ProbeEnv | null {
   const env = getEffectiveClaudeEnv();
   const baseUrl = env.ANTHROPIC_BASE_URL;
-  const host = normalizeHostname(baseUrl);
+  const host = normalizeCodexProbeHost(baseUrl);
   const token = env.ANTHROPIC_AUTH_TOKEN || env.ANTHROPIC_API_KEY;
   const model = env.ANTHROPIC_DEFAULT_SONNET_MODEL || data.model?.display_name;
   if (!baseUrl || !host || !token || !model || !isCodexProbeAllowedHost(cfg, host)) return null;

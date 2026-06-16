@@ -95,11 +95,11 @@ Line 1/2 的 `ctx` 与 `in/out` 是实时快照，不是累计值。渲染层按
 
 `features/codexLimits.ts` 只在这些条件下探测：
 - stdin 没有可用 `rate_limits.five_hour`
-- `ANTHROPIC_BASE_URL` 的 host 是内建本地 host（`localhost` / `127.0.0.1` / `::1`）或显式配置在 `codexProbeAllowedHosts`
+- `ANTHROPIC_BASE_URL` 的 host identity 是内建本地 host（`localhost` / `127.0.0.1` / `::1`）或显式配置在 `codexProbeAllowedHosts`；显式端口会参与匹配，例如 `47.88.92.24:8080`
 - 有可用 token 和 model
 
 服务要求：
 - `codexProbeIntervalMinutes` 限频，默认 3 分钟，范围 1–10 分钟。
-- `inflight` promise 必须按 host 复用，避免并发探测。
+- `inflight` promise 必须按 host identity 复用，避免并发探测。
 - 24 小时内当前 host 的旧缓存可作为 fallback snapshot。
 - Codex fallback 缓存按 host 隔离，避免切换代理后串用额度。
