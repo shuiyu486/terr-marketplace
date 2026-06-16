@@ -245,6 +245,8 @@ The approved Design Seed becomes the input for Phase 2.
 
 ## Agents
 
+The plugin agents do not pin a specific model. By default they follow Claude Code's current session/default model resolution unless the caller explicitly overrides the model for a specific launch. Effort and thinking behavior likewise follow the active session/model capabilities.
+
 ### `feature-dev:code-explorer`
 
 **Purpose**: Deeply analyzes existing codebase features by tracing execution paths.
@@ -359,4 +361,4 @@ Sid Bidasaria (sbidasaria@anthropic.com), with local discovery workflow adaptati
 
 ## Version
 
-1.3.0
+1.4.0

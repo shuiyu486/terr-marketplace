@@ -138,7 +138,7 @@
         "path": "plugins/feature-dev"
       },
       "description": "Adaptive feature development workflow with collaborative discovery, scope-aware agent orchestration, architecture design, and integrated high-signal code review",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "author": {
         "name": "Sid Bidasaria",
         "email": "sbidasaria@anthropic.com"

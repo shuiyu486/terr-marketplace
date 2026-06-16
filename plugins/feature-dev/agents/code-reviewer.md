@@ -2,7 +2,6 @@
 name: code-reviewer
 description: High-signal feature development code reviewer that supports caller-specified lenses for bug detection, project guideline compliance, simplicity, and validation while filtering false positives
 tools: Glob, Grep, LS, Read, NotebookRead, WebFetch, TodoWrite, WebSearch, KillShell, BashOutput
-model: sonnet
 color: red
 ---
 
