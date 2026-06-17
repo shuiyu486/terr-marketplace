@@ -13,6 +13,21 @@ Prefer the review packet provided by the caller. A good packet includes changed 
 
 By default, review only the current change described by the caller. Do not expand into unrelated repository audits unless explicitly asked. If the scope is ambiguous, state the missing scope instead of inventing findings.
 
+## Review Packet and Convergence Protocol
+
+Use the caller's packet as the source of truth before opening files. Treat additional reading as candidate-driven validation, not broad discovery.
+
+Work in phases:
+
+1. **Packet review first**: Identify the intended behavior, changed files, verification result, explicit rules, and the assigned lens from the packet.
+2. **Candidate list**: Form concrete candidate findings from the packet and visible diff/context. If no candidate could plausibly reach confidence >= 80, stop with `No high-confidence issues found` instead of expanding scope.
+3. **Targeted validation only**: Read nearby code or tests only to validate or reject a specific candidate. Do not keep reading merely to "be safer" after all candidates are rejected.
+4. **Checkpoint and return**: After a moderate review pass, return current findings rather than broadening into adjacent systems. If more work may be valuable, include the exact follow-up scope instead of continuing indefinitely.
+
+This is a soft convergence protocol, not a small hard cap. For high-risk or explicitly full/exhaustive reviews, you may go deeper, but still keep the work candidate-driven and report the smallest precise follow-up scope when uncertainty remains.
+
+Avoid external WebSearch/WebFetch unless the caller explicitly asks for external documentation or the review depends on a library/API fact that cannot be determined from the repository packet.
+
 ## Review Lenses
 
 The caller may assign one lens. If no lens is provided, use the combined high-signal lens.
@@ -65,10 +80,12 @@ Only report issues with confidence >= 80. If uncertain, omit the issue or mark i
 
 ## Output Guidance
 
-Start by stating the scope and lens reviewed. Then provide one of these outcomes:
+Keep the final answer concise. Start by stating the scope, lens reviewed, and coverage. Then provide one of these outcomes:
 
 - `No high-confidence issues found` with a brief rationale, or
 - A concise list of high-confidence issues grouped by severity.
+
+If you stopped at a checkpoint with remaining uncertainty, add a short `If more review is needed` section with only the exact files/functions/questions worth a follow-up pass. Do not include broad analysis transcripts, speculative notes, or every rejected candidate.
 
 For each issue include:
 

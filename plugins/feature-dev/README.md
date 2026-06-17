@@ -101,7 +101,7 @@ If omitted, the default is `auto`:
 | Review Panel | Default mapping | What happens |
 |---|---|---|
 | `light` | Small | Local verification plus inline self-review; launches a reviewer only for risk-sensitive logic |
-| `medium` | Medium | Local verification plus 2 reviewer lenses: diff-only bug scan and project guidelines / simplicity |
+| `medium` | Medium | Local verification plus focused reviewer lenses for clear risk areas, normally diff-only bug scan and project guidelines / simplicity, using compressed packets and checkpointed review |
 | `full` | Large | Local verification plus 3-4 first-pass reviewer lenses, with optional validation reviewers for borderline or high-impact candidate issues after consolidation |
 | `auto` | Default | Maps Small -> light, Medium -> medium, Large -> full, upgrading for high-risk changes |
 
@@ -215,9 +215,10 @@ The approved Design Seed becomes the input for Phase 2.
 - Chooses the Integrated Review Panel level from the user request or the default `auto` mapping
 - Builds a review packet with changed files, diff or change summary, project instructions, verification results, and approved design intent
 - Small/light changes use inline self-review unless they touch risk-sensitive logic
-- Medium review launches 2 `feature-dev:code-reviewer` agents in parallel:
+- Medium review launches focused `feature-dev:code-reviewer` agents only for clear lenses or risk areas, normally:
   - **Diff-only bug scan**
   - **Project guidelines / simplicity**
+- Review packets stay compressed, candidate-driven, and checkpointed so reviewers return once high-confidence findings or exact follow-up scopes are clear
 - Full review launches 3-4 first-pass `feature-dev:code-reviewer` agents with lenses such as:
   - **Project guidelines**
   - **Diff-only correctness**
@@ -361,4 +362,4 @@ Sid Bidasaria (sbidasaria@anthropic.com), with local discovery workflow adaptati
 
 ## Version
 
-1.4.0
+1.4.1

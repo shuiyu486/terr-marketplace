@@ -119,12 +119,15 @@ Review Panel levels:
 
 - **auto**: Map workflow depth to review depth: Small -> light, Medium -> medium, Large -> full. Upgrade one level for risk-sensitive changes involving security, auth, permissions, billing, data migrations, public APIs, background jobs, or cross-system behavior.
 - **light**: Run local verification and do an inline self-review. Launch `feature-dev:code-reviewer` only when the change touches risk-sensitive logic or verification reveals suspicious behavior.
-- **medium**: Run local verification, then launch 2 `feature-dev:code-reviewer` agents with different lenses:
+- **medium**: Run local verification, prepare a compressed review packet, then launch focused `feature-dev:code-reviewer` agents only for clear lenses or risk areas:
   - **Diff-only bug scan**: clear bugs introduced by the change itself.
   - **Project guidelines / simplicity**: explicit CLAUDE.md or project-rule violations, plus important simplicity or abstraction-fit issues.
-- **full**: Run local verification, then launch 3-4 first-pass `feature-dev:code-reviewer` agents with lenses such as project guidelines, diff-only correctness, context-aware correctness, and simplicity/abstraction fit. After consolidating first-pass findings, optionally launch validation reviewers for borderline or high-impact candidate issues.
+  - Split reviewers by non-overlapping scope when possible, such as one risky function, recovery path, UI flow, or schema boundary per reviewer.
+- **full**: Run local verification, then launch 3-4 first-pass `feature-dev:code-reviewer` agents with lenses such as project guidelines, diff-only correctness, context-aware correctness, and simplicity/abstraction fit. After consolidating first-pass findings, optionally launch validation reviewers for borderline or high-impact candidate issues. Full/exhaustive reviews may wait for all critical reviewers and run follow-up validation passes.
 
-Before launching reviewers, prepare a review packet containing the changed files, relevant diff or change summary, applicable project instructions, local verification results, approved design intent, and requested lens. Reviewers should not rerun tests, lint, type-check, or build; the main workflow owns verification.
+Before launching reviewers, prepare a compressed review packet containing the changed files, relevant diff or change summary, applicable project instructions, local verification results, approved design intent, assigned lens, and specific code regions or questions to verify. Do not paste entire large diffs into every reviewer when a short behavior contract plus file:line targets is enough. Reviewers should not rerun tests, lint, type-check, or build; the main workflow owns verification.
+
+Reviewer work should be candidate-driven and checkpointed. A reviewer that has no candidate likely to reach confidence >= 80 should return `No high-confidence issues found` plus any exact follow-up scope instead of broadening indefinitely. Slow reviewers should not unconditionally block the main flow: wait for them when they own a critical risk lens, have a high-value candidate under validation, or the user requested full/exhaustive review; otherwise treat their follow-up scope as optional continuation work.
 
 Report only high-signal issues: introduced by the current change, actionable, tied to a file/line or narrow code region, and confidence >= 80 or validated by a separate lens. Discard pre-existing issues, subjective style preferences, broad refactor suggestions, linter-only items, and speculative edge cases.
 
@@ -182,8 +185,9 @@ Initial request: $ARGUMENTS
    - Medium: launch 1-2 `feature-dev:code-explorer` agents in parallel.
    - Large: launch 2-3 `feature-dev:code-explorer` agents in parallel.
 2. Each explorer agent should:
-   - Trace through the code comprehensively for its assigned aspect.
+   - Trace through the code comprehensively for its assigned aspect, but keep exploration bounded by that aspect.
    - Target a different aspect from the approved Design Seed, such as similar features, architecture, UX, tests, integrations, or extension points.
+   - Work from a compressed seed and return once it can name the key flow and essential files; if uncertainty remains, list exact follow-up targets rather than widening indefinitely.
    - Include a list of the most important files to read, usually 3-7 for Small/Medium and 5-10 for Large.
 
    **Example agent prompts**:
@@ -263,9 +267,9 @@ If the user says "whatever you think is best", provide your recommendation and g
 3. Prepare a review packet: changed files, relevant diff or change summary, applicable project instructions, local verification results, approved design intent, and review level.
 4. Run the selected review depth:
    - **light**: inline self-review; launch a reviewer only for risk-sensitive logic or suspicious verification results.
-   - **medium**: launch 2 `feature-dev:code-reviewer` agents in parallel with lenses: diff-only bug scan, and project guidelines / simplicity.
-   - **full**: launch 3-4 first-pass `feature-dev:code-reviewer` agents in parallel with lenses such as project guidelines, diff-only correctness, context-aware correctness, and simplicity/abstraction fit.
-5. Consolidate findings with high-signal filtering: keep only issues introduced by this change, actionable, tied to a narrow code region, and confidence >= 80 or separately validated.
+   - **medium**: launch focused reviewers only for clear lenses or risk areas, normally diff-only bug scan and project guidelines / simplicity. Give each reviewer a compressed packet, non-overlapping scope when possible, and the checkpoint protocol from the Integrated Review Panel section.
+   - **full**: launch 3-4 first-pass `feature-dev:code-reviewer` agents in parallel with lenses such as project guidelines, diff-only correctness, context-aware correctness, and simplicity/abstraction fit. Full review waits for all critical reviewers and may run follow-up validation passes.
+5. Consolidate findings with high-signal filtering: keep only issues introduced by this change, actionable, tied to a narrow code region, and confidence >= 80 or separately validated. Do not paste entire reviewer transcripts; summarize coverage, confirmed findings, and exact optional follow-up scopes.
 6. For borderline, disputed, or high-impact candidate issues, launch validation reviewers before reporting or fixing them.
 7. For clear bugs introduced by the implementation, fix them directly and rerun relevant verification. In Review-only mode, ask for implementation approval before editing files.
 8. For trade-off, scope, or product decisions, present findings to the user and ask whether to fix now, defer, or proceed as-is.

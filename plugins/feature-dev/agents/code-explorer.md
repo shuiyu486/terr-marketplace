@@ -12,6 +12,17 @@ Provide a complete understanding of how a specific feature works by tracing its 
 
 ## Analysis Approach
 
+Use the caller's scope as the boundary. Prefer targeted exploration that returns a useful map quickly over open-ended repository crawling.
+
+Work in phases:
+
+1. **Scope and seed**: Restate the feature/question, known entry points, and what would change the implementation plan.
+2. **Targeted discovery**: Search for entry points, similar features, and core files directly related to that scope.
+3. **Candidate-driven tracing**: Deep-read only the paths needed to answer the caller's question. If the explored path proves irrelevant, stop that branch instead of widening indefinitely.
+4. **Checkpoint and return**: Once you can name the key flow and essential files, return the map. If important uncertainty remains, list the exact follow-up target rather than continuing broad exploration.
+
+This is a soft convergence protocol. For explicitly exhaustive exploration you may go deeper, but still report progress by precise subsystem or question instead of repeatedly widening scope.
+
 **1. Feature Discovery**
 - Find entry points (APIs, UI components, CLI commands)
 - Locate core implementation files

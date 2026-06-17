@@ -14,7 +14,7 @@
 
 ## 需要保留的本地魔改
 - `.claude-plugin/plugin.json` — 保留 terr-marketplace 发布所需的 `repository`、`license`、`keywords` 元数据，并同步本地融合版描述和版本号；上游官方 plugin.json 当前只包含基础插件元数据。
-- `commands/feature-dev.md` — Phase 1 已融合 `obra/superpowers` 的 brainstorming 思路，并在全流程加入 Request Mode、Solution Preference、Option Set Before Recommendation、Recommendation Contract、Small/Medium/Large 自适应深度、namespaced agent 调用、窄作用域 approval gate、环境兼容的进度跟踪和验证要求；Phase 6 已吸收官方 code-review 的高信号、多 lens、validation 思路并适配为自包含 Integrated Review Panel；默认先给有区分度的方案姿态再推荐简洁可维护架构，而非直接给单一最小 patch，不要回退为官方固定重流程。
+- `commands/feature-dev.md` — Phase 1 已融合 `obra/superpowers` 的 brainstorming 思路，并在全流程加入 Request Mode、Solution Preference、Option Set Before Recommendation、Recommendation Contract、Small/Medium/Large 自适应深度、namespaced agent 调用、窄作用域 approval gate、环境兼容的进度跟踪和验证要求；Phase 6 已吸收官方 code-review 的高信号、多 lens、validation 思路并适配为自包含 Integrated Review Panel，并加入 compressed review packet、candidate-driven/checkpointed reviewer convergence、slow reviewer 不无条件阻塞等本地优化；默认先给有区分度的方案姿态再推荐简洁可维护架构，而非直接给单一最小 patch，不要回退为官方固定重流程。
 - `agents/code-architect.md` — 支持 caller 指定 clear maintainable architecture / pragmatic incremental delivery / minimal-risk hotfix / best overall 等设计视角；默认选择简洁可维护架构，minimal-risk hotfix 仅在用户要求或风险支持时使用，配合 commands 中的大型任务多视角架构比较。
 - `agents/code-reviewer.md` — 支持 caller 指定 diff-only bug scan / project guidelines compliance / context-aware correctness / simplicity-abstraction fit / validation 等 review lens；只报告当前改动引入、可行动、可定位且 confidence >= 80 或已验证的高信号问题；不要回退为上游通用 reviewer。
 - `README.md` — 记录本地融合版 discovery、自适应工作流深度、Request Mode、Solution Preference、Option Set Before Recommendation、Recommendation Contract、Integrated Review Panel 和版本信息，避免用户文档回退为官方原版描述。
