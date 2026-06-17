@@ -28,7 +28,7 @@ Before choosing workflow depth, classify what the user is asking for. State the 
 
 - **Advisory**: The user asks for ideas, options, analysis, or an optimization plan. Do not edit files, scaffold code, or create planning documents in the repository unless the user separately asks for a written artifact. Provide a concise recommendation and stop at the requested advice.
 - **Planning Artifact**: The user asks for a proposal, design document, implementation plan, handoff, ADR, or other written artifact. Before writing to the repository, name the intended file path and get explicit approval for that file write. The approval to write a planning artifact does not approve code implementation.
-- **Review-only**: The user asks to review current diff, staged changes, commits, files, or an implementation without building a new feature. Skip Phases 1-5, do not modify files unless the user later gives explicit implementation approval, and run the Phase 6 Quality Review path directly with the requested Review Panel level.
+- **Review-only**: The user asks to review current diff, staged changes, commits, files, or an implementation without building a new feature. Skip Phases 1-5, do not modify files unless the user later gives explicit implementation approval, and run the Phase 6 Quality Review path directly with the requested Review Panel level. Start reviewer agents early after bounded scoping; do not let the main context perform the whole review before delegating.
 - **Implementation**: The user asks to build, implement, fix, modify, refactor, or otherwise change behavior. Follow the phased workflow and do not start implementation until the user explicitly approves the implementation approach.
 
 Approval scope is narrow:
@@ -36,10 +36,20 @@ Approval scope is narrow:
 - Design Seed approval only authorizes the next discovery/exploration phase.
 - Exploration or architecture approval only authorizes producing the next plan, not code changes.
 - Planning artifact approval only authorizes the named document or file write.
-- Review-only approval authorizes read-only inspection, local verification, and review output for the named scope; it does not authorize fixes or implementation changes.
+- Review-only approval authorizes bounded read-only scoping, local verification, early reviewer-agent fan-out, and review output for the named scope; it does not authorize fixes or implementation changes.
 - Implementation approval must clearly authorize implementation or code changes. Words like "continue", "confirm", or "approved" continue only the currently described next step; do not silently expand them into permission to modify code.
 
 For long outputs, keep the chat response short. If a detailed report would exceed roughly 500 words, write it to an approved `.md` file when in Planning Artifact mode; otherwise provide an executive summary and ask whether the user wants a written artifact.
+
+### Review-only Context Budget
+
+For Review-only requests, especially latest-commit or current-diff questions such as "does the fix still have problems?" or "can this be optimized further?", treat sub-agent fan-out as part of initial scoping, not a late final step.
+
+- Keep the main context bounded before reviewers run: identify the target revision or diff, changed files, high-level intent, applicable project instructions, and any cheap verification command results. Avoid broad code tracing, full-file reading, or repeated search/read loops in the main context before launching reviewers.
+- For `medium`, launch focused `feature-dev:code-reviewer` agents as soon as the bounded review packet exists, normally one for correctness/regression risk and one for simplicity/optimization/project-guideline fit.
+- For `full`, launch the first-pass reviewer panel immediately after bounded scoping; reserve main-context deep reading for consolidating reviewer findings, verifying candidate issues, and final synthesis.
+- When reviewers have read-only shell access, ask them to inspect the target commit or diff themselves with `git show`, `git diff`, `git status`, or `git log` as needed. If shell access is unavailable, provide compact changed-file lists and essential diff hunks rather than pasting entire files.
+- Do not spend thousands of tokens proving the commit range, tracing call paths, or assessing optimization opportunities in the main context before the reviewer agents have started.
 
 ---
 
@@ -119,13 +129,13 @@ Review Panel levels:
 
 - **auto**: Map workflow depth to review depth: Small -> light, Medium -> medium, Large -> full. Upgrade one level for risk-sensitive changes involving security, auth, permissions, billing, data migrations, public APIs, background jobs, or cross-system behavior.
 - **light**: Run local verification and do an inline self-review. Launch `feature-dev:code-reviewer` only when the change touches risk-sensitive logic or verification reveals suspicious behavior.
-- **medium**: Run local verification, prepare a compressed review packet, then launch focused `feature-dev:code-reviewer` agents only for clear lenses or risk areas:
+- **medium**: Run local verification, prepare a compressed review packet, then launch focused `feature-dev:code-reviewer` agents as soon as the bounded packet exists for clear lenses or risk areas:
   - **Diff-only bug scan**: clear bugs introduced by the change itself.
   - **Project guidelines / simplicity**: explicit CLAUDE.md or project-rule violations, plus important simplicity or abstraction-fit issues.
   - Split reviewers by non-overlapping scope when possible, such as one risky function, recovery path, UI flow, or schema boundary per reviewer.
-- **full**: Run local verification, then launch 3-4 first-pass `feature-dev:code-reviewer` agents with lenses such as project guidelines, diff-only correctness, context-aware correctness, and simplicity/abstraction fit. After consolidating first-pass findings, optionally launch validation reviewers for borderline or high-impact candidate issues. Full/exhaustive reviews may wait for all critical reviewers and run follow-up validation passes.
+- **full**: Run local verification, then launch 3-4 first-pass `feature-dev:code-reviewer` agents immediately after bounded scoping with lenses such as project guidelines, diff-only correctness, context-aware correctness, and simplicity/abstraction fit. After consolidating first-pass findings, optionally launch validation reviewers for borderline or high-impact candidate issues. Full/exhaustive reviews may wait for all critical reviewers and run follow-up validation passes.
 
-Before launching reviewers, prepare a compressed review packet containing the changed files, relevant diff or change summary, applicable project instructions, local verification results, approved design intent, assigned lens, and specific code regions or questions to verify. Do not paste entire large diffs into every reviewer when a short behavior contract plus file:line targets is enough. Reviewers should not rerun tests, lint, type-check, or build; the main workflow owns verification.
+Before launching reviewers, prepare a bounded, compressed review packet containing the target revision or diff, changed files, relevant diff or change summary, applicable project instructions, local verification results, approved design intent when relevant, assigned lens, and specific code regions or questions to verify. For Review-only mode, do this before broad main-context code tracing. Do not paste entire large diffs into every reviewer when a short behavior contract plus file:line targets is enough. Reviewers should not rerun tests, lint, type-check, or build; the main workflow owns verification.
 
 Reviewer work should be candidate-driven and checkpointed. A reviewer that has no candidate likely to reach confidence >= 80 should return `No high-confidence issues found` plus any exact follow-up scope instead of broadening indefinitely. Slow reviewers should not unconditionally block the main flow: wait for them when they own a critical risk lens, have a high-value candidate under validation, or the user requested full/exhaustive review; otherwise treat their follow-up scope as optional continuation work.
 
@@ -264,11 +274,11 @@ If the user says "whatever you think is best", provide your recommendation and g
 **Actions**:
 1. Run appropriate local verification: tests, lint, type-check, build, or targeted commands. For frontend/UI changes, start the dev server and verify in browser when available.
 2. Determine the Integrated Review Panel level from the user request or default `auto` mapping.
-3. Prepare a review packet: changed files, relevant diff or change summary, applicable project instructions, local verification results, approved design intent, and review level.
+3. Prepare a bounded review packet: target revision or diff, changed files, compact diff summary or essential hunks, applicable project instructions, cheap local verification results already available, approved design intent when relevant, and review level. In Review-only mode, do this before broad main-context code tracing.
 4. Run the selected review depth:
    - **light**: inline self-review; launch a reviewer only for risk-sensitive logic or suspicious verification results.
-   - **medium**: launch focused reviewers only for clear lenses or risk areas, normally diff-only bug scan and project guidelines / simplicity. Give each reviewer a compressed packet, non-overlapping scope when possible, and the checkpoint protocol from the Integrated Review Panel section.
-   - **full**: launch 3-4 first-pass `feature-dev:code-reviewer` agents in parallel with lenses such as project guidelines, diff-only correctness, context-aware correctness, and simplicity/abstraction fit. Full review waits for all critical reviewers and may run follow-up validation passes.
+   - **medium**: launch focused reviewers as soon as the bounded packet exists, normally diff-only bug scan and project guidelines / simplicity. Give each reviewer a compressed packet, non-overlapping scope when possible, and the checkpoint protocol from the Integrated Review Panel section.
+   - **full**: launch 3-4 first-pass `feature-dev:code-reviewer` agents in parallel immediately after bounded scoping, with lenses such as project guidelines, diff-only correctness, context-aware correctness, and simplicity/abstraction fit. Full review waits for all critical reviewers and may run follow-up validation passes.
 5. Consolidate findings with high-signal filtering: keep only issues introduced by this change, actionable, tied to a narrow code region, and confidence >= 80 or separately validated. Do not paste entire reviewer transcripts; summarize coverage, confirmed findings, and exact optional follow-up scopes.
 6. For borderline, disputed, or high-impact candidate issues, launch validation reviewers before reporting or fixing them.
 7. For clear bugs introduced by the implementation, fix them directly and rerun relevant verification. In Review-only mode, ask for implementation approval before editing files.

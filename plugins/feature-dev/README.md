@@ -47,7 +47,7 @@ The workflow first distinguishes what kind of help you are asking for.
 |---|---|---|
 | Advisory | You want ideas, analysis, options, or an optimization plan | Claude gives concise guidance and does not write repository files unless separately asked |
 | Planning Artifact | You want a design document, implementation plan, handoff, or ADR | Claude names the target file and asks before writing it; document approval does not approve code changes |
-| Review-only | You want Claude to review current diff, staged changes, commits, files, or an existing implementation | Claude skips feature implementation phases, runs Phase 6 review for the named scope, and does not fix files without separate implementation approval |
+| Review-only | You want Claude to review current diff, staged changes, commits, files, or an existing implementation | Claude skips feature implementation phases, keeps main-context scoping bounded, launches reviewer agents early for medium/full panels, and does not fix files without separate implementation approval |
 | Implementation | You want Claude to build, fix, refactor, or modify behavior | Claude follows the phased workflow and waits for explicit implementation approval before changing code |
 
 Approvals are scoped to the next named step. Approving a Design Seed only moves the workflow into exploration. Approving architecture only moves it toward an implementation plan. Review-only approval allows read-only inspection, local verification, and review output for the named scope, not fixes. Words like "continue", "confirm", or "approved" do not silently expand into permission to modify code unless the next step was explicitly described as implementation.
@@ -111,6 +111,7 @@ Approval expectations:
 
 - **Small** implementation requests may combine Design Seed and implementation-plan approval only when the next action is explicitly named as implementation or code changes.
 - **Medium** changes usually use two gates: approve the Design Seed before exploration, then explicitly approve the implementation approach before code changes.
+- **Review-only medium/full** panels should launch reviewer agents immediately after bounded diff/commit scoping, rather than letting the main context perform the whole review first.
 - **Large** changes use the same two gates as Medium, with deeper exploration, architecture comparison, and review before completion.
 
 ## The 7-Phase Workflow
@@ -213,9 +214,10 @@ The approved Design Seed becomes the input for Phase 2.
 - Runs appropriate verification: tests, lint, type-check, build, or targeted commands
 - For frontend/UI changes, starts the dev server and verifies in browser when available
 - Chooses the Integrated Review Panel level from the user request or the default `auto` mapping
-- Builds a review packet with changed files, diff or change summary, project instructions, verification results, and approved design intent
+- Builds a bounded review packet with changed files, compact diff or change summary, project instructions, verification results, and approved design intent
+- For Review-only requests, keeps main-context code reading bounded before reviewers run
 - Small/light changes use inline self-review unless they touch risk-sensitive logic
-- Medium review launches focused `feature-dev:code-reviewer` agents only for clear lenses or risk areas, normally:
+- Medium review launches focused `feature-dev:code-reviewer` agents immediately after bounded scoping for clear lenses or risk areas, normally:
   - **Diff-only bug scan**
   - **Project guidelines / simplicity**
 - Review packets stay compressed, candidate-driven, and checkpointed so reviewers return once high-confidence findings or exact follow-up scopes are clear
@@ -362,4 +364,4 @@ Sid Bidasaria (sbidasaria@anthropic.com), with local discovery workflow adaptati
 
 ## Version
 
-1.4.1
+1.4.2
