@@ -1,6 +1,6 @@
 {
   "name": "feature-dev",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "description": "Adaptive feature development workflow with collaborative discovery, scope-aware agent orchestration, architecture design, and integrated high-signal code review",
   "author": {
     "name": "Sid Bidasaria",

@@ -46,10 +46,11 @@ For long outputs, keep the chat response short. If a detailed report would excee
 For Review-only requests, especially latest-commit or current-diff questions such as "does the fix still have problems?" or "can this be optimized further?", treat sub-agent fan-out as part of initial scoping, not a late final step.
 
 - Keep the main context bounded before reviewers run: identify the target revision or diff, changed files, high-level intent, applicable project instructions, and any cheap verification command results. Avoid broad code tracing, full-file reading, or repeated search/read loops in the main context before launching reviewers.
-- For `medium`, launch focused `feature-dev:code-reviewer` agents as soon as the bounded review packet exists, normally one for correctness/regression risk and one for simplicity/optimization/project-guideline fit.
-- For `full`, launch the first-pass reviewer panel immediately after bounded scoping; reserve main-context deep reading for consolidating reviewer findings, verifying candidate issues, and final synthesis.
+- For `medium`, launch focused `feature-dev:code-reviewer` agents as soon as the bounded review packet exists, normally one first-pass reviewer for correctness/regression risk and one first-pass reviewer for simplicity/optimization/project-guideline fit.
+- For `full`, launch the first-pass reviewer panel immediately after bounded scoping; reserve main-context deep reading for consolidating reviewer checkpoints, deciding which candidates deserve validation, and final synthesis.
 - When reviewers have read-only shell access, ask them to inspect the target commit or diff themselves with `git show`, `git diff`, `git status`, or `git log` as needed. If shell access is unavailable, provide compact changed-file lists and essential diff hunks rather than pasting entire files.
 - Do not spend thousands of tokens proving the commit range, tracing call paths, or assessing optimization opportunities in the main context before the reviewer agents have started.
+- Treat long-running review as a staged handoff problem, not a reason to lower review quality. A first-pass reviewer may go deeper only around a named candidate or risk surface; otherwise it should checkpoint with exact follow-up scope. The main workflow decides whether to wait, launch a validation reviewer, split the scope, or continue with the available findings.
 
 ---
 
@@ -133,11 +134,13 @@ Review Panel levels:
   - **Diff-only bug scan**: clear bugs introduced by the change itself.
   - **Project guidelines / simplicity**: explicit CLAUDE.md or project-rule violations, plus important simplicity or abstraction-fit issues.
   - Split reviewers by non-overlapping scope when possible, such as one risky function, recovery path, UI flow, or schema boundary per reviewer.
-- **full**: Run local verification, then launch 3-4 first-pass `feature-dev:code-reviewer` agents immediately after bounded scoping with lenses such as project guidelines, diff-only correctness, context-aware correctness, and simplicity/abstraction fit. After consolidating first-pass findings, optionally launch validation reviewers for borderline or high-impact candidate issues. Full/exhaustive reviews may wait for all critical reviewers and run follow-up validation passes.
+- **full**: Run local verification, then launch 3-4 first-pass `feature-dev:code-reviewer` agents immediately after bounded scoping with lenses such as project guidelines, diff-only correctness, context-aware correctness, and simplicity/abstraction fit. After consolidating first-pass checkpoints, launch validation reviewers only for borderline, disputed, or high-impact candidates that need a second lens. Full/exhaustive reviews may wait for all critical checkpoints and run follow-up validation passes.
 
-Before launching reviewers, prepare a bounded, compressed review packet containing the target revision or diff, changed files, relevant diff or change summary, applicable project instructions, local verification results, approved design intent when relevant, assigned lens, and specific code regions or questions to verify. For Review-only mode, do this before broad main-context code tracing. Do not paste entire large diffs into every reviewer when a short behavior contract plus file:line targets is enough. Reviewers should not rerun tests, lint, type-check, or build; the main workflow owns verification.
+Before launching reviewers, prepare a bounded, compressed review packet containing the target revision or diff, changed files, relevant diff or change summary, applicable project instructions, local verification results, approved design intent when relevant, assigned lens, reviewer role (`first-pass`, `validation`, or `context-aware`), criticality (`critical` or `optional`), continuation rule, and specific code regions or questions to verify. For Review-only mode, do this before broad main-context code tracing. Do not paste entire large diffs into every reviewer when a short behavior contract plus file:line targets is enough. Reviewers should not rerun tests, lint, type-check, or build; the main workflow owns verification.
 
-Reviewer work should be candidate-driven and checkpointed. A reviewer that has no candidate likely to reach confidence >= 80 should return `No high-confidence issues found` plus any exact follow-up scope instead of broadening indefinitely. Slow reviewers should not unconditionally block the main flow: wait for them when they own a critical risk lens, have a high-value candidate under validation, or the user requested full/exhaustive review; otherwise treat their follow-up scope as optional continuation work.
+Reviewer work should be staged, candidate-driven, and checkpointed without imposing a low hard cap on review depth. A first-pass reviewer that has no candidate likely to reach confidence >= 80 should return `No high-confidence issues found` plus any exact follow-up scope instead of broadening indefinitely. A first-pass reviewer may continue deeper only when it names the candidate or risk surface being validated, the missing evidence, and why that evidence is worth pursuing. Validation reviewers must evaluate only the supplied candidate and should not restart a broad audit. Context-aware reviewers may inspect integration paths, but should still checkpoint around named risks rather than continuously expanding.
+
+Slow reviewers should not unconditionally block the main flow. Wait when they own a critical risk lens, have a high-value candidate that needs validation, or the user requested full/exhaustive review. Otherwise, consolidate the available reviewer checkpoints, turn unfinished areas into exact optional follow-up scope, and continue. If a review appears too broad for one reviewer, split it into first-pass and validation reviewers instead of asking one agent to find, trace, validate, and adjudicate everything.
 
 Report only high-signal issues: introduced by the current change, actionable, tied to a file/line or narrow code region, and confidence >= 80 or validated by a separate lens. Discard pre-existing issues, subjective style preferences, broad refactor suggestions, linter-only items, and speculative edge cases.
 
@@ -157,18 +160,24 @@ Initial request: $ARGUMENTS
    - Read available project instructions and relevant high-level docs.
    - Inspect the top-level structure and, when useful, recent commit messages.
    - Do not perform broad code tracing yet; that belongs in Phase 2.
-3. Restate the user's idea in your own words, including:
+3. Run the shortest reliable **Assisted Idea Shaping** path before proposing solutions:
+   - If the request is already clear enough, keep this lightweight: state the inferred defaults briefly and do not run a full brainstorming loop.
+   - If missing or ambiguous target users, problems, success signals, constraints, non-goals, or scope slices would materially change scope, architecture, risk, or verification, help the user shape the idea first.
+   - Do not turn missing dimensions into open-ended homework. Propose 2-3 candidate interpretations or defaults, recommend one, and let the user choose, correct, or accept the default.
+   - Ask at most one high-leverage question at a time, preferably with concrete choices. If the user is unsure or says to use your judgment, continue with the recommended default and record it as an assumption in the Design Seed.
+   - If the request spans multiple independent subsystems, suggest implementable slices and guide the user to pick or accept the recommended first slice before detailed design.
+4. Restate the user's shaped idea in your own words, including:
    - The problem or opportunity.
    - The intended user or workflow.
    - The expected outcome or success signal.
    - Known constraints and non-goals.
-4. Classify scope as Small, Medium, or Large using the Workflow Depth rules.
-5. Ask focused clarifying questions until the core intent is clear. Only ask questions that materially affect scope, behavior, risk, or the chosen implementation path.
-6. Propose candidate solution postures depending on depth and request mode:
+5. Classify scope as Small, Medium, or Large using the Workflow Depth rules.
+6. Ask any remaining focused clarifying questions until the core intent is clear. Only ask questions that materially affect scope, behavior, risk, or the chosen implementation path, and prefer assisted choices over open-ended questionnaires.
+7. Propose candidate solution postures depending on depth and request mode:
    - Small or fully specified implementation: usually one recommended direction is enough.
    - Medium: include at least two meaningfully different postures when the request asks for a plan, optimization, repair strategy, or architecture choice.
    - Large: include 2-3 postures with trade-offs before recommending one.
-7. Present a **Design Seed** and ask for approval before moving to codebase exploration. Include:
+8. Present a **Design Seed** and ask for approval before moving to codebase exploration. Include:
    - Request mode and approval boundary.
    - Scope classification and why.
    - Problem statement.
@@ -178,6 +187,7 @@ Initial request: $ARGUMENTS
    - Recommended direction and solution posture.
    - Why the recommended posture beats the other viable postures.
    - Why this is not merely a narrower patch, or why a narrow patch is appropriate.
+   - Assumptions accepted during Assisted Idea Shaping, especially defaults the user left to your judgment.
    - Open questions that require codebase exploration.
    - Exploration targets for Phase 2.
 
@@ -277,10 +287,10 @@ If the user says "whatever you think is best", provide your recommendation and g
 3. Prepare a bounded review packet: target revision or diff, changed files, compact diff summary or essential hunks, applicable project instructions, cheap local verification results already available, approved design intent when relevant, and review level. In Review-only mode, do this before broad main-context code tracing.
 4. Run the selected review depth:
    - **light**: inline self-review; launch a reviewer only for risk-sensitive logic or suspicious verification results.
-   - **medium**: launch focused reviewers as soon as the bounded packet exists, normally diff-only bug scan and project guidelines / simplicity. Give each reviewer a compressed packet, non-overlapping scope when possible, and the checkpoint protocol from the Integrated Review Panel section.
-   - **full**: launch 3-4 first-pass `feature-dev:code-reviewer` agents in parallel immediately after bounded scoping, with lenses such as project guidelines, diff-only correctness, context-aware correctness, and simplicity/abstraction fit. Full review waits for all critical reviewers and may run follow-up validation passes.
-5. Consolidate findings with high-signal filtering: keep only issues introduced by this change, actionable, tied to a narrow code region, and confidence >= 80 or separately validated. Do not paste entire reviewer transcripts; summarize coverage, confirmed findings, and exact optional follow-up scopes.
-6. For borderline, disputed, or high-impact candidate issues, launch validation reviewers before reporting or fixing them.
+   - **medium**: launch focused first-pass reviewers as soon as the bounded packet exists, normally diff-only bug scan and project guidelines / simplicity. Give each reviewer a compressed packet, non-overlapping scope when possible, explicit criticality, and a continuation rule that requires named candidates or risk surfaces before deeper reading.
+   - **full**: launch 3-4 first-pass `feature-dev:code-reviewer` agents in parallel immediately after bounded scoping, with lenses such as project guidelines, diff-only correctness, context-aware correctness, and simplicity/abstraction fit. Full review waits for critical first-pass checkpoints, then launches validation reviewers only for borderline, disputed, or high-impact candidates that need a second lens.
+5. Consolidate checkpoints with high-signal filtering: keep only issues introduced by this change, actionable, tied to a narrow code region, and confidence >= 80 or separately validated. Do not paste entire reviewer transcripts; summarize coverage, confirmed findings, rejected candidates when important, and exact optional follow-up scopes.
+6. For borderline, disputed, or high-impact candidate issues, launch validation reviewers before reporting or fixing them. Validation packets must name the single candidate, evidence to check, and disallowed scope expansion.
 7. For clear bugs introduced by the implementation, fix them directly and rerun relevant verification. In Review-only mode, ask for implementation approval before editing files.
 8. For trade-off, scope, or product decisions, present findings to the user and ask whether to fix now, defer, or proceed as-is.
 

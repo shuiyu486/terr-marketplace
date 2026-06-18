@@ -101,8 +101,8 @@ If omitted, the default is `auto`:
 | Review Panel | Default mapping | What happens |
 |---|---|---|
 | `light` | Small | Local verification plus inline self-review; launches a reviewer only for risk-sensitive logic |
-| `medium` | Medium | Local verification plus focused reviewer lenses for clear risk areas, normally diff-only bug scan and project guidelines / simplicity, using compressed packets and checkpointed review |
-| `full` | Large | Local verification plus 3-4 first-pass reviewer lenses, with optional validation reviewers for borderline or high-impact candidate issues after consolidation |
+| `medium` | Medium | Local verification plus focused first-pass reviewer lenses for clear risk areas, normally diff-only bug scan and project guidelines / simplicity, using compressed packets, explicit roles, and checkpointed review |
+| `full` | Large | Local verification plus 3-4 first-pass reviewer lenses, followed by validation reviewers only for borderline, disputed, or high-impact candidate issues after consolidation |
 | `auto` | Default | Maps Small -> light, Medium -> medium, Large -> full, upgrading for high-risk changes |
 
 The panel reports only high-signal issues: introduced by the current change, actionable, tied to a narrow code region, and confidence >= 80 or separately validated. It filters out pre-existing issues, subjective style nits, broad refactor ideas, linter-only items, and speculative edge cases.
@@ -124,10 +124,11 @@ Approval expectations:
 
 - Creates a progress list for the relevant phases
 - Reads lightweight project context before asking detailed questions
-- Restates the idea as a problem, target workflow, expected outcome, constraints, and non-goals
+- Uses the shortest reliable Assisted Idea Shaping path: clear requests get brief inferred defaults, while ambiguous requests get candidate interpretations and recommended defaults instead of open-ended homework
+- Restates the shaped idea as a problem, target workflow, expected outcome, constraints, and non-goals
 - Classifies the request as Small, Medium, or Large
 - Detects if the request should be decomposed into smaller slices
-- Asks focused clarifying questions only when they affect scope, behavior, risk, or implementation direction
+- Asks focused clarifying questions only when they affect scope, behavior, risk, or implementation direction, preferably as concrete choices with a recommendation
 - Proposes 1-3 candidate solution postures depending on workflow depth and request mode
 - States the recommended solution posture, why it beats the other viable postures, and the approval boundary
 - Presents a **Design Seed** and waits for approval before moving to codebase exploration
@@ -137,9 +138,21 @@ Approval expectations:
 ```text
 You: /feature-dev Add caching
 Claude: I understand the goal as improving response time by caching expensive results.
-        I’d classify this as Medium because it likely touches one service path and has invalidation questions.
-        Before exploring deeply, the biggest scope decision is:
-        should this cache apply to API responses, internal computed values, or both?
+        This is mostly clear, so I’ll keep idea shaping lightweight. I’m assuming the success signal is lower repeated-request latency without changing response semantics.
+        The biggest remaining scope decision is:
+        should this cache apply to API responses, internal computed values, or both? I recommend starting with internal computed values if invalidation is unclear.
+```
+
+For a fuzzier request, Claude should help shape the missing dimensions instead of asking the user to invent them from scratch:
+
+```text
+You: /feature-dev Make onboarding better
+Claude: This could mean a few things. I recommend treating it as reducing first-run confusion, because that is usually the highest-friction onboarding failure.
+        Which direction fits best?
+        1. Reduce first-run confusion with clearer defaults and guidance
+        2. Improve completion rate by shortening required steps
+        3. Add richer education or examples for advanced users
+        If you’re unsure, I’ll proceed with 1 as the default assumption.
 ```
 
 The approved Design Seed becomes the input for Phase 2.
@@ -220,13 +233,14 @@ The approved Design Seed becomes the input for Phase 2.
 - Medium review launches focused `feature-dev:code-reviewer` agents immediately after bounded scoping for clear lenses or risk areas, normally:
   - **Diff-only bug scan**
   - **Project guidelines / simplicity**
-- Review packets stay compressed, candidate-driven, and checkpointed so reviewers return once high-confidence findings or exact follow-up scopes are clear
+- Review packets stay compressed, role-aware, candidate-driven, and checkpointed so reviewers return high-confidence findings, current candidates, or exact follow-up scopes instead of broadening indefinitely
 - Full review launches 3-4 first-pass `feature-dev:code-reviewer` agents with lenses such as:
   - **Project guidelines**
   - **Diff-only correctness**
   - **Context-aware correctness**
   - **Simplicity / abstraction fit**
-- Optionally launches validation reviewers after consolidation for borderline or high-impact candidate issues
+- Launches validation reviewers after consolidation only for borderline, disputed, or high-impact candidate issues that need a second lens
+- Treats slow optional reviewers as checkpoint producers: the main workflow may continue with available findings and exact follow-up scope unless the reviewer owns a critical risk lens or the user requested full/exhaustive review
 - Reports only high-signal issues introduced by the current change
 - Fixes clear implementation bugs and reruns relevant verification; in Review-only mode, asks before editing files
 - Asks the user about trade-off or scope decisions
@@ -323,7 +337,7 @@ Or invoke a specific lens manually:
 Launch feature-dev:code-reviewer to review my recent changes with the diff-only bug scan lens
 ```
 
-When launched by `/feature-dev`, the reviewer receives a review packet with changed files, diff or change summary, project instructions, verification results, and the requested lens. For manual invocation, specify the target files, diff, commits, staged changes, or review lens explicitly when useful.
+When launched by `/feature-dev`, the reviewer receives a review packet with changed files, diff or change summary, project instructions, verification results, requested lens, reviewer role, criticality, and continuation rule. For manual invocation, specify the target files, diff, commits, staged changes, review lens, and whether the reviewer should act as first-pass, validation, or context-aware reviewer when useful.
 
 ## Best Practices
 
