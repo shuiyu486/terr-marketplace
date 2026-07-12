@@ -2,7 +2,7 @@
 
 `hook-terr` 支持四类通知器：`sound`、`windows_toast`、`popup`、`custom_command`。
 
-默认 Stop 自检规则不执行外部通知；Stop 外部通知需要启用 `notify` 的规则，且 runtime 护栏只允许主会话 Stop 触发。主会话 `AskUserQuestion` 求助场景由 runtime guard 复用 Stop 通道触发外部通知。通知失败 fail open，不会阻断 Claude Code 主流程；普通规则通知诊断会追加到 hook `systemMessage`，求助通知诊断只写入 stderr。
+默认普通 Stop 不返回自检 `systemMessage`，也不执行外部通知；Stop 外部通知需要启用 `notify` 的规则，且 runtime 护栏只允许主会话 Stop 触发。主会话 `AskUserQuestion` 求助场景由 runtime guard 复用 Stop 通道触发外部通知。通知失败 fail open，不会阻断 Claude Code 主流程；普通规则通知诊断会追加到 hook `systemMessage`，求助通知诊断只写入 stderr。
 
 ## sound
 
@@ -17,13 +17,13 @@ Windows 下播放 `.wav` 提示音。默认使用 `C:\\Windows\\Media\\tada.wav`
 
 ## windows_toast
 
-Windows 下显示 tray balloon 通知。默认可用，但不会由默认 Stop 自检规则触发。启用 notify 的规则可通过 `/hook-terr:configure` 或 settings 覆盖选择该通道。
+Windows 下显示 tray balloon 通知。默认可用，但不会由内置默认 stop-notify 规则触发。启用 notify 的规则可通过 `/hook-terr:configure` 或 settings 覆盖选择该通道。
 
 实现要求：hook 将通知脚本写入临时 `.ps1`，再通过 `cmd.exe /c start powershell.exe -STA -File ...` 启动独立通知进程并立即返回，避免 Claude Code 清理 Stop hook 子进程时中断通知。通知进程会同时投递 WinRT `ToastNotificationManager` 和 `System.Windows.Forms.NotifyIcon` tray balloon；后者使用 `ApplicationContext` message loop 保活。`timeoutMs` 会限制在 5–30 秒之间。设置 `HOOK_TERR_WINDOWS_TOAST_LOG` 时会把 WinRT/NotifyIcon 投递路径写入该日志。
 
 ## popup
 
-结构化弹窗，支持标题、正文和图标。默认通道配置中可用，但不会由默认 Stop 自检规则触发。实现必须非阻塞：hook 只启动弹窗进程，不等待用户关闭。
+结构化弹窗，支持标题、正文和图标。默认通道配置中可用，但不会由内置默认 stop-notify 规则触发。实现必须非阻塞：hook 只启动弹窗进程，不等待用户关闭。
 
 ## custom_command
 

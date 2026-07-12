@@ -25,7 +25,7 @@
 - 设置为数组时，只使用该数组中的通道。
 - 设置为空数组时，规则仍可返回 `systemMessage`，但不执行外部通知。
 
-内置 `stop-notify` 默认 `notify.enabled=false`，只返回自检 `systemMessage`；需要外部通知时，用用户或项目规则显式启用 `notify`。
+内置 `stop-notify` 默认关闭，不返回普通 Stop 自检 `systemMessage`；需要外部通知时，用用户或项目规则显式启用 `notify`。
 
 `/hook-terr:configure` 的 `立即生效` 模式会创建或更新 `stop-notify-explicit` 规则，而不是修改内置 `stop-notify` 默认规则。该 explicit rule 只匹配主会话 Stop，并启用 `notify.enabled=true`；默认不写 `notify.channels`，因此会使用 settings 中的 `events.Stop.notifications`。Stop 外部通知规则会被视为 pure external notification，不返回可能让 Claude 继续工作的 Stop `systemMessage`。如果 Stop 先被 documentationReminder 等 runtime feature 拦截，runtime 会先返回该 feature 的响应，不会继续匹配 explicit rule。
 

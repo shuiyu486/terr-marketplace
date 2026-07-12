@@ -12,9 +12,9 @@ STATE_VERSION = 1
 DEFAULT_TOOLS = ["Write", "Edit", "MultiEdit", "NotebookEdit"]
 DEFAULT_TTL_HOURS = 168
 DEFAULT_MESSAGE = (
-    "本轮会话已经修改过项目文件。结束前请完成文档收尾：更新相关 README、CLAUDE.md、"
+    "检测到本轮已经修改过项目文件。请继续完成文档收尾：检查并更新相关 README、CLAUDE.md、"
     "reference、配置说明或示例文档；然后执行必要的测试/验证。"
-    "若无需更新文档，请在最终回复中明确说明原因。完成后再次结束即可继续。"
+    "若无需更新文档，请在最终回复中明确说明原因。完成这些收尾动作后再结束本轮。"
 )
 PROJECT_MARKERS = {
     ".git",

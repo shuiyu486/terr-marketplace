@@ -14,7 +14,7 @@ from core.models import NotificationResult
 
 
 class StopNotificationPolicyTests(unittest.TestCase):
-    def test_default_stop_rule_warns_without_external_notification(self):
+    def test_default_stop_rule_is_silent_without_external_notification(self):
         with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
             cwd = os.path.join(home, "project")
             os.makedirs(cwd)
@@ -22,8 +22,7 @@ class StopNotificationPolicyTests(unittest.TestCase):
             with patch("core.action_executor.send_notification") as send_notification:
                 response = run("Stop", {"cwd": cwd, "transcript_path": os.path.join(home, "transcript.jsonl")})
 
-            self.assertIn("systemMessage", response)
-            self.assertIn("准备结束本轮回复前", response["systemMessage"])
+            self.assertEqual(response, {})
             send_notification.assert_not_called()
 
     def test_default_stop_rule_ignores_subagent_transcript_path(self):

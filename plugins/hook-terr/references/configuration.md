@@ -26,12 +26,12 @@ defaults/rules/*.json
 
 `settings.events.<Event>.notifications` 是默认通知通道来源。`rule.notify.channels` 是可选的规则级覆盖；未设置时回退到事件默认通道。
 
-settings 中的 Stop channels 是主会话 Stop 和主会话 `AskUserQuestion` 求助通知共同使用的“通道偏好”。Stop 本身不会仅因配置 channels 就触发外部通知，仍需要命中 `notify.enabled=true` 的 Stop 规则；`AskUserQuestion` 求助场景由 runtime guard 触发并复用 Stop channels。内置 `stop-notify` 默认不执行外部通知，只在 `is_subagent == "false"` 的主会话 Stop 中返回自检 `systemMessage`。`SubagentStop` 默认关闭且不配置通知，避免子 agent 结束时弹提示音。
+settings 中的 Stop channels 是主会话 Stop 和主会话 `AskUserQuestion` 求助通知共同使用的“通道偏好”。Stop 本身不会仅因配置 channels 就触发外部通知，仍需要命中 `notify.enabled=true` 的 Stop 规则；`AskUserQuestion` 求助场景由 runtime guard 触发并复用 Stop channels。内置 `stop-notify` 默认关闭，不执行外部通知，也不在普通 Stop 中返回自检 `systemMessage`。`SubagentStop` 默认关闭且不配置通知，避免子 agent 结束时弹提示音。
 
 ## Slash commands
 
 - `/hook-terr` 只读取并显示当前生效配置。
-- `/hook-terr:configure` 会先询问写入全局还是项目 settings，然后更新 Stop 通知通道。随后会询问是否创建/更新 explicit Stop notify rule：选择 `立即生效` 时写入对应 scope 的 `rules/stop.notify.explicit.json`；当主会话 Stop 未先被 documentationReminder 等 runtime feature 拦截并命中该 rule 时，会触发 pure external 外部通知，不再返回 Stop `systemMessage`。选择 `仅保存通道` 时只修改 settings，内置默认 `stop-notify` 仍不会触发 Stop 外部通知；但 `AskUserQuestion` 求助通知会复用保存的 Stop 通道。选择 `sound` 时，会在目标 settings 层显式初始化 `notifications.sound.wavPath` 为 `C:\\Windows\\Media\\tada.wav`，除非该层已有自定义 wavPath。
+- `/hook-terr:configure` 会先询问写入全局还是项目 settings，然后更新 Stop 通知通道。随后会询问是否创建/更新 explicit Stop notify rule：选择 `立即生效` 时写入对应 scope 的 `rules/stop.notify.explicit.json`；当主会话 Stop 未先被 documentationReminder 等 runtime feature 拦截并命中该 rule 时，会触发 pure external 外部通知，不返回普通 Stop `systemMessage`。选择 `仅保存通道` 时只修改 settings，内置默认 `stop-notify` 仍保持关闭且不会触发 Stop 外部通知；但 `AskUserQuestion` 求助通知会复用保存的 Stop 通道。选择 `sound` 时，会在目标 settings 层显式初始化 `notifications.sound.wavPath` 为 `C:\\Windows\\Media\\tada.wav`，除非该层已有自定义 wavPath。
 - `/hook-terr:sound` 可直接保存默认提示音，或打开外部 PowerShell picker 试听后，将所选 sound 提示音写入全局 settings。
 
 `/hook-terr:configure` settings 写入位置：

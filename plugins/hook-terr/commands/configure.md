@@ -54,7 +54,7 @@ If the user selects no channels, stop and say no changes were made.
 Explain before asking:
 
 ```text
-仅选择通知通道只会保存 Stop channel 偏好。内置默认 stop-notify 规则的 notify.enabled=false，不会直接播放 sound、弹 popup 或发送 toast。
+仅选择通知通道只会保存 Stop channel 偏好。内置默认 stop-notify 规则保持关闭，不会返回普通 Stop 自检提示，也不会直接播放 sound、弹 popup 或发送 toast。
 如果希望配置后主会话 Stop 立即触发外部通知，需要创建一个显式 Stop notify 规则。
 ```
 
@@ -64,7 +64,7 @@ Use `AskUserQuestion`:
 - Header: `生效方式`
 - Options:
   1. `立即生效` — write settings and create or update an explicit Stop notify rule for the selected scope. When Stop is not intercepted first by a runtime feature such as documentationReminder, the matched main-session Stop rule will use the selected channels.
-  2. `仅保存通道` — only write settings. Existing or future rules with `notify.enabled=true` can use these channels; the built-in default Stop self-check remains silent.
+  2. `仅保存通道` — only write settings. Existing or future rules with `notify.enabled=true` can use these channels; the built-in default Stop rule remains disabled and silent.
   3. `取消` — stop and make no changes.
 
 If the user chooses `取消`, stop and say no changes were made.
@@ -181,7 +181,7 @@ If the user chose `立即生效` and the rule was created or overwritten and val
 写入 settings: <path printed by settings_writer.py>
 写入 rule: <rule path>
 Stop channels: <channels>
-主会话 Stop 未先被 documentationReminder 等 runtime feature 拦截并命中该 rule 时会触发外部通知；内置默认 Stop 自检规则未被修改。
+主会话 Stop 未先被 documentationReminder 等 runtime feature 拦截并命中该 rule 时会触发外部通知；内置默认 stop-notify 规则保持关闭。
 ```
 
 If the user chose `立即生效` but kept an existing rule, tell the user:
@@ -191,7 +191,7 @@ If the user chose `立即生效` but kept an existing rule, tell the user:
 写入 settings: <path printed by settings_writer.py>
 保留 rule: <rule path>
 Stop channels: <channels>
-现有 rule 仍决定何时触发外部通知；内置默认 Stop 自检规则未被修改。
+现有 rule 仍决定何时触发外部通知；内置默认 stop-notify 规则保持关闭。
 ```
 
 If the user chose `仅保存通道`, tell the user:
@@ -200,7 +200,7 @@ If the user chose `仅保存通道`, tell the user:
 已更新 hook-terr Stop 通知通道偏好。
 写入 settings: <path printed by settings_writer.py>
 Stop channels: <channels>
-注意：这次只保存通道。内置默认 stop-notify 规则 notify.enabled=false，不会直接触发 sound/popup/toast。需要外部通知时，请创建或启用 explicit Stop notify rule。
+注意：这次只保存通道。内置默认 stop-notify 规则保持关闭，不会返回普通 Stop 自检提示，也不会直接触发 sound/popup/toast。需要外部通知时，请创建或启用 explicit Stop notify rule。
 ```
 
 If `sound` is enabled, also tell the user:
