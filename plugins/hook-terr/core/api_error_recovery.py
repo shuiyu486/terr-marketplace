@@ -13,6 +13,10 @@ DEFAULT_MATCH = [
     "This content was flagged for possible cybersecurity risk",
     "cybersecurity risk",
 ]
+DEFAULT_MODEL_SWITCH_CONFIRM_COMMAND = "1"
+DEFAULT_MODEL_SWITCH_CONFIRM_MODE = "auto"
+MODEL_SWITCH_CONFIRM_MODES = {"auto", "always", "never"}
+MODEL_SWITCH_CONFIRM_MARKERS = ("switch model?", "yes, switch to")
 
 
 def handle_api_error_recovery(event_name: str, context: HookContext, settings: Dict[str, Any]) -> Tuple[Dict[str, Any], List[str]]:
@@ -289,19 +293,31 @@ def restore_continue_steps(config: Dict[str, Any]) -> List[Dict[str, Any]]:
 def model_steps(config: Dict[str, Any], kind: str) -> List[Dict[str, Any]]:
     if kind == "fallback":
         command = str(config.get("fallbackModelCommand", "/model sonnet"))
-        confirm = str(config.get("fallbackConfirmCommand", ""))
+        legacy_confirm = str(config.get("fallbackConfirmCommand", ""))
     else:
         command = str(config.get("primaryModelCommand", "/model opus"))
-        confirm = str(config.get("primaryConfirmCommand", ""))
+        legacy_confirm = str(config.get("primaryConfirmCommand", ""))
 
     steps: List[Dict[str, Any]] = []
     command_text = command_line(command)
-    confirm_text = command_line(confirm)
-    if command_text:
-        delay = number_config(config, "modelSwitchConfirmDelayMs", 500) if confirm_text else number_config(config, "postModelSwitchDelayMs", 500)
-        steps.append({"text": command_text, "delayAfterMs": delay})
+    if not command_text:
+        return steps
+
+    mode = model_switch_confirm_mode(config)
+    confirm_text = command_line(model_switch_confirm_command(config, legacy_confirm)) if mode != "never" else ""
+    delay = number_config(config, "modelSwitchConfirmDelayMs", 500) if confirm_text else number_config(config, "postModelSwitchDelayMs", 500)
+    step = {"text": command_text, "delayAfterMs": delay}
+    if mode == "auto" and confirm_text:
+        step["captureConfirmBaseline"] = True
+    steps.append(step)
     if confirm_text:
-        steps.append({"text": confirm_text, "delayAfterMs": number_config(config, "postModelSwitchDelayMs", 500)})
+        steps.append(
+            {
+                "text": confirm_text,
+                "delayAfterMs": number_config(config, "postModelSwitchDelayMs", 500),
+                "condition": "model_switch_confirm" if mode == "auto" else "always",
+            }
+        )
     return steps
 
 
@@ -316,6 +332,20 @@ def steps_text(steps: List[Dict[str, Any]]) -> str:
 def command_line(command: str) -> str:
     stripped = command.strip()
     return f"{stripped}\r" if stripped else ""
+
+
+def model_switch_confirm_mode(config: Dict[str, Any]) -> str:
+    mode = str(config.get("modelSwitchConfirmMode", DEFAULT_MODEL_SWITCH_CONFIRM_MODE)).strip().lower()
+    return mode if mode in MODEL_SWITCH_CONFIRM_MODES else DEFAULT_MODEL_SWITCH_CONFIRM_MODE
+
+
+def model_switch_confirm_command(config: Dict[str, Any], legacy_confirm: str) -> str:
+    command = str(config.get("modelSwitchConfirmCommand", "")).strip()
+    if command:
+        return command
+    if legacy_confirm.strip():
+        return legacy_confirm
+    return DEFAULT_MODEL_SWITCH_CONFIRM_COMMAND
 
 
 def number_config(config: Dict[str, Any], key: str, default: float) -> float:
@@ -334,9 +364,15 @@ def send_recovery_steps(pane_id: str, steps: List[Dict[str, Any]], delay_ms: int
         return "apiErrorRecovery: recovery steps are empty"
     if delay_ms > 0:
         time.sleep(delay_ms / 1000)
+    confirm_baseline = ""
     for step in steps:
         text = str(step.get("text", "")) if isinstance(step, dict) else ""
         if not text:
+            continue
+        if bool(step.get("captureConfirmBaseline", False)):
+            confirm_baseline, _ = get_wezterm_pane_text(pane_id, int(config.get("modelSwitchConfirmScanLines", 20)))
+        condition = str(step.get("condition", "always")) if isinstance(step, dict) else "always"
+        if condition == "model_switch_confirm" and not pane_has_model_switch_confirm(pane_id, config, confirm_baseline):
             continue
         error = send_text_to_wezterm(pane_id, text)
         if error:
@@ -360,6 +396,67 @@ def send_text_to_wezterm(pane_id: str, text: str) -> str:
         return ""
     except Exception as exc:
         return f"apiErrorRecovery: wezterm send-text failed: {exc}"
+
+
+def pane_has_model_switch_confirm(pane_id: str, config: Dict[str, Any], baseline: str = "") -> bool:
+    text, error = get_wezterm_pane_text(pane_id, int(config.get("modelSwitchConfirmScanLines", 20)))
+    if error:
+        return False
+    scan_text = text_after_baseline(text, baseline)
+    return contains_model_switch_confirm(scan_text)
+
+
+def text_after_baseline(text: str, baseline: str) -> str:
+    if not baseline:
+        return text
+    if text == baseline:
+        return ""
+    if text.startswith(baseline):
+        return text[len(baseline) :]
+    overlap = suffix_prefix_overlap(baseline, text)
+    if overlap:
+        return text[overlap:]
+    if contains_model_switch_confirm(baseline):
+        return ""
+    return text
+
+
+def suffix_prefix_overlap(previous: str, current: str) -> int:
+    max_size = min(len(previous), len(current))
+    for size in range(max_size, 0, -1):
+        if previous[-size:] == current[:size]:
+            return size
+    return 0
+
+
+def contains_model_switch_confirm(text: str) -> bool:
+    lowered = text.lower()
+    return any(marker in lowered for marker in MODEL_SWITCH_CONFIRM_MARKERS)
+
+
+def get_wezterm_pane_text(pane_id: str, scan_lines: int) -> Tuple[str, str]:
+    end_line = -max(scan_lines, 1)
+    kwargs = {
+        "stdin": subprocess.DEVNULL,
+        "stdout": subprocess.PIPE,
+        "stderr": subprocess.PIPE,
+        "text": True,
+        "encoding": "utf-8",
+        "errors": "replace",
+        "timeout": 2,
+    }
+    if os.name == "nt":
+        kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    try:
+        completed = subprocess.run(
+            ["wezterm", "cli", "get-text", "--pane-id", pane_id, f"--start-line={end_line}"],
+            **kwargs,
+        )
+    except Exception as exc:
+        return "", f"apiErrorRecovery: wezterm get-text failed: {exc}"
+    if completed.returncode != 0:
+        return "", "apiErrorRecovery: wezterm get-text failed"
+    return completed.stdout or "", ""
 
 
 def build_session_key(context: HookContext, pane_id: str) -> str:

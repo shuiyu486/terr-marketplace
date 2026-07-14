@@ -23,8 +23,14 @@ class SettingsWriterTests(unittest.TestCase):
             self.assertTrue(recovery["enabled"])
             self.assertEqual(recovery["primaryModelCommand"], "/model opus")
             self.assertEqual(recovery["fallbackModelCommand"], "/model sonnet")
+            self.assertEqual(recovery["modelSwitchConfirmMode"], "auto")
+            self.assertEqual(recovery["modelSwitchConfirmCommand"], "1")
             self.assertEqual(recovery["primaryConfirmCommand"], "1")
             self.assertEqual(recovery["fallbackConfirmCommand"], "1")
+            self.assertEqual(
+                recovery["match"],
+                ["This content was flagged for possible cybersecurity risk", "cybersecurity risk"],
+            )
 
     def test_global_current_dir_appends_enabled_prefix_once(self):
         with self.env() as (home, cwd):
@@ -36,6 +42,40 @@ class SettingsWriterTests(unittest.TestCase):
             self.assertFalse(cwd_scope["default"])
             self.assertEqual(cwd_scope["enabledPrefixes"], [cwd])
             self.assertEqual(settings["features"]["apiErrorRecovery"]["fallbackConfirmCommand"], "")
+            self.assertEqual(settings["features"]["apiErrorRecovery"]["modelSwitchConfirmMode"], "auto")
+
+    def test_api_error_recovery_writes_custom_match_texts(self):
+        with self.env() as (home, cwd):
+            path = write_api_error_recovery(
+                "project",
+                cwd,
+                "project",
+                "/model opus",
+                "/model sonnet",
+                False,
+                ["cybersecurity risk", "API Error: 400", "cybersecurity risk"],
+            )
+
+            recovery = self.read_json(path)["features"]["apiErrorRecovery"]
+            self.assertEqual(recovery["match"], ["cybersecurity risk", "API Error: 400"])
+            self.assertEqual(recovery["modelSwitchConfirmMode"], "auto")
+            self.assertEqual(recovery["modelSwitchConfirmCommand"], "1")
+
+    def test_api_error_recovery_writes_confirm_mode_override(self):
+        with self.env() as (home, cwd):
+            path = write_api_error_recovery(
+                "project",
+                cwd,
+                "project",
+                "/model opus",
+                "/model sonnet",
+                False,
+                None,
+                "never",
+            )
+
+            recovery = self.read_json(path)["features"]["apiErrorRecovery"]
+            self.assertEqual(recovery["modelSwitchConfirmMode"], "never")
 
     def test_global_current_dir_removes_conflicting_disabled_prefix(self):
         with self.env() as (home, cwd):

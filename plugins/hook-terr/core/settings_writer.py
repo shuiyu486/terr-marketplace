@@ -2,12 +2,18 @@ import argparse
 import json
 import os
 from copy import deepcopy
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 VALID_CHANNELS = {"sound", "windows_toast", "popup", "custom_command"}
 DEFAULT_SOUND_WAV_PATH = r"C:\Windows\Media\tada.wav"
 DEFAULT_PRIMARY_MODEL_COMMAND = "/model opus"
 DEFAULT_FALLBACK_MODEL_COMMAND = "/model sonnet"
+DEFAULT_MATCH = [
+    "This content was flagged for possible cybersecurity risk",
+    "cybersecurity risk",
+]
+DEFAULT_MODEL_SWITCH_CONFIRM_MODE = "auto"
+DEFAULT_MODEL_SWITCH_CONFIRM_COMMAND = "1"
 
 
 def settings_path(scope: str, cwd: str) -> str:
@@ -70,6 +76,8 @@ def write_api_error_recovery(
     primary_model_command: str,
     fallback_model_command: str,
     confirm_model_switch: bool,
+    match_texts: Optional[List[str]] = None,
+    model_switch_confirm_mode: str = DEFAULT_MODEL_SWITCH_CONFIRM_MODE,
 ) -> str:
     target_scope = "project" if activation_mode == "project" else "global"
     if activation_mode == "disable-current-dir" and scope in ("global", "project"):
@@ -91,10 +99,14 @@ def write_api_error_recovery(
         recovery["primaryModelCommand"] = primary_model_command or DEFAULT_PRIMARY_MODEL_COMMAND
         recovery["fallbackModelCommand"] = fallback_model_command or DEFAULT_FALLBACK_MODEL_COMMAND
         recovery["continueCommand"] = "continue"
+        recovery["match"] = clean_match_texts(match_texts) or DEFAULT_MATCH
+        recovery["modelSwitchConfirmMode"] = clean_confirm_mode(model_switch_confirm_mode)
+        recovery["modelSwitchConfirmCommand"] = DEFAULT_MODEL_SWITCH_CONFIRM_COMMAND
         recovery["primaryConfirmCommand"] = "1" if confirm_model_switch else ""
         recovery["fallbackConfirmCommand"] = "1" if confirm_model_switch else ""
         recovery.setdefault("modelSwitchConfirmDelayMs", 500)
         recovery.setdefault("postModelSwitchDelayMs", 500)
+        recovery.setdefault("modelSwitchConfirmScanLines", 20)
 
     if activation_mode == "project":
         cwd_scope = recovery.setdefault("scopes", {}).setdefault("cwd", {})
@@ -122,6 +134,24 @@ def write_api_error_recovery(
 
     write_settings(path, settings)
     return path
+
+
+def clean_match_texts(match_texts: Optional[List[str]]) -> List[str]:
+    if not match_texts:
+        return []
+    cleaned: List[str] = []
+    for text in match_texts:
+        value = str(text or "").strip()
+        if value and value not in cleaned:
+            cleaned.append(value)
+    return cleaned
+
+
+def clean_confirm_mode(mode: str) -> str:
+    normalized = str(mode or DEFAULT_MODEL_SWITCH_CONFIRM_MODE).strip().lower()
+    if normalized in ("auto", "always", "never"):
+        return normalized
+    return DEFAULT_MODEL_SWITCH_CONFIRM_MODE
 
 
 def append_unique_path(config: Dict[str, Any], key: str, value: str) -> None:
@@ -191,7 +221,9 @@ def main():
     parser.add_argument("--activation-mode", choices=("project", "global-current-dir", "global-default", "disable-current-dir"))
     parser.add_argument("--primary-model-command", default=DEFAULT_PRIMARY_MODEL_COMMAND)
     parser.add_argument("--fallback-model-command", default=DEFAULT_FALLBACK_MODEL_COMMAND)
-    parser.add_argument("--confirm-model-switch", choices=("true", "false"), default="true")
+    parser.add_argument("--confirm-model-switch", choices=("true", "false"), default="false")
+    parser.add_argument("--model-switch-confirm-mode", choices=("auto", "always", "never"), default=DEFAULT_MODEL_SWITCH_CONFIRM_MODE)
+    parser.add_argument("--match-text", action="append", help="StopFailure text to match; may be passed multiple times")
     args = parser.parse_args()
 
     if args.sound_wav_path:
@@ -206,6 +238,8 @@ def main():
             args.primary_model_command,
             args.fallback_model_command,
             args.confirm_model_switch == "true",
+            args.match_text,
+            args.model_switch_confirm_mode,
         )
     else:
         if not args.scope or args.channels is None:

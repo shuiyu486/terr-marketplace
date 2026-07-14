@@ -107,8 +107,11 @@ class RuleSchemaTests(unittest.TestCase):
                     "fallbackModelCommand": "/model sonnet",
                     "fallbackConfirmCommand": "1",
                     "continueCommand": "continue",
+                    "modelSwitchConfirmMode": "auto",
+                    "modelSwitchConfirmCommand": "1",
                     "modelSwitchConfirmDelayMs": 500,
                     "postModelSwitchDelayMs": 500,
+                    "modelSwitchConfirmScanLines": 20,
                     "maxEscalations": 1,
                     "lockTimeoutSeconds": 30,
                     "dedupeSeconds": 5,
@@ -129,6 +132,9 @@ class RuleSchemaTests(unittest.TestCase):
                     "windowSeconds": 0,
                     "sendDelayMs": -1,
                     "modelSwitchConfirmDelayMs": -1,
+                    "modelSwitchConfirmMode": "sometimes",
+                    "modelSwitchConfirmCommand": [],
+                    "modelSwitchConfirmScanLines": 0,
                     "primaryConfirmCommand": [],
                     "match": [1],
                     "requireSamePaneForRestore": "true",
@@ -144,6 +150,9 @@ class RuleSchemaTests(unittest.TestCase):
         self.assertIn("settings.features.apiErrorRecovery.windowSeconds must be a positive integer", errors)
         self.assertIn("settings.features.apiErrorRecovery.sendDelayMs must be a non-negative number", errors)
         self.assertIn("settings.features.apiErrorRecovery.modelSwitchConfirmDelayMs must be a non-negative number", errors)
+        self.assertIn("settings.features.apiErrorRecovery.modelSwitchConfirmMode must be one of auto, always, never", errors)
+        self.assertIn("settings.features.apiErrorRecovery.modelSwitchConfirmCommand must be a string", errors)
+        self.assertIn("settings.features.apiErrorRecovery.modelSwitchConfirmScanLines must be a positive integer", errors)
         self.assertIn("settings.features.apiErrorRecovery.primaryConfirmCommand must be a string", errors)
         self.assertIn("settings.features.apiErrorRecovery.match must contain only strings", errors)
         self.assertIn("settings.features.apiErrorRecovery.requireSamePaneForRestore must be a boolean", errors)

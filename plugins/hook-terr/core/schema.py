@@ -125,10 +125,20 @@ def validate_settings(settings: Any) -> List[str]:
                 terminal = recovery.get("terminal")
                 if terminal is not None and terminal != "wezterm":
                     errors.append("settings.features.apiErrorRecovery.terminal must be wezterm")
-                for key in ("primaryModelCommand", "fallbackModelCommand", "continueCommand", "primaryConfirmCommand", "fallbackConfirmCommand"):
+                for key in (
+                    "primaryModelCommand",
+                    "fallbackModelCommand",
+                    "continueCommand",
+                    "primaryConfirmCommand",
+                    "fallbackConfirmCommand",
+                    "modelSwitchConfirmCommand",
+                ):
                     value = recovery.get(key)
                     if value is not None and not isinstance(value, str):
                         errors.append(f"settings.features.apiErrorRecovery.{key} must be a string")
+                confirm_mode = recovery.get("modelSwitchConfirmMode")
+                if confirm_mode is not None and confirm_mode not in ("auto", "always", "never"):
+                    errors.append("settings.features.apiErrorRecovery.modelSwitchConfirmMode must be one of auto, always, never")
                 match = recovery.get("match")
                 if match is not None:
                     if not isinstance(match, list):
@@ -138,7 +148,14 @@ def validate_settings(settings: Any) -> List[str]:
                             if not isinstance(item, str):
                                 errors.append("settings.features.apiErrorRecovery.match must contain only strings")
                                 break
-                for key in ("windowSeconds", "restoreAfterSeconds", "maxEscalations", "lockTimeoutSeconds", "dedupeSeconds"):
+                for key in (
+                    "windowSeconds",
+                    "restoreAfterSeconds",
+                    "maxEscalations",
+                    "lockTimeoutSeconds",
+                    "dedupeSeconds",
+                    "modelSwitchConfirmScanLines",
+                ):
                     value = recovery.get(key)
                     if value is not None and (not isinstance(value, int) or isinstance(value, bool) or value <= 0):
                         errors.append(f"settings.features.apiErrorRecovery.{key} must be a positive integer")

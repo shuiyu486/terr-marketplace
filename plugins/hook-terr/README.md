@@ -9,7 +9,7 @@
 - 内置普通 Stop 自检规则默认关闭，避免在多轮/自主推进中污染上下文；`SubagentStop` 默认关闭，避免子 agent 结束时弹提示音。
 - 规则可匹配 `is_subagent` 与 `agent_type`，用于区分主会话和子 agent。
 - 默认启用文档收尾提醒：项目内使用 `Write`、`Edit`、`MultiEdit` 或 `NotebookEdit` 修改文件后，首次 Stop 会提醒 Claude 更新相关文档并完成必要验证。
-- 可选 `apiErrorRecovery` 会在 WezTerm 中按 pane 精确恢复指定 API error：首次发送 `continue`，短时间再次失败时切到 fallback 模型并继续，正常 Stop 或超时后切回 primary 模型。
+- 可选 `apiErrorRecovery` 会在 WezTerm 中按 pane 精确恢复匹配的 StopFailure API error：首次发送 `continue`，短时间再次失败时切到 fallback 模型并继续，自动兼容 `/model` 的 `Switch model?` 确认框，正常 Stop 或超时后切回 primary 模型。
 - 支持插件内默认配置、用户全局覆盖和项目覆盖。
 - Stop 外部通知需要通过用户或项目规则显式启用，避免每次 Stop 都误触发；外部通知在 runtime 层只允许主会话 Stop 和主会话 `AskUserQuestion` 求助场景。
 - 支持 Windows tray 通知、提示音、结构化弹窗和高级自定义命令。
@@ -19,7 +19,7 @@
 
 - `/hook-terr` — 显示当前生效的 hook-terr 配置。
 - `/hook-terr:configure` — 交互式配置 Stop 通知通道，并可选择创建 explicit Stop notify rule 让配置立即生效；启用 `sound` 时会补齐默认提示音。
-- `/hook-terr:api-error-recovery` — 交互式为当前目录启用、禁用或限制 WezTerm API error recovery，并可配置 `/model` 切换确认输入。
+- `/hook-terr:api-error-recovery` — 交互式为当前目录启用、禁用或限制 WezTerm API error recovery，并可配置 StopFailure 匹配文本；`/model` 切换确认默认自动检测。
 - `/hook-terr:sound` — 直接保存默认 sound 提示音，或打开外部 PowerShell picker 试听后保存全局偏好。
 
 ## 配置来源
@@ -75,11 +75,11 @@ Windows notification 仍然可用，但不再由默认 Stop 自检规则触发�
 
 ## API error recovery
 
-`features.apiErrorRecovery` 默认关闭。启用后，`StopFailure` 命中配置的错误文本时，会使用 `WEZTERM_PANE` 和 `wezterm cli send-text --pane-id ... --no-paste` 将恢复命令发回触发错误的 WezTerm pane。状态按 `session_id + pane_id` 隔离，并使用 per-session lock 与短时间去重，避免多个 Claude Code 会话或多个 WezTerm 标签页互相串线。
+`features.apiErrorRecovery` 默认关闭。启用后，`StopFailure` 命中配置的 `match` 文本时，会使用 `WEZTERM_PANE` 和 `wezterm cli send-text --pane-id ... --no-paste` 将恢复命令发回触发错误的 WezTerm pane。默认 `match` 只覆盖 `This content was flagged for possible cybersecurity risk` / `cybersecurity risk`，匹配范围是 `error`、`error_details`、`last_assistant_message` 和 `reason` 合并后的文本。状态按 `session_id + pane_id` 隔离，并使用 per-session lock 与短时间去重，避免多个 Claude Code 会话或多个 WezTerm 标签页互相串线。
 
 默认策略是 `escalate_then_restore`：第一次命中发送 `continue`；在 `windowSeconds` 内再次命中时发送 `fallbackModelCommand` 后再发送 `continueCommand`；fallback active 后遇到正常 `Stop`，或后续 `Stop`/`UserPromptSubmit` 懒检测到超过 `restoreAfterSeconds`，会发送 `primaryModelCommand` 切回原模型。
 
-可用 `scopes.sessions` 和 `scopes.cwd` 控制每个会话或目录是否触发。项目级开关可写在 `<project>/.claude/hook-terr/settings.json`；全局启用但排除目录时可用 `scopes.cwd.disabledPrefixes`；临时禁用当前启动环境可设置 `HOOK_TERR_API_ERROR_RECOVERY=0`。如果 `/model` 切换会弹 `Switch model?` 确认框，可设置 `primaryConfirmCommand` / `fallbackConfirmCommand` 为 `1`，并通过 `modelSwitchConfirmDelayMs` / `postModelSwitchDelayMs` 控制分步输入延迟；也可运行 `/hook-terr:api-error-recovery` 交互式配置。
+可用 `scopes.sessions` 和 `scopes.cwd` 控制每个会话或目录是否触发。项目级开关可写在 `<project>/.claude/hook-terr/settings.json`；全局启用但排除目录时可用 `scopes.cwd.disabledPrefixes`；临时禁用当前启动环境可设置 `HOOK_TERR_API_ERROR_RECOVERY=0`。`modelSwitchConfirmMode` 默认是 `auto`：runtime 会在发送 `/model ...` 后读取当前 WezTerm pane，只有检测到 `Switch model?` / `Yes, switch to` 确认框时才发送 `modelSwitchConfirmCommand`（默认 `1`），避免未弹框时把 `1` 当成普通用户输入；也可运行 `/hook-terr:api-error-recovery` 交互式配置匹配文本和启用范围。
 
 启用示例：
 
