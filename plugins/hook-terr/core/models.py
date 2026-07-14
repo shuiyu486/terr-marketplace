@@ -13,6 +13,10 @@ class HookContext:
     agent_type: str = "main"
     user_prompt: str = ""
     cwd: str = ""
+    session_id: str = ""
+    error: str = ""
+    error_details: str = ""
+    last_assistant_message: str = ""
     raw_input: Dict[str, Any] = field(default_factory=dict)
 
 

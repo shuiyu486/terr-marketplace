@@ -1,7 +1,7 @@
 import re
 from typing import Any, Dict, List
 
-VALID_EVENTS = {"Stop", "SubagentStop", "PreToolUse", "PostToolUse", "UserPromptSubmit"}
+VALID_EVENTS = {"Stop", "StopFailure", "SubagentStop", "PreToolUse", "PostToolUse", "UserPromptSubmit"}
 VALID_DECISIONS = {"allow", "warn", "block"}
 VALID_OPERATORS = {"equals", "contains", "regex", "not_regex", "in"}
 VALID_CHANNELS = {"windows_toast", "sound", "popup", "custom_command"}
@@ -111,6 +111,79 @@ def validate_settings(settings: Any) -> List[str]:
                 if message is not None and not isinstance(message, str):
                     errors.append("settings.features.documentationReminder.message must be a string")
 
+        recovery = features.get("apiErrorRecovery")
+        if recovery is not None:
+            if not isinstance(recovery, dict):
+                errors.append("settings.features.apiErrorRecovery must be an object")
+            else:
+                recovery_enabled = recovery.get("enabled")
+                if recovery_enabled is not None and not isinstance(recovery_enabled, bool):
+                    errors.append("settings.features.apiErrorRecovery.enabled must be a boolean")
+                strategy = recovery.get("strategy")
+                if strategy is not None and strategy != "escalate_then_restore":
+                    errors.append("settings.features.apiErrorRecovery.strategy must be escalate_then_restore")
+                terminal = recovery.get("terminal")
+                if terminal is not None and terminal != "wezterm":
+                    errors.append("settings.features.apiErrorRecovery.terminal must be wezterm")
+                for key in ("primaryModelCommand", "fallbackModelCommand", "continueCommand"):
+                    value = recovery.get(key)
+                    if value is not None and not isinstance(value, str):
+                        errors.append(f"settings.features.apiErrorRecovery.{key} must be a string")
+                match = recovery.get("match")
+                if match is not None:
+                    if not isinstance(match, list):
+                        errors.append("settings.features.apiErrorRecovery.match must be an array")
+                    else:
+                        for item in match:
+                            if not isinstance(item, str):
+                                errors.append("settings.features.apiErrorRecovery.match must contain only strings")
+                                break
+                for key in ("windowSeconds", "restoreAfterSeconds", "maxEscalations", "lockTimeoutSeconds", "dedupeSeconds"):
+                    value = recovery.get(key)
+                    if value is not None and (not isinstance(value, int) or isinstance(value, bool) or value <= 0):
+                        errors.append(f"settings.features.apiErrorRecovery.{key} must be a positive integer")
+                send_delay = recovery.get("sendDelayMs")
+                if send_delay is not None and (isinstance(send_delay, bool) or not isinstance(send_delay, (int, float)) or send_delay < 0):
+                    errors.append("settings.features.apiErrorRecovery.sendDelayMs must be a non-negative number")
+                require_same_pane = recovery.get("requireSamePaneForRestore")
+                if require_same_pane is not None and not isinstance(require_same_pane, bool):
+                    errors.append("settings.features.apiErrorRecovery.requireSamePaneForRestore must be a boolean")
+                scopes = recovery.get("scopes")
+                if scopes is not None:
+                    errors.extend(validate_api_error_recovery_scopes(scopes))
+
+    return errors
+
+
+def validate_api_error_recovery_scopes(scopes: Any) -> List[str]:
+    errors: List[str] = []
+    if not isinstance(scopes, dict):
+        return ["settings.features.apiErrorRecovery.scopes must be an object"]
+    for scope_name in ("sessions", "cwd"):
+        scope = scopes.get(scope_name)
+        if scope is None:
+            continue
+        if not isinstance(scope, dict):
+            errors.append(f"settings.features.apiErrorRecovery.scopes.{scope_name} must be an object")
+            continue
+        default = scope.get("default")
+        if default is not None and not isinstance(default, bool):
+            errors.append(f"settings.features.apiErrorRecovery.scopes.{scope_name}.default must be a boolean")
+        for list_key in ("enabled", "disabled"):
+            values = scope.get(list_key)
+            if values is not None:
+                if not isinstance(values, list):
+                    errors.append(f"settings.features.apiErrorRecovery.scopes.{scope_name}.{list_key} must be an array")
+                elif any(not isinstance(value, str) for value in values):
+                    errors.append(f"settings.features.apiErrorRecovery.scopes.{scope_name}.{list_key} must contain only strings")
+        if scope_name == "cwd":
+            for list_key in ("enabledPrefixes", "disabledPrefixes"):
+                values = scope.get(list_key)
+                if values is not None:
+                    if not isinstance(values, list):
+                        errors.append(f"settings.features.apiErrorRecovery.scopes.cwd.{list_key} must be an array")
+                    elif any(not isinstance(value, str) for value in values):
+                        errors.append(f"settings.features.apiErrorRecovery.scopes.cwd.{list_key} must contain only strings")
     return errors
 
 

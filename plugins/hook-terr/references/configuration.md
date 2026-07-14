@@ -81,15 +81,56 @@ settings 中的 Stop channels 是主会话 Stop 和主会话 `AskUserQuestion` �
 
 运行时状态存储在 `~/.claude/hook-terr/state/documentation-reminder/`。
 
+## API error recovery
+
+`features.apiErrorRecovery` 默认关闭，启用后只支持 WezTerm：
+
+```json
+{
+  "features": {
+    "apiErrorRecovery": {
+      "enabled": true,
+      "terminal": "wezterm",
+      "strategy": "escalate_then_restore",
+      "windowSeconds": 600,
+      "restoreAfterSeconds": 600,
+      "sendDelayMs": 800,
+      "match": ["cybersecurity risk"],
+      "primaryModelCommand": "/model opus",
+      "fallbackModelCommand": "/model sonnet",
+      "continueCommand": "continue",
+      "maxEscalations": 1,
+      "lockTimeoutSeconds": 30,
+      "dedupeSeconds": 5,
+      "requireSamePaneForRestore": true,
+      "scopes": {
+        "sessions": { "default": true, "enabled": [], "disabled": [] },
+        "cwd": {
+          "default": true,
+          "enabled": [],
+          "disabled": [],
+          "enabledPrefixes": [],
+          "disabledPrefixes": []
+        }
+      }
+    }
+  }
+}
+```
+
+行为：第一次匹配 `StopFailure` 发送 `continueCommand`；`windowSeconds` 内再次匹配时发送 `fallbackModelCommand` 和 `continueCommand`；fallback active 后正常 `Stop` 或超时懒恢复发送 `primaryModelCommand`。状态存储在 `~/.claude/hook-terr/state/api-error-recovery/`，按 `session_id + WEZTERM_PANE` 隔离，多会话、多标签页不会共享恢复状态。
+
+`scopes` 可控制每个会话或目录是否启用。`sessions.enabled/disabled` 匹配 Claude Code `session_id`；`cwd.enabled/disabled` 精确匹配当前工作目录；`cwd.enabledPrefixes/disabledPrefixes` 匹配目录前缀。若需要某个项目默认启用，可把项目配置写到 `<project>/.claude/hook-terr/settings.json`；若全局开启但排除某些目录，可在全局 settings 的 `scopes.cwd.disabledPrefixes` 中加入对应路径。临时禁用当前启动环境可设置 `HOOK_TERR_API_ERROR_RECOVERY=0`。
+
 ## custom_command 配置迁移
 
 `notifications.custom_command.command` 中不再支持旧模板变量：`{{event}}`、`{{title}}`、`{{message}}`、`{{cwd}}`、`{{timestamp}}`。如果用户或项目 settings 包含这些模板，settings 加载阶段会报诊断并跳过该配置层。
 
 请改用 `HOOK_TERR_*` 环境变量，例如 PowerShell 中使用 `$env:HOOK_TERR_MESSAGE`，sh/bash 中使用 `$HOOK_TERR_MESSAGE`。
 
-## Presets
+## Presets 和 examples
 
-`presets/` 随 marketplace 插件分发，保存开源可复用配置方案。它们不会自动加载，用户可以复制其中内容到全局或项目 settings 中。
+`presets/` 随 marketplace 插件分发，保存开源可复用配置方案。`examples/` 保存可复制的配置片段，例如 `examples/config.api-error-recovery.wezterm.example.json`。它们不会自动加载，用户可以复制其中内容到全局或项目 settings 中。
 
 ## 禁用上层规则
 

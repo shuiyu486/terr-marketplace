@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "features": {
+    "apiErrorRecovery": {
+      "enabled": true,
+      "terminal": "wezterm",
+      "strategy": "escalate_then_restore",
+      "windowSeconds": 600,
+      "restoreAfterSeconds": 600,
+      "sendDelayMs": 800,
+      "match": [
+        "This content was flagged for possible cybersecurity risk",
+        "cybersecurity risk"
+      ],
+      "primaryModelCommand": "/model opus",
+      "fallbackModelCommand": "/model sonnet",
+      "continueCommand": "continue",
+      "maxEscalations": 1,
+      "lockTimeoutSeconds": 30,
+      "dedupeSeconds": 5,
+      "requireSamePaneForRestore": true,
+      "scopes": {
+        "sessions": {
+          "default": true,
+          "enabled": [],
+          "disabled": []
+        },
+        "cwd": {
+          "default": false,
+          "enabled": [],
+          "disabled": [],
+          "enabledPrefixes": ["C:\\path\\to\\project"],
+          "disabledPrefixes": []
+        }
+      }
+    }
+  }
+}

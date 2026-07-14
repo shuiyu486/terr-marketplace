@@ -26,6 +26,7 @@ def build_status(cwd: str) -> Dict[str, Any]:
         "settingsFiles": existing_paths(settings_paths(root, cwd)),
         "ruleFiles": existing_paths(rule_paths(root, cwd)),
         "enabled": settings.get("enabled", True),
+        "features": settings.get("features", {}),
         "events": settings.get("events", {}),
         "notifications": settings.get("notifications", {}),
         "stopRule": rule_to_dict(stop_rule),

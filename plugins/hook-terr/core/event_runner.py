@@ -1,6 +1,7 @@
 from typing import Any, Dict
 
 from core.action_executor import execute, execute_assistance_notification, should_suppress_response
+from core.api_error_recovery import handle_api_error_recovery
 from core.config_loader import load_configuration, warn
 from core.context_builder import build_context
 from core.documentation_reminder import handle_documentation_reminder
@@ -22,6 +23,13 @@ def run(event_name: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
     assistance_request = is_assistance_request(context) and not context.is_subagent
     event_settings = settings.get("events", {}).get(event_name, {})
     event_enabled = not (isinstance(event_settings, dict) and not event_settings.get("enabled", True))
+
+    if event_name == "StopFailure" and event_enabled:
+        recovery_response, recovery_diagnostics = handle_api_error_recovery(event_name, context, settings)
+        for diagnostic in recovery_diagnostics:
+            warn(f"hook-terr api error recovery: {diagnostic}")
+        if recovery_response:
+            return recovery_response
     if not event_enabled and not assistance_request:
         return {}
 
@@ -30,6 +38,13 @@ def run(event_name: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
         warn(f"hook-terr documentation reminder: {diagnostic}")
     if feature_response:
         return feature_response
+
+    if event_name in ("Stop", "UserPromptSubmit"):
+        recovery_response, recovery_diagnostics = handle_api_error_recovery(event_name, context, settings)
+        for diagnostic in recovery_diagnostics:
+            warn(f"hook-terr api error recovery: {diagnostic}")
+        if recovery_response:
+            return recovery_response
 
     rule = find_match(event_name, context, rules) if event_enabled else None
     if not rule:

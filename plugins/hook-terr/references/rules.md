@@ -7,7 +7,7 @@
 - `version`: schema 版本，当前为 `1`。
 - `id`: 规则唯一键，也是覆盖键。
 - `enabled`: 是否启用。
-- `event`: `Stop`、`SubagentStop`、`PreToolUse`、`PostToolUse` 或 `UserPromptSubmit`。
+- `event`: `Stop`、`StopFailure`、`SubagentStop`、`PreToolUse`、`PostToolUse` 或 `UserPromptSubmit`。
 - `priority`: 数字越大越先匹配。
 - `decision`: `allow`、`warn` 或 `block`。
 - `match`: `all` 或 `any`，默认 `all`。
@@ -50,6 +50,8 @@
 通用字段：`event`、`cwd`。
 
 Stop/SubagentStop：`reason`、`transcript_path`、`is_subagent`、`agent_type`。
+
+StopFailure：`error`、`error_details`、`last_assistant_message`、`session_id`、`transcript_path`、`is_subagent`、`agent_type`。
 
 `is_subagent` 在规则匹配中返回字符串 `"true"` 或 `"false"`；条件 `value` 可写字符串或 JSON boolean。`agent_type` 当前返回 `"main"` 或 `"subagent"`。runtime 会优先使用 hook payload 中的显式 `is_subagent` / `agent_type` 字段；缺失时，`SubagentStop` 事件、`isSidechain` 或 `agentId` 会视为子 agent，`Stop` 事件还会用 `transcript_path` 中独立的 `subagents` 路径段作为 fallback。
 

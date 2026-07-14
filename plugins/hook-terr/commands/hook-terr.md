@@ -30,6 +30,7 @@ python (Join-Path $pluginPath 'core\config_status.py')
    - Current cwd
    - Existing settings/rule files
    - Whether hook-terr is enabled
+   - Whether `features.apiErrorRecovery.enabled` is enabled, plus its strategy, terminal, primary/fallback model commands, and timing window when present
    - Stop effective channels
    - `notifications.sound.enabled` and `notifications.sound.wavPath`
    - `notifications.windows_toast.enabled`, `notifications.popup.enabled`

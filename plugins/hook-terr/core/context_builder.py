@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Any, Dict, Optional, Tuple
 
@@ -22,6 +23,10 @@ def build_context(event_name: str, input_data: Dict[str, Any]) -> HookContext:
         agent_type=agent_type,
         user_prompt=input_data.get("user_prompt", ""),
         cwd=input_data.get("cwd") or os.getcwd(),
+        session_id=str(input_data.get("session_id", "")),
+        error=str(input_data.get("error", "")),
+        error_details=stringify(input_data.get("error_details", "")),
+        last_assistant_message=str(input_data.get("last_assistant_message", "")),
         raw_input=input_data,
     )
 
@@ -76,6 +81,17 @@ def path_has_segment(path: str, segment: str) -> bool:
     return segment in parts
 
 
+def stringify(value: Any) -> str:
+    if isinstance(value, str):
+        return value
+    if value is None:
+        return ""
+    try:
+        return json.dumps(value, ensure_ascii=False, sort_keys=True)
+    except (TypeError, ValueError):
+        return str(value)
+
+
 def get_field(context: HookContext, field: str) -> str:
     if field == "event":
         return context.hook_event_name
@@ -93,6 +109,14 @@ def get_field(context: HookContext, field: str) -> str:
         return context.user_prompt
     if field == "cwd":
         return context.cwd
+    if field == "session_id":
+        return context.session_id
+    if field == "error":
+        return context.error
+    if field == "error_details":
+        return context.error_details
+    if field == "last_assistant_message":
+        return context.last_assistant_message
     if field in context.tool_input:
         value = context.tool_input[field]
         return value if isinstance(value, str) else str(value)

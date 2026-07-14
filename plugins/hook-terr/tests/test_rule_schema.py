@@ -6,7 +6,7 @@ PLUGIN_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
-from core.schema import validate_rule
+from core.schema import validate_rule, validate_settings
 
 
 class RuleSchemaTests(unittest.TestCase):
@@ -87,6 +87,58 @@ class RuleSchemaTests(unittest.TestCase):
         errors = validate_rule(rule, "rule.json")
 
         self.assertIn("rule.json: condition 0 operator must be a string", errors)
+
+    def test_stop_failure_rule_event_is_allowed(self):
+        self.assertEqual(self.errors_for(event="StopFailure"), [])
+
+    def test_api_error_recovery_settings_are_allowed(self):
+        settings = {
+            "features": {
+                "apiErrorRecovery": {
+                    "enabled": True,
+                    "terminal": "wezterm",
+                    "strategy": "escalate_then_restore",
+                    "windowSeconds": 600,
+                    "restoreAfterSeconds": 600,
+                    "sendDelayMs": 800,
+                    "match": ["cybersecurity risk"],
+                    "primaryModelCommand": "/model opus",
+                    "fallbackModelCommand": "/model sonnet",
+                    "continueCommand": "continue",
+                    "maxEscalations": 1,
+                    "lockTimeoutSeconds": 30,
+                    "dedupeSeconds": 5,
+                    "requireSamePaneForRestore": True,
+                }
+            }
+        }
+
+        self.assertEqual(validate_settings(settings), [])
+
+    def test_api_error_recovery_rejects_invalid_settings(self):
+        settings = {
+            "features": {
+                "apiErrorRecovery": {
+                    "enabled": "yes",
+                    "terminal": "windows_terminal",
+                    "strategy": "always_switch",
+                    "windowSeconds": 0,
+                    "sendDelayMs": -1,
+                    "match": [1],
+                    "requireSamePaneForRestore": "true",
+                }
+            }
+        }
+
+        errors = validate_settings(settings)
+
+        self.assertIn("settings.features.apiErrorRecovery.enabled must be a boolean", errors)
+        self.assertIn("settings.features.apiErrorRecovery.terminal must be wezterm", errors)
+        self.assertIn("settings.features.apiErrorRecovery.strategy must be escalate_then_restore", errors)
+        self.assertIn("settings.features.apiErrorRecovery.windowSeconds must be a positive integer", errors)
+        self.assertIn("settings.features.apiErrorRecovery.sendDelayMs must be a non-negative number", errors)
+        self.assertIn("settings.features.apiErrorRecovery.match must contain only strings", errors)
+        self.assertIn("settings.features.apiErrorRecovery.requireSamePaneForRestore must be a boolean", errors)
 
 
 if __name__ == "__main__":

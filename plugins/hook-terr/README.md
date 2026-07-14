@@ -4,11 +4,12 @@
 
 ## 特性
 
-- 注册 `Stop`、`SubagentStop`、`PreToolUse`、`PostToolUse`、`UserPromptSubmit` 五类 hook 入口。
+- 注册 `Stop`、`StopFailure`、`SubagentStop`、`PreToolUse`、`PostToolUse`、`UserPromptSubmit` 六类 hook 入口。
 - 当主会话调用 `AskUserQuestion` 等待用户选择或输入时，复用 Stop 通知通道触发外部通知。
 - 内置普通 Stop 自检规则默认关闭，避免在多轮/自主推进中污染上下文；`SubagentStop` 默认关闭，避免子 agent 结束时弹提示音。
 - 规则可匹配 `is_subagent` 与 `agent_type`，用于区分主会话和子 agent。
 - 默认启用文档收尾提醒：项目内使用 `Write`、`Edit`、`MultiEdit` 或 `NotebookEdit` 修改文件后，首次 Stop 会提醒 Claude 更新相关文档并完成必要验证。
+- 可选 `apiErrorRecovery` 会在 WezTerm 中按 pane 精确恢复指定 API error：首次发送 `continue`，短时间再次失败时切到 fallback 模型并继续，正常 Stop 或超时后切回 primary 模型。
 - 支持插件内默认配置、用户全局覆盖和项目覆盖。
 - Stop 外部通知需要通过用户或项目规则显式启用，避免每次 Stop 都误触发；外部通知在 runtime 层只允许主会话 Stop 和主会话 `AskUserQuestion` 求助场景。
 - 支持 Windows tray 通知、提示音、结构化弹窗和高级自定义命令。
@@ -52,7 +53,7 @@ defaults/rules/*.json
 <project>/.claude/hook-terr/rules/*.json
 ```
 
-`presets/` 随插件分发，但不会自动加载；需要复制到全局或项目 settings 后才会生效。
+`presets/` 和 `examples/` 随插件分发，但不会自动加载；需要复制到全局或项目 settings 后才会生效。`examples/config.api-error-recovery.wezterm.example.json` 提供 WezTerm API error recovery 示例，建议先放到项目 `.claude/hook-terr/settings.json` 小范围启用。
 
 ## 默认行为
 
@@ -70,6 +71,28 @@ defaults/rules/*.json
 - 同一轮只提醒一次；再次 Stop 会放行。用户或项目 settings 可通过 `features.documentationReminder.enabled=false` 关闭。
 
 Windows notification 仍然可用，但不再由默认 Stop 自检规则触发。`/hook-terr:configure` 可以只保存 Stop 通知通道，也可以在用户确认后创建 explicit Stop notify rule。选择“立即生效”时，会创建 pure external explicit Stop notify rule；当主会话 Stop 未先被 documentationReminder 等 runtime feature 拦截并命中该 rule 时，会使用所选通道触发外部通知，但不会向 Claude 返回普通 Stop `systemMessage`。选择“仅保存通道”时，内置普通 `stop-notify` 仍保持关闭；但主会话 `AskUserQuestion` 求助场景会复用保存的 Stop 通道。通知进程会独立启动，hook 本身不会等待通知关闭。
+
+## API error recovery
+
+`features.apiErrorRecovery` 默认关闭。启用后，`StopFailure` 命中配置的错误文本时，会使用 `WEZTERM_PANE` 和 `wezterm cli send-text --pane-id ... --no-paste` 将恢复命令发回触发错误的 WezTerm pane。状态按 `session_id + pane_id` 隔离，并使用 per-session lock 与短时间去重，避免多个 Claude Code 会话或多个 WezTerm 标签页互相串线。
+
+默认策略是 `escalate_then_restore`：第一次命中发送 `continue`；在 `windowSeconds` 内再次命中时发送 `fallbackModelCommand` 后再发送 `continueCommand`；fallback active 后遇到正常 `Stop`，或后续 `Stop`/`UserPromptSubmit` 懒检测到超过 `restoreAfterSeconds`，会发送 `primaryModelCommand` 切回原模型。
+
+可用 `scopes.sessions` 和 `scopes.cwd` 控制每个会话或目录是否触发。项目级开关可写在 `<project>/.claude/hook-terr/settings.json`；全局启用但排除目录时可用 `scopes.cwd.disabledPrefixes`；临时禁用当前启动环境可设置 `HOOK_TERR_API_ERROR_RECOVERY=0`。
+
+启用示例：
+
+```json
+{
+  "features": {
+    "apiErrorRecovery": {
+      "enabled": true,
+      "primaryModelCommand": "/model opus",
+      "fallbackModelCommand": "/model sonnet"
+    }
+  }
+}
+```
 
 ## 通知通道
 
