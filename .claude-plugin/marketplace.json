@@ -82,7 +82,7 @@
         "path": "plugins/hook-terr"
       },
       "description": "Personal workflow hook runtime with configurable Stop notifications, API error recovery, and extensible hook rules.",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "author": { "name": "terrapin" },
       "repository": "https://github.com/shuiyu486/terr-marketplace",
       "license": "MIT",

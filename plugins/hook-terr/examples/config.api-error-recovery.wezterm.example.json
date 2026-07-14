@@ -13,8 +13,12 @@
         "cybersecurity risk"
       ],
       "primaryModelCommand": "/model opus",
+      "primaryConfirmCommand": "1",
       "fallbackModelCommand": "/model sonnet",
+      "fallbackConfirmCommand": "1",
       "continueCommand": "continue",
+      "modelSwitchConfirmDelayMs": 500,
+      "postModelSwitchDelayMs": 500,
       "maxEscalations": 1,
       "lockTimeoutSeconds": 30,
       "dedupeSeconds": 5,
@@ -26,10 +30,10 @@
           "disabled": []
         },
         "cwd": {
-          "default": false,
+          "default": true,
           "enabled": [],
           "disabled": [],
-          "enabledPrefixes": ["C:\\path\\to\\project"],
+          "enabledPrefixes": [],
           "disabledPrefixes": []
         }
       }

@@ -125,7 +125,7 @@ def validate_settings(settings: Any) -> List[str]:
                 terminal = recovery.get("terminal")
                 if terminal is not None and terminal != "wezterm":
                     errors.append("settings.features.apiErrorRecovery.terminal must be wezterm")
-                for key in ("primaryModelCommand", "fallbackModelCommand", "continueCommand"):
+                for key in ("primaryModelCommand", "fallbackModelCommand", "continueCommand", "primaryConfirmCommand", "fallbackConfirmCommand"):
                     value = recovery.get(key)
                     if value is not None and not isinstance(value, str):
                         errors.append(f"settings.features.apiErrorRecovery.{key} must be a string")
@@ -142,9 +142,10 @@ def validate_settings(settings: Any) -> List[str]:
                     value = recovery.get(key)
                     if value is not None and (not isinstance(value, int) or isinstance(value, bool) or value <= 0):
                         errors.append(f"settings.features.apiErrorRecovery.{key} must be a positive integer")
-                send_delay = recovery.get("sendDelayMs")
-                if send_delay is not None and (isinstance(send_delay, bool) or not isinstance(send_delay, (int, float)) or send_delay < 0):
-                    errors.append("settings.features.apiErrorRecovery.sendDelayMs must be a non-negative number")
+                for key in ("sendDelayMs", "modelSwitchConfirmDelayMs", "postModelSwitchDelayMs"):
+                    delay = recovery.get(key)
+                    if delay is not None and (isinstance(delay, bool) or not isinstance(delay, (int, float)) or delay < 0):
+                        errors.append(f"settings.features.apiErrorRecovery.{key} must be a non-negative number")
                 require_same_pane = recovery.get("requireSamePaneForRestore")
                 if require_same_pane is not None and not isinstance(require_same_pane, bool):
                     errors.append("settings.features.apiErrorRecovery.requireSamePaneForRestore must be a boolean")

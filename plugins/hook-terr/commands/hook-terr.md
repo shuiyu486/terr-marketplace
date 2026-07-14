@@ -37,4 +37,4 @@ python (Join-Path $pluginPath 'core\config_status.py')
    - Matched Stop rule id and decision
    - Diagnostics, if any
 
-4. End by saying: `运行 /hook-terr:configure 可以修改启用 notify 的 Stop 规则所使用的通知通道。`
+4. End by saying: `运行 /hook-terr:configure 可以修改启用 notify 的 Stop 规则所使用的通知通道；运行 /hook-terr:api-error-recovery 可以为当前目录配置 API error 自动恢复。`

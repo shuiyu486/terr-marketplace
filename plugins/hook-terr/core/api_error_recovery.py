@@ -46,7 +46,7 @@ def handle_api_error_recovery(event_name: str, context: HookContext, settings: D
         if not action:
             return {}, diagnostics
 
-        error = send_recovery_text(pane_id, action["text"], int(config.get("sendDelayMs", 800)), config)
+        error = send_recovery_steps(pane_id, action["steps"], int(config.get("sendDelayMs", 800)), config)
         if error:
             diagnostics.append(error)
             return {}, diagnostics
@@ -142,7 +142,7 @@ def plan_action(event_name: str, context: HookContext, config: Dict[str, Any], s
         if should_restore(event_name, config, state, pane_id, now):
             text = restore_text(config)
             if text and not is_duplicate_action(state, text, config, now):
-                return {"type": "restore_model", "text": text}, state, True
+                return {"type": "restore_model", "text": text, "steps": restore_steps(config)}, state, True
         return None, state, False
 
     if not matches_error(context, config):
@@ -155,7 +155,7 @@ def plan_action(event_name: str, context: HookContext, config: Dict[str, Any], s
             text = restore_text(config) + continue_text(config)
             next_state = first_failure_state(context, pane_id, session_key, now, text, error_text, "restore_model_continue")
             if not is_duplicate_action(state, text, config, now):
-                return {"type": "restore_model_continue", "text": text}, next_state, False
+                return {"type": "restore_model_continue", "text": text, "steps": restore_continue_steps(config)}, next_state, False
         return None, state, False
 
     window_seconds = int(config.get("windowSeconds", 600))
@@ -166,7 +166,7 @@ def plan_action(event_name: str, context: HookContext, config: Dict[str, Any], s
         text = continue_text(config)
         next_state = first_failure_state(context, pane_id, session_key, now, text, error_text, "continue")
         if not is_duplicate_action(state, text, config, now):
-            return {"type": "continue", "text": text}, next_state, False
+            return {"type": "continue", "text": text, "steps": continue_steps(config)}, next_state, False
         return None, state, False
 
     escalation_count = int(state.get("escalationCount", 0) or 0)
@@ -192,7 +192,7 @@ def plan_action(event_name: str, context: HookContext, config: Dict[str, Any], s
         }
     )
     if not is_duplicate_action(state, text, config, now):
-        return {"type": "switch_model_continue", "text": text}, next_state, False
+        return {"type": "switch_model_continue", "text": text, "steps": switch_model_continue_steps(config)}, next_state, False
     return None, state, False
 
 
@@ -259,15 +259,58 @@ def combined_error_text(context: HookContext) -> str:
 
 
 def continue_text(config: Dict[str, Any]) -> str:
-    return command_line(str(config.get("continueCommand", "continue")))
+    return steps_text(continue_steps(config))
 
 
 def switch_model_continue_text(config: Dict[str, Any]) -> str:
-    return command_line(str(config.get("fallbackModelCommand", "/model sonnet"))) + command_line(str(config.get("continueCommand", "continue")))
+    return steps_text(switch_model_continue_steps(config))
 
 
 def restore_text(config: Dict[str, Any]) -> str:
-    return command_line(str(config.get("primaryModelCommand", "/model opus")))
+    return steps_text(restore_steps(config))
+
+
+def continue_steps(config: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return text_steps(command_line(str(config.get("continueCommand", "continue"))))
+
+
+def switch_model_continue_steps(config: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return model_steps(config, "fallback") + continue_steps(config)
+
+
+def restore_steps(config: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return model_steps(config, "primary")
+
+
+def restore_continue_steps(config: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return restore_steps(config) + continue_steps(config)
+
+
+def model_steps(config: Dict[str, Any], kind: str) -> List[Dict[str, Any]]:
+    if kind == "fallback":
+        command = str(config.get("fallbackModelCommand", "/model sonnet"))
+        confirm = str(config.get("fallbackConfirmCommand", ""))
+    else:
+        command = str(config.get("primaryModelCommand", "/model opus"))
+        confirm = str(config.get("primaryConfirmCommand", ""))
+
+    steps: List[Dict[str, Any]] = []
+    command_text = command_line(command)
+    confirm_text = command_line(confirm)
+    if command_text:
+        delay = number_config(config, "modelSwitchConfirmDelayMs", 500) if confirm_text else number_config(config, "postModelSwitchDelayMs", 500)
+        steps.append({"text": command_text, "delayAfterMs": delay})
+    if confirm_text:
+        steps.append({"text": confirm_text, "delayAfterMs": number_config(config, "postModelSwitchDelayMs", 500)})
+    return steps
+
+
+def text_steps(text: str) -> List[Dict[str, Any]]:
+    return [{"text": text, "delayAfterMs": 0}] if text else []
+
+
+def steps_text(steps: List[Dict[str, Any]]) -> str:
+    return "".join(str(step.get("text", "")) for step in steps if isinstance(step, dict))
 
 
 def command_line(command: str) -> str:
@@ -275,16 +318,33 @@ def command_line(command: str) -> str:
     return f"{stripped}\r" if stripped else ""
 
 
-def send_recovery_text(pane_id: str, text: str, delay_ms: int, config: Dict[str, Any]) -> str:
+def number_config(config: Dict[str, Any], key: str, default: float) -> float:
+    value = config.get(key, default)
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0:
+        return default
+    return float(value)
+
+
+def send_recovery_steps(pane_id: str, steps: List[Dict[str, Any]], delay_ms: int, config: Dict[str, Any]) -> str:
     if str(config.get("terminal", "wezterm")) != "wezterm":
         return "apiErrorRecovery: 当前仅支持 terminal=wezterm"
     if not pane_id:
         return "apiErrorRecovery: WEZTERM_PANE is not set"
-    if not text:
-        return "apiErrorRecovery: recovery text is empty"
+    if not steps:
+        return "apiErrorRecovery: recovery steps are empty"
     if delay_ms > 0:
         time.sleep(delay_ms / 1000)
-    return send_text_to_wezterm(pane_id, text)
+    for step in steps:
+        text = str(step.get("text", "")) if isinstance(step, dict) else ""
+        if not text:
+            continue
+        error = send_text_to_wezterm(pane_id, text)
+        if error:
+            return error
+        delay_after_ms = number_config(step, "delayAfterMs", 0)
+        if delay_after_ms > 0:
+            time.sleep(delay_after_ms / 1000)
+    return ""
 
 
 def send_text_to_wezterm(pane_id: str, text: str) -> str:

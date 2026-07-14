@@ -32,6 +32,7 @@ settings 中的 Stop channels 是主会话 Stop 和主会话 `AskUserQuestion` �
 
 - `/hook-terr` 只读取并显示当前生效配置。
 - `/hook-terr:configure` 会先询问写入全局还是项目 settings，然后更新 Stop 通知通道。随后会询问是否创建/更新 explicit Stop notify rule：选择 `立即生效` 时写入对应 scope 的 `rules/stop.notify.explicit.json`；当主会话 Stop 未先被 documentationReminder 等 runtime feature 拦截并命中该 rule 时，会触发 pure external 外部通知，不返回普通 Stop `systemMessage`。选择 `仅保存通道` 时只修改 settings，内置默认 `stop-notify` 仍保持关闭且不会触发 Stop 外部通知；但 `AskUserQuestion` 求助通知会复用保存的 Stop 通道。选择 `sound` 时，会在目标 settings 层显式初始化 `notifications.sound.wavPath` 为 `C:\\Windows\\Media\\tada.wav`，除非该层已有自定义 wavPath。
+- `/hook-terr:api-error-recovery` 会交互式为当前目录启用、限制或禁用 `features.apiErrorRecovery`，可写项目或全局 settings，并支持配置 `/model` 切换确认输入 `1`。
 - `/hook-terr:sound` 可直接保存默认提示音，或打开外部 PowerShell picker 试听后，将所选 sound 提示音写入全局 settings。
 
 `/hook-terr:configure` settings 写入位置：
@@ -97,8 +98,12 @@ settings 中的 Stop channels 是主会话 Stop 和主会话 `AskUserQuestion` �
       "sendDelayMs": 800,
       "match": ["cybersecurity risk"],
       "primaryModelCommand": "/model opus",
+      "primaryConfirmCommand": "1",
       "fallbackModelCommand": "/model sonnet",
+      "fallbackConfirmCommand": "1",
       "continueCommand": "continue",
+      "modelSwitchConfirmDelayMs": 500,
+      "postModelSwitchDelayMs": 500,
       "maxEscalations": 1,
       "lockTimeoutSeconds": 30,
       "dedupeSeconds": 5,
@@ -121,6 +126,8 @@ settings 中的 Stop channels 是主会话 Stop 和主会话 `AskUserQuestion` �
 行为：第一次匹配 `StopFailure` 发送 `continueCommand`；`windowSeconds` 内再次匹配时发送 `fallbackModelCommand` 和 `continueCommand`；fallback active 后正常 `Stop` 或超时懒恢复发送 `primaryModelCommand`。状态存储在 `~/.claude/hook-terr/state/api-error-recovery/`，按 `session_id + WEZTERM_PANE` 隔离，多会话、多标签页不会共享恢复状态。
 
 `scopes` 可控制每个会话或目录是否启用。`sessions.enabled/disabled` 匹配 Claude Code `session_id`；`cwd.enabled/disabled` 精确匹配当前工作目录；`cwd.enabledPrefixes/disabledPrefixes` 匹配目录前缀。若需要某个项目默认启用，可把项目配置写到 `<project>/.claude/hook-terr/settings.json`；若全局开启但排除某些目录，可在全局 settings 的 `scopes.cwd.disabledPrefixes` 中加入对应路径。临时禁用当前启动环境可设置 `HOOK_TERR_API_ERROR_RECOVERY=0`。
+
+如果 Claude Code 的 `/model` 切换会弹 `Switch model?` 确认框，可设置 `primaryConfirmCommand` / `fallbackConfirmCommand` 为 `1`。runtime 会分步发送 `/model ...`、确认输入和 `continue`，并用 `modelSwitchConfirmDelayMs` 与 `postModelSwitchDelayMs` 控制延迟。`/model` 命令遵循当前 Claude Code 环境或自定义 API/gateway 的模型映射，`opus`、`sonnet` 不一定代表官方模型。
 
 ## custom_command 配置迁移
 

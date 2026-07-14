@@ -103,8 +103,12 @@ class RuleSchemaTests(unittest.TestCase):
                     "sendDelayMs": 800,
                     "match": ["cybersecurity risk"],
                     "primaryModelCommand": "/model opus",
+                    "primaryConfirmCommand": "1",
                     "fallbackModelCommand": "/model sonnet",
+                    "fallbackConfirmCommand": "1",
                     "continueCommand": "continue",
+                    "modelSwitchConfirmDelayMs": 500,
+                    "postModelSwitchDelayMs": 500,
                     "maxEscalations": 1,
                     "lockTimeoutSeconds": 30,
                     "dedupeSeconds": 5,
@@ -124,6 +128,8 @@ class RuleSchemaTests(unittest.TestCase):
                     "strategy": "always_switch",
                     "windowSeconds": 0,
                     "sendDelayMs": -1,
+                    "modelSwitchConfirmDelayMs": -1,
+                    "primaryConfirmCommand": [],
                     "match": [1],
                     "requireSamePaneForRestore": "true",
                 }
@@ -137,6 +143,8 @@ class RuleSchemaTests(unittest.TestCase):
         self.assertIn("settings.features.apiErrorRecovery.strategy must be escalate_then_restore", errors)
         self.assertIn("settings.features.apiErrorRecovery.windowSeconds must be a positive integer", errors)
         self.assertIn("settings.features.apiErrorRecovery.sendDelayMs must be a non-negative number", errors)
+        self.assertIn("settings.features.apiErrorRecovery.modelSwitchConfirmDelayMs must be a non-negative number", errors)
+        self.assertIn("settings.features.apiErrorRecovery.primaryConfirmCommand must be a string", errors)
         self.assertIn("settings.features.apiErrorRecovery.match must contain only strings", errors)
         self.assertIn("settings.features.apiErrorRecovery.requireSamePaneForRestore must be a boolean", errors)
 

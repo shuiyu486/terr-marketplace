@@ -20,8 +20,12 @@
         "cybersecurity risk"
       ],
       "primaryModelCommand": "/model opus",
+      "primaryConfirmCommand": "",
       "fallbackModelCommand": "/model sonnet",
+      "fallbackConfirmCommand": "",
       "continueCommand": "continue",
+      "modelSwitchConfirmDelayMs": 500,
+      "postModelSwitchDelayMs": 500,
       "maxEscalations": 1,
       "lockTimeoutSeconds": 30,
       "dedupeSeconds": 5,

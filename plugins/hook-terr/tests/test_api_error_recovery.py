@@ -27,7 +27,8 @@ class ApiErrorRecoveryTests(unittest.TestCase):
                 run("StopFailure", self.stop_failure_payload(cwd, "s1"))
 
             self.assertEqual(send_text.call_args_list[0].args, ("101", "continue\r"))
-            self.assertEqual(send_text.call_args_list[1].args, ("101", "/model sonnet\rcontinue\r"))
+            self.assertEqual(send_text.call_args_list[1].args, ("101", "/model sonnet\r"))
+            self.assertEqual(send_text.call_args_list[2].args, ("101", "continue\r"))
 
     def test_second_stop_failure_after_window_starts_new_continue_window(self):
         with self.project_env() as (home, cwd):
@@ -46,7 +47,33 @@ class ApiErrorRecoveryTests(unittest.TestCase):
                 run("StopFailure", self.stop_failure_payload(cwd, "s1"))
                 run("Stop", {"cwd": cwd, "session_id": "s1"})
 
-            self.assertEqual(send_text.call_args_list[2].args, ("101", "/model opus\r"))
+            self.assertEqual(send_text.call_args_list[3].args, ("101", "/model opus\r"))
+
+    def test_model_switch_can_send_confirmation_steps(self):
+        with self.project_env(
+            {
+                "features": {
+                    "apiErrorRecovery": {
+                        "enabled": True,
+                        "sendDelayMs": 0,
+                        "modelSwitchConfirmDelayMs": 0,
+                        "postModelSwitchDelayMs": 0,
+                        "primaryConfirmCommand": "1",
+                        "fallbackConfirmCommand": "1",
+                    }
+                }
+            }
+        ) as (home, cwd):
+            with self.recovery_patches("101", [1000, 1100, 1200]) as send_text:
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("Stop", {"cwd": cwd, "session_id": "s1"})
+
+            self.assertEqual(send_text.call_args_list[1].args, ("101", "/model sonnet\r"))
+            self.assertEqual(send_text.call_args_list[2].args, ("101", "1\r"))
+            self.assertEqual(send_text.call_args_list[3].args, ("101", "continue\r"))
+            self.assertEqual(send_text.call_args_list[4].args, ("101", "/model opus\r"))
+            self.assertEqual(send_text.call_args_list[5].args, ("101", "1\r"))
 
     def test_quick_second_stop_failure_switches_model(self):
         with self.project_env() as (home, cwd):
@@ -55,7 +82,8 @@ class ApiErrorRecoveryTests(unittest.TestCase):
                 run("StopFailure", self.stop_failure_payload(cwd, "s1"))
 
             self.assertEqual(send_text.call_args_list[0].args, ("101", "continue\r"))
-            self.assertEqual(send_text.call_args_list[1].args, ("101", "/model sonnet\rcontinue\r"))
+            self.assertEqual(send_text.call_args_list[1].args, ("101", "/model sonnet\r"))
+            self.assertEqual(send_text.call_args_list[2].args, ("101", "continue\r"))
 
     def test_duplicate_same_action_is_deduped(self):
         with self.project_env({"features": {"apiErrorRecovery": {"enabled": True, "sendDelayMs": 0, "windowSeconds": 1, "dedupeSeconds": 5}}}) as (home, cwd):
@@ -74,8 +102,9 @@ class ApiErrorRecoveryTests(unittest.TestCase):
                 run("Stop", {"cwd": cwd, "session_id": "s1"})
 
             self.assertEqual(send_text.call_args_list[0].args, ("101", "continue\r"))
-            self.assertEqual(send_text.call_args_list[1].args, ("101", "/model sonnet\rcontinue\r"))
-            self.assertEqual(send_text.call_args_list[2].args, ("101", "/model opus\r"))
+            self.assertEqual(send_text.call_args_list[1].args, ("101", "/model sonnet\r"))
+            self.assertEqual(send_text.call_args_list[2].args, ("101", "continue\r"))
+            self.assertEqual(send_text.call_args_list[3].args, ("101", "/model opus\r"))
 
     def test_expired_fallback_stop_failure_restores_and_continues(self):
         with self.project_env({"features": {"apiErrorRecovery": {"enabled": True, "sendDelayMs": 0, "windowSeconds": 100, "restoreAfterSeconds": 100}}}) as (home, cwd):
@@ -84,7 +113,8 @@ class ApiErrorRecoveryTests(unittest.TestCase):
                 run("StopFailure", self.stop_failure_payload(cwd, "s1"))
                 run("StopFailure", self.stop_failure_payload(cwd, "s1"))
 
-            self.assertEqual(send_text.call_args_list[2].args, ("101", "/model opus\rcontinue\r"))
+            self.assertEqual(send_text.call_args_list[3].args, ("101", "/model opus\r"))
+            self.assertEqual(send_text.call_args_list[4].args, ("101", "continue\r"))
 
     def test_stop_failure_event_disabled_skips_recovery(self):
         with self.project_env({"features": {"apiErrorRecovery": {"enabled": True, "sendDelayMs": 0}}, "events": {"StopFailure": {"enabled": False}}}) as (home, cwd):
@@ -107,7 +137,8 @@ class ApiErrorRecoveryTests(unittest.TestCase):
 
             self.assertEqual(send_text.call_args_list[0].args, ("101", "continue\r"))
             self.assertEqual(send_text.call_args_list[1].args, ("202", "continue\r"))
-            self.assertEqual(send_text.call_args_list[2].args, ("101", "/model sonnet\rcontinue\r"))
+            self.assertEqual(send_text.call_args_list[2].args, ("101", "/model sonnet\r"))
+            self.assertEqual(send_text.call_args_list[3].args, ("101", "continue\r"))
 
     def test_missing_wezterm_pane_skips_recovery(self):
         with self.project_env() as (home, cwd):
@@ -213,6 +244,8 @@ class ProjectEnv:
                     "primaryModelCommand": "/model opus",
                     "fallbackModelCommand": "/model sonnet",
                     "continueCommand": "continue",
+                    "modelSwitchConfirmDelayMs": 0,
+                    "postModelSwitchDelayMs": 0,
                 }
             }
         }
