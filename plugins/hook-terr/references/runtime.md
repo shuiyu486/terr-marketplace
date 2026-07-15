@@ -22,7 +22,7 @@
 
 `features.apiErrorRecovery` 默认关闭。启用后，`StopFailure` 命中 `match` 文本时会读取当前 hook 进程环境变量 `WEZTERM_PANE`，并通过 `wezterm cli send-text --pane-id <pane> --no-paste` 向触发错误的 pane 发送恢复命令。状态存储在 `~/.claude/hook-terr/state/api-error-recovery/`，key 由 `session_id + WEZTERM_PANE` 或 `transcript_path + WEZTERM_PANE + cwd` 计算，确保多个 Claude Code 会话和多个 WezTerm tab/pane 隔离。
 
-默认策略 `escalate_then_restore`：第一次 `StopFailure` 发送 `continueCommand`；`windowSeconds` 内再次失败时发送 `fallbackModelCommand` 加 `continueCommand`；fallback active 后遇到正常 `Stop`，或后续相关 hook 懒检测到超过 `restoreAfterSeconds`，发送 `primaryModelCommand`。同一 session/pane 使用 lock 目录串行化，并用 `dedupeSeconds` 避免重复输入。`match` 检查 `error`、`error_details`、`last_assistant_message` 和 `reason` 合并后的文本；默认只匹配 cyber risk 相关 API error。`modelSwitchConfirmMode=auto` 会在发送 `/model ...` 前后读取当前 pane 文本，只在新出现 `Switch model?` / `Yes, switch to` 时发送确认命令，避免未弹确认框时误输入 `1`。
+默认 `recoveryMode=continue_then_fallback`：第一次 `StopFailure` 发送 `continueCommand`；`windowSeconds` 内再次失败时发送 `fallbackModelCommand` 加 `continueCommand`。`continue_only` 会始终只继续，不切模型；`fallback_then_continue` 会第一次失败就发送 `fallbackModelCommand` 加 `continueCommand`。fallback active 后遇到正常 `Stop`，或后续相关 hook 懒检测到超过 `restoreAfterSeconds`，发送 `primaryModelCommand`。同一 session/pane 使用 lock 目录串行化，并用 `dedupeSeconds` 避免重复输入。`match` 检查 `error`、`error_details`、`last_assistant_message` 和 `reason` 合并后的文本；默认只匹配 cyber risk 相关 API error。`modelSwitchConfirmMode=auto` 会在发送 `/model ...` 前后读取当前 pane 文本，只在新出现 `Switch model?` / `Yes, switch to` 时发送确认命令，避免未弹确认框时误输入 `1`。
 
 ## 新增事件规则
 

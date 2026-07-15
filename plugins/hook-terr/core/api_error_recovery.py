@@ -15,7 +15,9 @@ DEFAULT_MATCH = [
 ]
 DEFAULT_MODEL_SWITCH_CONFIRM_COMMAND = "1"
 DEFAULT_MODEL_SWITCH_CONFIRM_MODE = "auto"
+DEFAULT_RECOVERY_MODE = "continue_then_fallback"
 MODEL_SWITCH_CONFIRM_MODES = {"auto", "always", "never"}
+RECOVERY_MODES = {"continue_only", "continue_then_fallback", "fallback_then_continue"}
 MODEL_SWITCH_CONFIRM_MARKERS = ("switch model?", "yes, switch to")
 
 
@@ -162,9 +164,20 @@ def plan_action(event_name: str, context: HookContext, config: Dict[str, Any], s
                 return {"type": "restore_model_continue", "text": text, "steps": restore_continue_steps(config)}, next_state, False
         return None, state, False
 
+    mode = recovery_mode(config)
+    if mode == "continue_only":
+        text = continue_text(config)
+        next_state = first_failure_state(context, pane_id, session_key, now, text, error_text, "continue")
+        if not is_duplicate_action(state, text, config, now):
+            return {"type": "continue", "text": text, "steps": continue_steps(config)}, next_state, False
+        return None, state, False
+
     window_seconds = int(config.get("windowSeconds", 600))
     first_failure_at = float(state.get("firstFailureAt", 0) or 0)
     within_window = bool(first_failure_at and now - first_failure_at <= window_seconds)
+
+    if mode == "fallback_then_continue":
+        return plan_switch_model_continue(context, config, state, pane_id, session_key, now, error_text, 0)
 
     if not state or not within_window:
         text = continue_text(config)
@@ -178,8 +191,21 @@ def plan_action(event_name: str, context: HookContext, config: Dict[str, Any], s
     if escalation_count >= max_escalations:
         return None, state, False
 
+    return plan_switch_model_continue(context, config, state, pane_id, session_key, now, error_text, escalation_count)
+
+
+def plan_switch_model_continue(
+    context: HookContext,
+    config: Dict[str, Any],
+    state: Dict[str, Any],
+    pane_id: str,
+    session_key: str,
+    now: float,
+    error_text: str,
+    escalation_count: int,
+):
     text = switch_model_continue_text(config)
-    next_state = dict(state)
+    next_state = dict(state) if state else base_state(context, pane_id, session_key, now)
     next_state.update(
         {
             "lastFailureAt": now,
@@ -195,9 +221,16 @@ def plan_action(event_name: str, context: HookContext, config: Dict[str, Any], s
             "paneId": pane_id,
         }
     )
+    if not state:
+        next_state["firstFailureAt"] = now
     if not is_duplicate_action(state, text, config, now):
         return {"type": "switch_model_continue", "text": text, "steps": switch_model_continue_steps(config)}, next_state, False
     return None, state, False
+
+
+def recovery_mode(config: Dict[str, Any]) -> str:
+    mode = str(config.get("recoveryMode", DEFAULT_RECOVERY_MODE)).strip().lower()
+    return mode if mode in RECOVERY_MODES else DEFAULT_RECOVERY_MODE
 
 
 def should_restore(event_name: str, config: Dict[str, Any], state: Dict[str, Any], pane_id: str, now: float) -> bool:

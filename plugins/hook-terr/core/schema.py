@@ -139,6 +139,11 @@ def validate_settings(settings: Any) -> List[str]:
                 confirm_mode = recovery.get("modelSwitchConfirmMode")
                 if confirm_mode is not None and confirm_mode not in ("auto", "always", "never"):
                     errors.append("settings.features.apiErrorRecovery.modelSwitchConfirmMode must be one of auto, always, never")
+                recovery_mode = recovery.get("recoveryMode")
+                if recovery_mode is not None and recovery_mode not in ("continue_only", "continue_then_fallback", "fallback_then_continue"):
+                    errors.append(
+                        "settings.features.apiErrorRecovery.recoveryMode must be one of continue_only, continue_then_fallback, fallback_then_continue"
+                    )
                 match = recovery.get("match")
                 if match is not None:
                     if not isinstance(match, list):

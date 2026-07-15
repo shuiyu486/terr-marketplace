@@ -14,6 +14,8 @@ DEFAULT_MATCH = [
 ]
 DEFAULT_MODEL_SWITCH_CONFIRM_MODE = "auto"
 DEFAULT_MODEL_SWITCH_CONFIRM_COMMAND = "1"
+DEFAULT_RECOVERY_MODE = "continue_then_fallback"
+RECOVERY_MODES = {"continue_only", "continue_then_fallback", "fallback_then_continue"}
 
 
 def settings_path(scope: str, cwd: str) -> str:
@@ -78,6 +80,7 @@ def write_api_error_recovery(
     confirm_model_switch: bool,
     match_texts: Optional[List[str]] = None,
     model_switch_confirm_mode: str = DEFAULT_MODEL_SWITCH_CONFIRM_MODE,
+    recovery_mode: str = DEFAULT_RECOVERY_MODE,
 ) -> str:
     target_scope = "project" if activation_mode == "project" else "global"
     if activation_mode == "disable-current-dir" and scope in ("global", "project"):
@@ -100,6 +103,7 @@ def write_api_error_recovery(
         recovery["fallbackModelCommand"] = fallback_model_command or DEFAULT_FALLBACK_MODEL_COMMAND
         recovery["continueCommand"] = "continue"
         recovery["match"] = clean_match_texts(match_texts) or DEFAULT_MATCH
+        recovery["recoveryMode"] = clean_recovery_mode(recovery_mode)
         recovery["modelSwitchConfirmMode"] = clean_confirm_mode(model_switch_confirm_mode)
         recovery["modelSwitchConfirmCommand"] = DEFAULT_MODEL_SWITCH_CONFIRM_COMMAND
         recovery["primaryConfirmCommand"] = "1" if confirm_model_switch else ""
@@ -152,6 +156,11 @@ def clean_confirm_mode(mode: str) -> str:
     if normalized in ("auto", "always", "never"):
         return normalized
     return DEFAULT_MODEL_SWITCH_CONFIRM_MODE
+
+
+def clean_recovery_mode(mode: str) -> str:
+    normalized = str(mode or DEFAULT_RECOVERY_MODE).strip().lower()
+    return normalized if normalized in RECOVERY_MODES else DEFAULT_RECOVERY_MODE
 
 
 def append_unique_path(config: Dict[str, Any], key: str, value: str) -> None:
@@ -223,6 +232,7 @@ def main():
     parser.add_argument("--fallback-model-command", default=DEFAULT_FALLBACK_MODEL_COMMAND)
     parser.add_argument("--confirm-model-switch", choices=("true", "false"), default="false")
     parser.add_argument("--model-switch-confirm-mode", choices=("auto", "always", "never"), default=DEFAULT_MODEL_SWITCH_CONFIRM_MODE)
+    parser.add_argument("--recovery-mode", choices=tuple(sorted(RECOVERY_MODES)), default=DEFAULT_RECOVERY_MODE)
     parser.add_argument("--match-text", action="append", help="StopFailure text to match; may be passed multiple times")
     args = parser.parse_args()
 
@@ -240,6 +250,7 @@ def main():
             args.confirm_model_switch == "true",
             args.match_text,
             args.model_switch_confirm_mode,
+            args.recovery_mode,
         )
     else:
         if not args.scope or args.channels is None:

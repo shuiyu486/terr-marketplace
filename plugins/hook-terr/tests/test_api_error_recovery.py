@@ -30,6 +30,24 @@ class ApiErrorRecoveryTests(unittest.TestCase):
             self.assertEqual(send_text.call_args_list[1].args, ("101", "/model sonnet\r"))
             self.assertEqual(send_text.call_args_list[2].args, ("101", "continue\r"))
 
+    def test_continue_only_never_switches_model(self):
+        with self.project_env({"features": {"apiErrorRecovery": {"enabled": True, "sendDelayMs": 0, "recoveryMode": "continue_only"}}}) as (home, cwd):
+            with self.recovery_patches("101", [1000, 1100]) as send_text:
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+
+            self.assertEqual(send_text.call_args_list[0].args, ("101", "continue\r"))
+            self.assertEqual(send_text.call_args_list[1].args, ("101", "continue\r"))
+            self.assertEqual(send_text.call_count, 2)
+
+    def test_fallback_then_continue_switches_model_on_first_failure(self):
+        with self.project_env({"features": {"apiErrorRecovery": {"enabled": True, "sendDelayMs": 0, "recoveryMode": "fallback_then_continue"}}}) as (home, cwd):
+            with self.recovery_patches("101", [1000]) as send_text:
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+
+            self.assertEqual(send_text.call_args_list[0].args, ("101", "/model sonnet\r"))
+            self.assertEqual(send_text.call_args_list[1].args, ("101", "continue\r"))
+
     def test_second_stop_failure_after_window_starts_new_continue_window(self):
         with self.project_env() as (home, cwd):
             with self.recovery_patches("101", [1000, 1701]) as send_text:
@@ -48,6 +66,14 @@ class ApiErrorRecoveryTests(unittest.TestCase):
                 run("Stop", {"cwd": cwd, "session_id": "s1"})
 
             self.assertEqual(send_text.call_args_list[3].args, ("101", "/model opus\r"))
+
+    def test_stop_restores_primary_model_after_immediate_fallback(self):
+        with self.project_env({"features": {"apiErrorRecovery": {"enabled": True, "sendDelayMs": 0, "recoveryMode": "fallback_then_continue"}}}) as (home, cwd):
+            with self.recovery_patches("101", [1000, 1200]) as send_text:
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("Stop", {"cwd": cwd, "session_id": "s1"})
+
+            self.assertEqual(send_text.call_args_list[2].args, ("101", "/model opus\r"))
 
     def test_model_switch_auto_sends_confirmation_when_prompt_visible(self):
         with self.project_env(

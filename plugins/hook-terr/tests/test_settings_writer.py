@@ -23,6 +23,7 @@ class SettingsWriterTests(unittest.TestCase):
             self.assertTrue(recovery["enabled"])
             self.assertEqual(recovery["primaryModelCommand"], "/model opus")
             self.assertEqual(recovery["fallbackModelCommand"], "/model sonnet")
+            self.assertEqual(recovery["recoveryMode"], "continue_then_fallback")
             self.assertEqual(recovery["modelSwitchConfirmMode"], "auto")
             self.assertEqual(recovery["modelSwitchConfirmCommand"], "1")
             self.assertEqual(recovery["primaryConfirmCommand"], "1")
@@ -58,8 +59,26 @@ class SettingsWriterTests(unittest.TestCase):
 
             recovery = self.read_json(path)["features"]["apiErrorRecovery"]
             self.assertEqual(recovery["match"], ["cybersecurity risk", "API Error: 400"])
+            self.assertEqual(recovery["recoveryMode"], "continue_then_fallback")
             self.assertEqual(recovery["modelSwitchConfirmMode"], "auto")
             self.assertEqual(recovery["modelSwitchConfirmCommand"], "1")
+
+    def test_api_error_recovery_writes_recovery_mode_override(self):
+        with self.env() as (home, cwd):
+            path = write_api_error_recovery(
+                "project",
+                cwd,
+                "project",
+                "/model opus",
+                "/model sonnet",
+                False,
+                None,
+                "auto",
+                "continue_only",
+            )
+
+            recovery = self.read_json(path)["features"]["apiErrorRecovery"]
+            self.assertEqual(recovery["recoveryMode"], "continue_only")
 
     def test_api_error_recovery_writes_confirm_mode_override(self):
         with self.env() as (home, cwd):

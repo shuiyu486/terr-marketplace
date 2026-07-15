@@ -15,6 +15,7 @@
       "primaryModelCommand": "/model opus",
       "fallbackModelCommand": "/model sonnet",
       "continueCommand": "continue",
+      "recoveryMode": "continue_then_fallback",
       "modelSwitchConfirmMode": "auto",
       "modelSwitchConfirmDelayMs": 500,
       "postModelSwitchDelayMs": 500,

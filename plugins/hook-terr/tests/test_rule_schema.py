@@ -107,6 +107,7 @@ class RuleSchemaTests(unittest.TestCase):
                     "fallbackModelCommand": "/model sonnet",
                     "fallbackConfirmCommand": "1",
                     "continueCommand": "continue",
+                    "recoveryMode": "continue_then_fallback",
                     "modelSwitchConfirmMode": "auto",
                     "modelSwitchConfirmCommand": "1",
                     "modelSwitchConfirmDelayMs": 500,
@@ -133,6 +134,7 @@ class RuleSchemaTests(unittest.TestCase):
                     "sendDelayMs": -1,
                     "modelSwitchConfirmDelayMs": -1,
                     "modelSwitchConfirmMode": "sometimes",
+                    "recoveryMode": "switch_sometimes",
                     "modelSwitchConfirmCommand": [],
                     "modelSwitchConfirmScanLines": 0,
                     "primaryConfirmCommand": [],
@@ -151,6 +153,10 @@ class RuleSchemaTests(unittest.TestCase):
         self.assertIn("settings.features.apiErrorRecovery.sendDelayMs must be a non-negative number", errors)
         self.assertIn("settings.features.apiErrorRecovery.modelSwitchConfirmDelayMs must be a non-negative number", errors)
         self.assertIn("settings.features.apiErrorRecovery.modelSwitchConfirmMode must be one of auto, always, never", errors)
+        self.assertIn(
+            "settings.features.apiErrorRecovery.recoveryMode must be one of continue_only, continue_then_fallback, fallback_then_continue",
+            errors,
+        )
         self.assertIn("settings.features.apiErrorRecovery.modelSwitchConfirmCommand must be a string", errors)
         self.assertIn("settings.features.apiErrorRecovery.modelSwitchConfirmScanLines must be a positive integer", errors)
         self.assertIn("settings.features.apiErrorRecovery.primaryConfirmCommand must be a string", errors)

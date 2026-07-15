@@ -100,6 +100,7 @@ settings 中的 Stop channels 是主会话 Stop 和主会话 `AskUserQuestion` �
       "primaryModelCommand": "/model opus",
       "fallbackModelCommand": "/model sonnet",
       "continueCommand": "continue",
+      "recoveryMode": "continue_then_fallback",
       "modelSwitchConfirmMode": "auto",
       "modelSwitchConfirmCommand": "1",
       "modelSwitchConfirmDelayMs": 500,
@@ -124,7 +125,7 @@ settings 中的 Stop channels 是主会话 Stop 和主会话 `AskUserQuestion` �
 }
 ```
 
-行为：第一次匹配 `StopFailure` 发送 `continueCommand`；`windowSeconds` 内再次匹配时发送 `fallbackModelCommand` 和 `continueCommand`；fallback active 后正常 `Stop` 或超时懒恢复发送 `primaryModelCommand`。`match` 会检查 `error`、`error_details`、`last_assistant_message` 和 `reason` 合并后的文本；默认只匹配 cyber risk 相关 API error，不会拦截所有 StopFailure。状态存储在 `~/.claude/hook-terr/state/api-error-recovery/`，按 `session_id + WEZTERM_PANE` 隔离，多会话、多标签页不会共享恢复状态。
+`recoveryMode` 控制遇到匹配 API error 时的恢复方式：`continue_only` 每次只发送 `continueCommand`；`continue_then_fallback` 第一次只继续，`windowSeconds` 默认 600 秒内再次失败才先换到备用模型再继续；`fallback_then_continue` 第一次失败就先换到备用模型再继续。换到备用模型后，正常 Stop 或超过 `restoreAfterSeconds` 默认 600 秒后有新动作时会发送 `primaryModelCommand` 切回原模型。`match` 会检查 `error`、`error_details`、`last_assistant_message` 和 `reason` 合并后的文本；默认只匹配 cyber risk 相关 API error，不会拦截所有 StopFailure。状态存储在 `~/.claude/hook-terr/state/api-error-recovery/`，按 `session_id + WEZTERM_PANE` 隔离，多会话、多标签页不会共享恢复状态。
 
 `scopes` 可控制每个会话或目录是否启用。`sessions.enabled/disabled` 匹配 Claude Code `session_id`；`cwd.enabled/disabled` 精确匹配当前工作目录；`cwd.enabledPrefixes/disabledPrefixes` 匹配目录前缀。若需要某个项目默认启用，可把项目配置写到 `<project>/.claude/hook-terr/settings.json`；若全局开启但排除某些目录，可在全局 settings 的 `scopes.cwd.disabledPrefixes` 中加入对应路径。临时禁用当前启动环境可设置 `HOOK_TERR_API_ERROR_RECOVERY=0`。
 

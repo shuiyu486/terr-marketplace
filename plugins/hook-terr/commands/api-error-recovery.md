@@ -43,7 +43,26 @@ Use `AskUserQuestion`:
 
 Recommend `当前项目启用` because api error recovery sends automatic input to the terminal.
 
-### 3. Ask model commands
+### 3. Ask recovery mode
+
+Use `AskUserQuestion`:
+
+- Question: `遇到匹配的 API error 后如何恢复？`
+- Header: `恢复方式`
+- Options:
+  1. `二次失败再切` — Recommended. 第一次只自动输入 `continue`；如果 10 分钟内又遇到同类 API error，就先换到备用模型，再自动输入 `continue`。本轮正常结束后，或切换超过 10 分钟后有新动作时，会切回原模型。
+  2. `只 continue` — 每次遇到匹配的 API error，只自动输入 `continue`，不切换模型。
+  3. `立即切模型` — 第一次遇到匹配的 API error，就先换到备用模型，再自动输入 `continue`。本轮正常结束后，或切换超过 10 分钟后有新动作时，会切回原模型。
+
+Map choices to:
+
+- `二次失败再切` -> `continue_then_fallback`
+- `只 continue` -> `continue_only`
+- `立即切模型` -> `fallback_then_continue`
+
+### 4. Ask model commands
+
+If selected recovery mode is `continue_only`, skip this question and use the default model commands; they will not be used by that mode.
 
 Explain:
 
@@ -56,14 +75,14 @@ Use `AskUserQuestion`:
 - Question: `恢复策略使用哪组 /model 命令？`
 - Header: `模型命令`
 - Options:
-  1. `opus → sonnet` — primary `/model opus`, fallback `/model sonnet`. Good for gateway setups where opus maps to GPT and sonnet maps to GLM.
-  2. `fable → sonnet` — primary `/model fable`, fallback `/model sonnet`.
-  3. `sonnet → opus` — primary `/model sonnet`, fallback `/model opus`.
+  1. `opus → sonnet` — 原模型 `/model opus`，备用模型 `/model sonnet`。适合 opus 映射到 GPT、sonnet 映射到 GLM 的 gateway 环境。
+  2. `fable → sonnet` — 原模型 `/model fable`，备用模型 `/model sonnet`。
+  3. `sonnet → opus` — 原模型 `/model sonnet`，备用模型 `/model opus`。
   4. `自定义` — Ask the user for exact `primaryModelCommand` and `fallbackModelCommand` before writing.
 
 If custom input is needed, ask only for full commands, e.g. `/model gpt-5.5[1m]` and `/model glm-5.2[1m]`.
 
-### 4. Ask error match text
+### 5. Ask error match text
 
 Explain:
 
@@ -81,7 +100,7 @@ Use `AskUserQuestion`:
 
 If custom input is needed, ask for substrings rather than regex. Example: `API Error: 400`, `upstream quota exceeded`.
 
-### 5. Write settings
+### 6. Write settings
 
 Map activation mode to one of:
 
@@ -121,13 +140,14 @@ python (Join-Path $pluginPath 'core\settings_writer.py') `
   --cwd $cwd `
   --primary-model-command '<primary command>' `
   --fallback-model-command '<fallback command>' `
+  --recovery-mode '<recovery-mode>' `
   --model-switch-confirm-mode 'auto' `
   @matchArgs
 ```
 
 Keep the path printed by `settings_writer.py`.
 
-### 6. Validate
+### 7. Validate
 
 Parse the written settings file:
 
@@ -151,9 +171,9 @@ $env:HOOK_TERR_CWD = $cwd
 python (Join-Path $pluginPath 'core\config_status.py')
 ```
 
-Check that `features.apiErrorRecovery.enabled`, model commands, `match`, and `modelSwitchConfirmMode` match the selected choices. For `禁用当前目录`, check that the current cwd is no longer effectively enabled; if project settings still override the global disable, rerun the write step with `--scope project`. If status diagnostics contain errors, report them and do not claim success.
+Check that `features.apiErrorRecovery.enabled`, `recoveryMode`, model commands, `match`, and `modelSwitchConfirmMode` match the selected choices. For `禁用当前目录`, check that the current cwd is no longer effectively enabled; if project settings still override the global disable, rerun the write step with `--scope project`. If status diagnostics contain errors, report them and do not claim success.
 
-### 7. Confirm
+### 8. Confirm
 
 Successful confirmation template:
 
@@ -161,10 +181,11 @@ Successful confirmation template:
 已更新 hook-terr API error recovery 配置。
 写入 settings: <path>
 启用范围: <activation mode>
-primary: <primaryModelCommand>
-fallback: <fallbackModelCommand>
+原模型: <primaryModelCommand>
+备用模型: <fallbackModelCommand>
+恢复方式: <只 continue / 二次失败再切 / 立即切模型>
 匹配文本: <match list>
 /model 确认: auto（检测到 Switch model? 才发送 1）
 
-当 Claude Code 在 WezTerm pane 内触发匹配的 StopFailure 时，首次会发送 continue；短时间再次失败会按配置切 fallback 模型、必要时自动确认后 continue；正常 Stop 或超时后会切回 primary 模型。
+当 Claude Code 在 WezTerm pane 内触发匹配的 StopFailure 时，会按选择的恢复方式自动输入 continue，必要时自动换到备用模型；本轮正常结束后，或切换超过 10 分钟后有新动作时，会切回原模型。
 ```
