@@ -32,7 +32,7 @@ settings 中的 Stop channels 是主会话 Stop 和主会话 `AskUserQuestion` �
 
 - `/hook-terr` 只读取并显示当前生效配置。
 - `/hook-terr:configure` 会先询问写入全局还是项目 settings，然后更新 Stop 通知通道。随后会询问是否创建/更新 explicit Stop notify rule：选择 `立即生效` 时写入对应 scope 的 `rules/stop.notify.explicit.json`；当主会话 Stop 未先被 documentationReminder 等 runtime feature 拦截并命中该 rule 时，会触发 pure external 外部通知，不返回普通 Stop `systemMessage`。选择 `仅保存通道` 时只修改 settings，内置默认 `stop-notify` 仍保持关闭且不会触发 Stop 外部通知；但 `AskUserQuestion` 求助通知会复用保存的 Stop 通道。选择 `sound` 时，会在目标 settings 层显式初始化 `notifications.sound.wavPath` 为 `C:\\Windows\\Media\\tada.wav`，除非该层已有自定义 wavPath。
-- `/hook-terr:api-error-recovery` 会交互式为当前目录启用、限制或禁用 `features.apiErrorRecovery`，可写项目或全局 settings，并支持配置 StopFailure 匹配文本；`/model` 切换确认默认自动检测。
+- `/hook-terr:api-error-recovery` 会交互式为当前目录开启、修改或关闭 `features.apiErrorRecovery`，写入当前目录的 `.claude/hook-terr/settings.json`，并支持配置恢复方式、StopFailure 匹配文本和模型命令；`/model` 切换确认默认自动检测。
 - `/hook-terr:sound` 可直接保存默认提示音，或打开外部 PowerShell picker 试听后，将所选 sound 提示音写入全局 settings。
 
 `/hook-terr:configure` settings 写入位置：
@@ -109,17 +109,7 @@ settings 中的 Stop channels 是主会话 Stop 和主会话 `AskUserQuestion` �
       "maxEscalations": 1,
       "lockTimeoutSeconds": 30,
       "dedupeSeconds": 5,
-      "requireSamePaneForRestore": true,
-      "scopes": {
-        "sessions": { "default": true, "enabled": [], "disabled": [] },
-        "cwd": {
-          "default": true,
-          "enabled": [],
-          "disabled": [],
-          "enabledPrefixes": [],
-          "disabledPrefixes": []
-        }
-      }
+      "requireSamePaneForRestore": true
     }
   }
 }
@@ -127,7 +117,7 @@ settings 中的 Stop channels 是主会话 Stop 和主会话 `AskUserQuestion` �
 
 `recoveryMode` 控制遇到匹配 API error 时的恢复方式：`continue_only` 每次只发送 `continueCommand`；`continue_then_fallback` 第一次只继续，`windowSeconds` 默认 600 秒内再次失败才先换到备用模型再继续；`fallback_then_continue` 第一次失败就先换到备用模型再继续。换到备用模型后，正常 Stop 或超过 `restoreAfterSeconds` 默认 600 秒后有新动作时会发送 `primaryModelCommand` 切回原模型。`match` 会检查 `error`、`error_details`、`last_assistant_message` 和 `reason` 合并后的文本；默认只匹配 cyber risk 相关 API error，不会拦截所有 StopFailure。状态存储在 `~/.claude/hook-terr/state/api-error-recovery/`，按 `session_id + WEZTERM_PANE` 隔离，多会话、多标签页不会共享恢复状态。
 
-`scopes` 可控制每个会话或目录是否启用。`sessions.enabled/disabled` 匹配 Claude Code `session_id`；`cwd.enabled/disabled` 精确匹配当前工作目录；`cwd.enabledPrefixes/disabledPrefixes` 匹配目录前缀。若需要某个项目默认启用，可把项目配置写到 `<project>/.claude/hook-terr/settings.json`；若全局开启但排除某些目录，可在全局 settings 的 `scopes.cwd.disabledPrefixes` 中加入对应路径。临时禁用当前启动环境可设置 `HOOK_TERR_API_ERROR_RECOVERY=0`。
+推荐运行 `/hook-terr:api-error-recovery` 给当前目录写入 `<current directory>/.claude/hook-terr/settings.json`；在不同目录分别运行，就能给每个目录保存不同恢复方式、模型和匹配文本，互不影响。关闭某个目录时，该命令也只改这个目录的 settings。底层仍保留 `scopes` 字段供手工高级配置使用；普通交互流程不会展示或要求配置这些高级字段。临时禁用当前启动环境可设置 `HOOK_TERR_API_ERROR_RECOVERY=0`。
 
 `modelSwitchConfirmMode` 支持 `auto`、`always`、`never`。默认 `auto` 会在发送 `/model ...` 后读取当前 WezTerm pane 的近几行文本，只有检测到 `Switch model?` / `Yes, switch to` 时才发送 `modelSwitchConfirmCommand`（默认 `1`）；`always` 保留旧式总是确认行为，`never` 永不发送确认。`modelSwitchConfirmDelayMs`、`postModelSwitchDelayMs` 和 `modelSwitchConfirmScanLines` 分别控制确认框等待、确认后等待和扫描行数。`primaryConfirmCommand` / `fallbackConfirmCommand` 仍兼容旧配置，但新配置建议使用统一的 `modelSwitchConfirmCommand`。`/model` 命令遵循当前 Claude Code 环境或自定义 API/gateway 的模型映射，`opus`、`sonnet` 不一定代表官方模型。
 

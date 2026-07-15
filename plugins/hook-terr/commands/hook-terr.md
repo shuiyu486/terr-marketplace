@@ -30,7 +30,7 @@ python (Join-Path $pluginPath 'core\config_status.py')
    - Current cwd
    - Existing settings/rule files
    - Whether hook-terr is enabled
-   - API error recovery status from `apiErrorRecoveryStatus`: whether it is globally enabled, whether it is effective for the current cwd, `recoveryModeLabel`/`recoveryMode`, cwd scope match reason (`cwdScope.matchedBy` and `matchedValue`), plus match text, original/backup model commands, model switch confirm mode, and timing windows when present
+   - API error recovery status from `apiErrorRecoveryStatus`: whether it is enabled in the loaded settings, whether it is effective for the current directory, `recoveryModeLabel`/`recoveryMode`, plus match text, original/backup model commands, model switch confirm mode, and timing windows when present. Only mention cwd scope internals (`cwdScope.matchedBy` and `matchedValue`) when they explain why the current directory is disabled.
    - Stop effective channels
    - `notifications.sound.enabled` and `notifications.sound.wavPath`
    - `notifications.windows_toast.enabled`, `notifications.popup.enabled`

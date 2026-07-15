@@ -23,21 +23,7 @@
       "maxEscalations": 1,
       "lockTimeoutSeconds": 30,
       "dedupeSeconds": 5,
-      "requireSamePaneForRestore": true,
-      "scopes": {
-        "sessions": {
-          "default": true,
-          "enabled": [],
-          "disabled": []
-        },
-        "cwd": {
-          "default": true,
-          "enabled": [],
-          "disabled": [],
-          "enabledPrefixes": [],
-          "disabledPrefixes": []
-        }
-      }
+      "requireSamePaneForRestore": true
     }
   }
 }

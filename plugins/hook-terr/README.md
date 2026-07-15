@@ -19,7 +19,7 @@
 
 - `/hook-terr` — 显示当前生效的 hook-terr 配置。
 - `/hook-terr:configure` — 交互式配置 Stop 通知通道，并可选择创建 explicit Stop notify rule 让配置立即生效；启用 `sound` 时会补齐默认提示音。
-- `/hook-terr:api-error-recovery` — 交互式为当前目录启用、禁用或限制 WezTerm API error recovery，并可配置 StopFailure 匹配文本；`/model` 切换确认默认自动检测。
+- `/hook-terr:api-error-recovery` — 交互式为当前目录开启、修改或关闭 WezTerm API error recovery；每个目录单独保存设置，互不影响。
 - `/hook-terr:sound` — 直接保存默认 sound 提示音，或打开外部 PowerShell picker 试听后保存全局偏好。
 
 ## 配置来源
@@ -79,7 +79,7 @@ Windows notification 仍然可用，但不再由默认 Stop 自检规则触发�
 
 默认恢复方式是 `continue_then_fallback`：第一次命中只发送 `continue`；如果 `windowSeconds` 默认 600 秒内再次命中，先发送 `fallbackModelCommand` 换到备用模型，再发送 `continueCommand`。也可配置 `continue_only` 让每次只继续，或 `fallback_then_continue` 让第一次失败就换到备用模型并继续。换到备用模型后，本轮正常结束，或超过 `restoreAfterSeconds` 默认 600 秒后有新动作时，会发送 `primaryModelCommand` 切回原模型。
 
-可用 `scopes.sessions` 和 `scopes.cwd` 控制每个会话或目录是否触发。项目级开关可写在 `<project>/.claude/hook-terr/settings.json`；全局启用但排除目录时可用 `scopes.cwd.disabledPrefixes`；临时禁用当前启动环境可设置 `HOOK_TERR_API_ERROR_RECOVERY=0`。`modelSwitchConfirmMode` 默认是 `auto`：runtime 会在发送 `/model ...` 后读取当前 WezTerm pane，只有检测到 `Switch model?` / `Yes, switch to` 确认框时才发送 `modelSwitchConfirmCommand`（默认 `1`），避免未弹框时把 `1` 当成普通用户输入；也可运行 `/hook-terr:api-error-recovery` 交互式配置匹配文本和启用范围。
+运行 `/hook-terr:api-error-recovery` 会给当前目录写入 `<current directory>/.claude/hook-terr/settings.json`；在不同目录分别运行，就能给每个目录保存不同恢复方式、模型和匹配文本，互不影响。临时禁用当前启动环境可设置 `HOOK_TERR_API_ERROR_RECOVERY=0`。`modelSwitchConfirmMode` 默认是 `auto`：runtime 会在发送 `/model ...` 后读取当前 WezTerm pane，只有检测到 `Switch model?` / `Yes, switch to` 确认框时才发送 `modelSwitchConfirmCommand`（默认 `1`），避免未弹框时把 `1` 当成普通用户输入。
 
 启用示例：
 

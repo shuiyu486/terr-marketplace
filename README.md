@@ -47,7 +47,7 @@ claude plugin marketplace add shuiyu486/terr-marketplace
 | `config-sync` | 1.3.0 | 终端配置双向同步+快速兼容检查（WezTerm, Nushell, Starship，5 个文件） |
 | `dm-api` | 1.0.0 | 大漠插件 API 文档查询（465 个函数，17 个分类） |
 | `hookify` | 1.0.1 | 从对话模式创建钩子规则，防止不期望的行为 |
-| `hook-terr` | 1.2.5 | 可扩展 Claude Code hook runtime，支持 Stop 通知通道与显式 notify 规则 |
+| `hook-terr` | 1.4.3 | 可扩展 Claude Code hook runtime，支持 Stop 通知、API error 自动恢复和显式 notify 规则 |
 | `skill-creator` | 1.0.0 | Skill 全生命周期管理（创建、修改、评估、优化触发） |
 | `skills2ccPlugin` | 1.0.1 | 将 skill 转换为 terr-marketplace 可安装插件并发布 |
 
