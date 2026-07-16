@@ -10,7 +10,7 @@ def build_context(event_name: str, input_data: Dict[str, Any]) -> HookContext:
     if not isinstance(tool_input, dict):
         tool_input = {}
 
-    transcript_path = str(input_data.get("transcript_path", ""))
+    transcript_path = optional_string(input_data.get("transcript_path"))
     is_subagent, agent_type = derive_agent_fields(event_name, input_data, transcript_path)
 
     return HookContext(
@@ -23,7 +23,7 @@ def build_context(event_name: str, input_data: Dict[str, Any]) -> HookContext:
         agent_type=agent_type,
         user_prompt=input_data.get("user_prompt", ""),
         cwd=input_data.get("cwd") or os.getcwd(),
-        session_id=str(input_data.get("session_id", "")),
+        session_id=optional_string(input_data.get("session_id")),
         error=str(input_data.get("error", "")),
         error_details=stringify(input_data.get("error_details", "")),
         last_assistant_message=str(input_data.get("last_assistant_message", "")),
@@ -37,20 +37,12 @@ def derive_agent_fields(event_name: str, input_data: Dict[str, Any], transcript_
 
     explicit_is_subagent = coerce_bool(input_data.get("is_subagent"))
     explicit_agent_type = normalize_agent_type(input_data.get("agent_type"))
-
-    if explicit_is_subagent is not None:
-        return explicit_is_subagent, "subagent" if explicit_is_subagent else "main"
-    if explicit_agent_type:
-        return explicit_agent_type == "subagent", explicit_agent_type
-
     is_sidechain = coerce_bool(input_data.get("isSidechain"))
-    if is_sidechain is not None:
-        return is_sidechain, "subagent" if is_sidechain else "main"
-    agent_id = input_data.get("agentId")
-    if isinstance(agent_id, str) and agent_id.strip():
-        return True, "subagent"
+    agent_id = optional_string(input_data.get("agent_id") or input_data.get("agentId"))
 
-    if path_has_segment(transcript_path, "subagents"):
+    if explicit_is_subagent is True or explicit_agent_type == "subagent" or is_sidechain is True:
+        return True, "subagent"
+    if agent_id or path_has_segment(transcript_path, "subagents"):
         return True, "subagent"
     return False, "main"
 
@@ -79,6 +71,12 @@ def path_has_segment(path: str, segment: str) -> bool:
         return False
     parts = [part for part in path.replace("\\", "/").split("/") if part]
     return segment in parts
+
+
+def optional_string(value: Any) -> str:
+    if value is None:
+        return ""
+    return str(value).strip()
 
 
 def stringify(value: Any) -> str:

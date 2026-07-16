@@ -75,6 +75,117 @@ class ApiErrorRecoveryTests(unittest.TestCase):
 
             self.assertEqual(send_text.call_args_list[2].args, ("101", "/model opus\r"))
 
+    def test_stop_restore_runs_before_documentation_reminder_block(self):
+        with self.project_env() as (home, cwd):
+            with open(os.path.join(cwd, "README.md"), "w", encoding="utf-8") as handle:
+                handle.write("# project\n")
+            with self.recovery_patches("101", [1000, 1100, 1101, 1102]) as send_text:
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run(
+                    "PostToolUse",
+                    {
+                        "cwd": cwd,
+                        "session_id": "s1",
+                        "tool_name": "Write",
+                        "tool_input": {"file_path": os.path.join(cwd, "app.py")},
+                    },
+                )
+                response = run("Stop", {"cwd": cwd, "session_id": "s1"})
+
+            self.assertEqual(send_text.call_args_list[3].args, ("101", "/model opus\r"))
+            self.assertEqual(response.get("decision"), "block")
+
+    def test_stop_event_disabled_still_restores_primary_model(self):
+        with self.project_env({"features": {"apiErrorRecovery": {"enabled": True, "sendDelayMs": 0}}, "events": {"Stop": {"enabled": False}}}) as (home, cwd):
+            with self.recovery_patches("101", [1000, 1100, 1200]) as send_text:
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("Stop", {"cwd": cwd, "session_id": "s1"})
+
+            self.assertEqual(send_text.call_args_list[3].args, ("101", "/model opus\r"))
+
+    def test_pre_tool_use_restores_primary_model_after_timeout(self):
+        with self.project_env() as (home, cwd):
+            with self.recovery_patches("101", [1000, 1100, 1801]) as send_text:
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("PreToolUse", {"cwd": cwd, "session_id": "s1", "tool_name": "Read", "tool_input": {"file_path": os.path.join(cwd, "app.py")}})
+                run("PostToolUse", {"cwd": cwd, "session_id": "s1", "tool_name": "Read", "tool_input": {"file_path": os.path.join(cwd, "app.py")}})
+
+            self.assertEqual(send_text.call_args_list[3].args, ("101", "/model opus\r"))
+            self.assertEqual(send_text.call_count, 4)
+
+    def test_subagent_tool_event_does_not_restore_primary_model(self):
+        with self.project_env() as (home, cwd):
+            with self.recovery_patches("101", [1000, 1100]) as send_text:
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run(
+                    "PreToolUse",
+                    {
+                        "cwd": cwd,
+                        "session_id": "s1",
+                        "is_subagent": True,
+                        "tool_name": "Read",
+                        "tool_input": {"file_path": os.path.join(cwd, "app.py")},
+                    },
+                )
+
+            self.assertEqual(send_text.call_count, 3)
+
+    def test_subagent_stop_failure_does_not_send_or_create_state(self):
+        with self.project_env() as (home, cwd):
+            payload = self.stop_failure_payload(cwd, "s1")
+            payload.update(
+                {
+                    "agent_id": "agent-123",
+                    "agent_type": "Explore",
+                    "transcript_path": os.path.join(home, "agent-123.jsonl"),
+                }
+            )
+            with self.recovery_patches("101", []) as send_text:
+                run("StopFailure", payload)
+
+            send_text.assert_not_called()
+            state_dir = os.path.join(home, ".claude", "hook-terr", "state", "api-error-recovery")
+            self.assertFalse(os.path.exists(state_dir))
+
+    def test_subagent_stop_failure_cannot_advance_main_session_state(self):
+        with self.project_env() as (home, cwd):
+            subagent_payload = self.stop_failure_payload(cwd, "s1")
+            subagent_payload.update(
+                {
+                    "agent_id": "agent-123",
+                    "agent_type": "Explore",
+                    "transcript_path": os.path.join(home, "agent-123.jsonl"),
+                }
+            )
+            with self.recovery_patches("101", [1000, 1100]) as send_text:
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("StopFailure", subagent_payload)
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+
+            self.assertEqual(send_text.call_args_list[0].args, ("101", "continue\r"))
+            self.assertEqual(send_text.call_args_list[1].args, ("101", "/model sonnet\r"))
+            self.assertEqual(send_text.call_args_list[2].args, ("101", "continue\r"))
+            self.assertEqual(send_text.call_count, 3)
+
+    def test_failed_restore_keeps_state_for_next_checkpoint(self):
+        with self.project_env() as (home, cwd):
+            with patch.dict(os.environ, {"WEZTERM_PANE": "101"}, clear=False), patch(
+                "core.api_error_recovery.send_text_to_wezterm", side_effect=["", "", "", "apiErrorRecovery: boom", ""]
+            ) as send_text, patch("core.api_error_recovery.get_wezterm_pane_text", return_value=("", "")), patch(
+                "core.api_error_recovery.now_seconds", side_effect=[1000, 1100, 1200, 1300]
+            ):
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("Stop", {"cwd": cwd, "session_id": "s1"})
+                run("Stop", {"cwd": cwd, "session_id": "s1"})
+
+            self.assertEqual(send_text.call_args_list[3].args, ("101", "/model opus\r"))
+            self.assertEqual(send_text.call_args_list[4].args, ("101", "/model opus\r"))
+
     def test_model_switch_auto_sends_confirmation_when_prompt_visible(self):
         with self.project_env(
             {
@@ -193,6 +304,19 @@ class ApiErrorRecoveryTests(unittest.TestCase):
 
             self.assertEqual(send_text.call_args_list[3].args, ("101", "/model opus\r"))
             self.assertEqual(send_text.call_args_list[4].args, ("101", "continue\r"))
+
+    def test_expired_fallback_non_matching_stop_failure_restores_without_continue(self):
+        with self.project_env({"features": {"apiErrorRecovery": {"enabled": True, "sendDelayMs": 0, "windowSeconds": 100, "restoreAfterSeconds": 100}}}) as (home, cwd):
+            non_matching = self.stop_failure_payload(cwd, "s1")
+            non_matching["error_details"] = "temporary upstream failure"
+            with self.recovery_patches("101", [1000, 1010, 1120]) as send_text:
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("StopFailure", non_matching)
+                run("Stop", {"cwd": cwd, "session_id": "s1"})
+
+            self.assertEqual(send_text.call_args_list[3].args, ("101", "/model opus\r"))
+            self.assertEqual(send_text.call_count, 4)
 
     def test_stop_failure_event_disabled_skips_recovery(self):
         with self.project_env({"features": {"apiErrorRecovery": {"enabled": True, "sendDelayMs": 0}}, "events": {"StopFailure": {"enabled": False}}}) as (home, cwd):

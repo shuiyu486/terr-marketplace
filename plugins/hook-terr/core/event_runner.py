@@ -30,6 +30,14 @@ def run(event_name: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
             warn(f"hook-terr api error recovery: {diagnostic}")
         if recovery_response:
             return recovery_response
+
+    if should_check_api_error_recovery(event_name, context):
+        recovery_response, recovery_diagnostics = handle_api_error_recovery(event_name, context, settings)
+        for diagnostic in recovery_diagnostics:
+            warn(f"hook-terr api error recovery: {diagnostic}")
+        if recovery_response:
+            return recovery_response
+
     if not event_enabled and not assistance_request:
         return {}
 
@@ -38,13 +46,6 @@ def run(event_name: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
         warn(f"hook-terr documentation reminder: {diagnostic}")
     if feature_response:
         return feature_response
-
-    if event_name in ("Stop", "UserPromptSubmit"):
-        recovery_response, recovery_diagnostics = handle_api_error_recovery(event_name, context, settings)
-        for diagnostic in recovery_diagnostics:
-            warn(f"hook-terr api error recovery: {diagnostic}")
-        if recovery_response:
-            return recovery_response
 
     rule = find_match(event_name, context, rules) if event_enabled else None
     if not rule:
@@ -68,6 +69,12 @@ def run(event_name: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
     if response:
         return response
     return diagnostic_response(response_diagnostics)
+
+
+def should_check_api_error_recovery(event_name: str, context) -> bool:
+    if context.is_subagent:
+        return False
+    return event_name in ("Stop", "UserPromptSubmit", "PreToolUse", "PostToolUse")
 
 
 def notify_assistance(context, settings) -> None:

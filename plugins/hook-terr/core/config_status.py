@@ -15,6 +15,9 @@ from core.rule_matcher import find_match
 from core.utf8 import configure_stdio
 
 
+PLUGIN_METADATA_PATH = os.path.join(PLUGIN_ROOT, ".claude-plugin", "plugin.json")
+
+
 def build_status(cwd: str) -> Dict[str, Any]:
     settings, rules, diagnostics = load_configuration(cwd)
     context = build_context("Stop", {"cwd": cwd, "reason": "status"})
@@ -24,6 +27,7 @@ def build_status(cwd: str) -> Dict[str, Any]:
     return {
         "cwd": cwd,
         "pluginRoot": root,
+        "pluginVersion": plugin_version(root),
         "settingsFiles": existing_paths(settings_paths(root, cwd)),
         "ruleFiles": existing_paths(rule_paths(root, cwd)),
         "enabled": settings.get("enabled", True),
@@ -104,6 +108,17 @@ def resolve_stop_channels(settings: Dict[str, Any], rule: Rule) -> List[str]:
 
 def existing_paths(paths: List[str]) -> List[str]:
     return [path for path in paths if os.path.exists(path)]
+
+
+def plugin_version(root: str) -> str:
+    path = os.path.join(root, ".claude-plugin", "plugin.json") if root else PLUGIN_METADATA_PATH
+    try:
+        with open(path, "r", encoding="utf-8-sig") as handle:
+            metadata = json.load(handle)
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return ""
+    version = metadata.get("version") if isinstance(metadata, dict) else ""
+    return str(version).strip() if version is not None else ""
 
 
 def rule_to_dict(rule: Rule):

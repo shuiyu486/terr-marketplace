@@ -48,9 +48,9 @@ Use `AskUserQuestion`:
 - Question: `遇到匹配的 API error 后如何恢复？`
 - Header: `恢复方式`
 - Options:
-  1. `二次失败再切` — Recommended. 第一次只自动输入 `continue`；如果 10 分钟内又遇到同类 API error，就先换到备用模型，再自动输入 `continue`。本轮正常结束后，或切换超过 10 分钟后有新动作时，会切回原模型。
+  1. `二次失败再切` — Recommended. 第一次只自动输入 `continue`；如果 10 分钟内又遇到同类 API error，就先换到备用模型，再自动输入 `continue`。本轮正常结束后会优先切回原模型；如果长回合暂时没有 Stop，切换超过 10 分钟后的主会话工具/提示/失败检查点也会尝试切回。
   2. `只 continue` — 每次遇到匹配的 API error，只自动输入 `continue`，不切换模型。
-  3. `立即切模型` — 第一次遇到匹配的 API error，就先换到备用模型，再自动输入 `continue`。本轮正常结束后，或切换超过 10 分钟后有新动作时，会切回原模型。
+  3. `立即切模型` — 第一次遇到匹配的 API error，就先换到备用模型，再自动输入 `continue`。本轮正常结束后会优先切回原模型；如果长回合暂时没有 Stop，切换超过 10 分钟后的主会话工具/提示/失败检查点也会尝试切回。
 
 Map choices to:
 

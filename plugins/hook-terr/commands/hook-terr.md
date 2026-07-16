@@ -26,7 +26,7 @@ python (Join-Path $pluginPath 'core\config_status.py')
 ```
 
 3. Summarize the JSON for the user in Chinese:
-   - Plugin root
+   - Loaded plugin version (`pluginVersion`) and plugin root (`pluginRoot`). Explain that the path identifies the version currently loaded by this session.
    - Current cwd
    - Existing settings/rule files
    - Whether hook-terr is enabled
@@ -37,4 +37,4 @@ python (Join-Path $pluginPath 'core\config_status.py')
    - Matched Stop rule id and decision
    - Diagnostics, if any
 
-4. End by saying: `运行 /hook-terr:configure 可以修改启用 notify 的 Stop 规则所使用的通知通道；运行 /hook-terr:api-error-recovery 可以为当前目录配置 API error 自动恢复。`
+4. End by saying: `运行 /hook-terr:configure 可以修改启用 notify 的 Stop 规则所使用的通知通道；运行 /hook-terr:api-error-recovery 可以为当前目录配置 API error 自动恢复。获取新版请先运行 /plugin marketplace update terr-marketplace，再通过 /plugin 更新 hook-terr；更新后运行 /reload-plugins 或重启 Claude Code，并再次运行 /hook-terr 核对 pluginVersion 和 pluginRoot。`

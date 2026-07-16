@@ -237,6 +237,42 @@ class StopNotificationPolicyTests(unittest.TestCase):
             self.assertEqual(response, {"systemMessage": "explicit notify"})
             send_notification.assert_not_called()
 
+    def test_official_agent_id_stop_does_not_notify_subagent(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            rules_dir = os.path.join(home, ".claude", "hook-terr", "rules")
+            os.makedirs(rules_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(rules_dir, "always-notify.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "version": 1,
+                        "id": "always-notify",
+                        "enabled": True,
+                        "event": "Stop",
+                        "priority": 200,
+                        "decision": "warn",
+                        "when": [],
+                        "message": {"text": "explicit notify"},
+                        "notify": {"enabled": True, "channels": ["sound"], "title": "title", "text": "text"},
+                    },
+                    handle,
+                )
+
+            with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
+                response = run(
+                    "Stop",
+                    {
+                        "cwd": cwd,
+                        "agent_id": "agent-123",
+                        "agent_type": "Explore",
+                        "transcript_path": os.path.join(home, "agent-123.jsonl"),
+                    },
+                )
+
+            self.assertEqual(response, {"systemMessage": "explicit notify"})
+            send_notification.assert_not_called()
+
     def test_overbroad_post_tool_notify_rule_does_not_notify_regular_tool(self):
         with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
             cwd = os.path.join(home, "project")
@@ -316,6 +352,25 @@ class StopNotificationPolicyTests(unittest.TestCase):
 
             with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
                 response = run("PreToolUse", {"cwd": cwd, "tool_name": "AskUserQuestion", "isSidechain": True})
+
+            self.assertEqual(response, {})
+            send_notification.assert_not_called()
+
+    def test_ask_user_question_with_official_agent_id_does_not_notify_subagent(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            os.makedirs(cwd)
+
+            with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
+                response = run(
+                    "PreToolUse",
+                    {
+                        "cwd": cwd,
+                        "tool_name": "AskUserQuestion",
+                        "agent_id": "agent-123",
+                        "agent_type": "Explore",
+                    },
+                )
 
             self.assertEqual(response, {})
             send_notification.assert_not_called()

@@ -15,24 +15,34 @@ def send(title: str, message: str, context: HookContext, config: Dict[str, Any])
     safe_message = ps_quote(message)
     timeout_ms = int(config.get("timeoutMs", 5000))
     visible_ms = min(max(timeout_ms, 5000), 30000)
+    silent = bool(config.get("silent", True))
+    audio_xml = '<audio silent="true"/>' if silent else ""
+    silent_ps = "$true" if silent else "$false"
     script = f"""
 $ErrorActionPreference = 'Stop'
 $scriptPath = $MyInvocation.MyCommand.Path
 $debugLog = $env:HOOK_TERR_WINDOWS_TOAST_LOG
 $toastTitle = [System.Security.SecurityElement]::Escape({safe_title})
 $toastMessage = [System.Security.SecurityElement]::Escape({safe_message})
+$silent = {silent_ps}
+$winrtShown = $false
 try {{
     [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
     [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] > $null
-    $template = "<toast><visual><binding template=`"ToastGeneric`"><text>$toastTitle</text><text>$toastMessage</text></binding></visual></toast>"
+    $template = "<toast><visual><binding template=`"ToastGeneric`"><text>$toastTitle</text><text>$toastMessage</text></binding></visual>{audio_xml}</toast>"
     $xml = New-Object Windows.Data.Xml.Dom.XmlDocument
     $xml.LoadXml($template)
     $toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
     $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Windows PowerShell')
     $notifier.Show($toast)
+    $winrtShown = $true
     if ($debugLog) {{ Add-Content -Path $debugLog -Encoding UTF8 -Value "$(Get-Date -Format o) WinRT shown" }}
 }} catch {{
-    Write-Error $_
+    if ($debugLog) {{ Add-Content -Path $debugLog -Encoding UTF8 -Value "$(Get-Date -Format o) WinRT failed: $($_.Exception.Message)" }}
+}}
+if ($winrtShown -or $silent) {{
+    Remove-Item $scriptPath -Force -ErrorAction SilentlyContinue
+    exit 0
 }}
 try {{
     Add-Type -AssemblyName System.Windows.Forms
@@ -63,7 +73,7 @@ try {{
     if ($debugLog) {{ Add-Content -Path $debugLog -Encoding UTF8 -Value "$(Get-Date -Format o) NotifyIcon shown" }}
     [System.Windows.Forms.Application]::Run($context)
 }} catch {{
-    Write-Error $_
+    if ($debugLog) {{ Add-Content -Path $debugLog -Encoding UTF8 -Value "$(Get-Date -Format o) NotifyIcon failed: $($_.Exception.Message)" }}
     Remove-Item $scriptPath -Force -ErrorAction SilentlyContinue
 }}
 """

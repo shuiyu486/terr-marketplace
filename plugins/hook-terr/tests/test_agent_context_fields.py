@@ -48,6 +48,24 @@ class AgentContextFieldsTests(unittest.TestCase):
         self.assertEqual(get_field(context, "is_subagent"), "true")
         self.assertEqual(get_field(context, "agent_type"), "subagent")
 
+    def test_snake_case_agent_id_payload_field(self):
+        context = build_context("Stop", {"agent_id": "abc123", "agent_type": "Explore"})
+
+        self.assertEqual(get_field(context, "is_subagent"), "true")
+        self.assertEqual(get_field(context, "agent_type"), "subagent")
+
+    def test_subagent_evidence_overrides_explicit_false(self):
+        context = build_context("Stop", {"is_subagent": False, "agent_id": "abc123"})
+
+        self.assertEqual(get_field(context, "is_subagent"), "true")
+        self.assertEqual(get_field(context, "agent_type"), "subagent")
+
+    def test_null_session_and_transcript_are_empty(self):
+        context = build_context("Stop", {"session_id": None, "transcript_path": None})
+
+        self.assertEqual(context.session_id, "")
+        self.assertEqual(context.transcript_path, "")
+
     def test_windows_transcript_path_subagents_segment_fallback(self):
         context = build_context("Stop", {"transcript_path": r"C:\Users\u\.claude\projects\p\subagents\agent.jsonl"})
 

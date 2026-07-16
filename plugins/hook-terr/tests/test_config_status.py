@@ -8,10 +8,17 @@ PLUGIN_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
-from core.config_status import api_error_recovery_status
+from core.config_status import api_error_recovery_status, build_status
 
 
 class ConfigStatusTests(unittest.TestCase):
+    def test_build_status_reports_loaded_plugin_version_and_root(self):
+        with self.env() as cwd:
+            status = build_status(cwd)
+
+            self.assertEqual(status["pluginVersion"], "1.4.4")
+            self.assertEqual(os.path.normcase(status["pluginRoot"]), os.path.normcase(PLUGIN_ROOT))
+
     def test_api_error_recovery_status_reports_recovery_mode_label(self):
         with self.env() as cwd:
             settings = {

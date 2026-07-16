@@ -8,7 +8,7 @@
 2. `hooks/*.py` 读取 stdin JSON，并调用 `core.event_runner.run(event, input_data)`。
 3. `context_builder` 将原始 payload 规范化为 `HookContext`，并推导 `is_subagent` 与 `agent_type` 规则字段。
 4. `config_loader` 加载 settings 和 rules。
-5. `api_error_recovery` 在启用时处理 `StopFailure` API error 恢复，并在正常 `Stop` 或超时后恢复模型；它只做 WezTerm pane 定向输入副作用，不依赖 hook 输出控制 Claude。
+5. `api_error_recovery` 在启用时处理 `StopFailure` API error 恢复，并在正常 `Stop` 或超时后的主会话检查点恢复模型；它只做 WezTerm pane 定向输入副作用，不依赖 hook 输出控制 Claude。
 6. `documentation_reminder` 在启用时处理项目修改后的文档收尾提醒：`PostToolUse` 记录项目文件修改，`Stop` 首次返回 block，`UserPromptSubmit` 重置本轮状态。
 7. `rule_matcher` 找到当前事件最高优先级命中规则。
 8. `action_executor` 解析有效通知通道并执行通知器；runtime 通知护栏只允许主会话 Stop 和主会话 `PreToolUse`/`AskUserQuestion` 求助场景发出外部通知。
@@ -16,13 +16,13 @@
 
 ## Agent 上下文字段
 
-`context_builder` 会暴露 `is_subagent` 和 `agent_type` 供规则匹配。`SubagentStop` 事件总是视为子 agent；`Stop` 事件优先使用 payload 显式 `is_subagent` / `agent_type` 字段，其次识别 `isSidechain` / `agentId`，缺失时用 `transcript_path` 中独立的 `subagents` 路径段作为 fallback。无法判断时按主会话 fail open。
+`context_builder` 会暴露 `is_subagent` 和 `agent_type` 供规则匹配。`SubagentStop` 事件总是视为子 agent；其他事件会综合 payload 显式 `is_subagent=true` / `agent_type=subagent`、`isSidechain=true`、官方 `agent_id`、兼容字段 `agentId`，以及 `transcript_path` 中独立的 `subagents` 路径段。任一明确子 agent 证据都会优先，避免矛盾字段把子 agent 降级为主会话；无法判断时仍按主会话 fail open。
 
 ## API error recovery
 
-`features.apiErrorRecovery` 默认关闭。启用后，`StopFailure` 命中 `match` 文本时会读取当前 hook 进程环境变量 `WEZTERM_PANE`，并通过 `wezterm cli send-text --pane-id <pane> --no-paste` 向触发错误的 pane 发送恢复命令。状态存储在 `~/.claude/hook-terr/state/api-error-recovery/`，key 由 `session_id + WEZTERM_PANE` 或 `transcript_path + WEZTERM_PANE + cwd` 计算，确保多个 Claude Code 会话和多个 WezTerm tab/pane 隔离。
+`features.apiErrorRecovery` 默认关闭且只处理主会话。启用后，主会话 `StopFailure` 命中 `match` 文本时会读取当前 hook 进程环境变量 `WEZTERM_PANE`，并通过 `wezterm cli send-text --pane-id <pane> --no-paste` 向触发错误的 pane 发送恢复命令；子 agent 在副作用入口直接跳过，不会创建或推进恢复状态。状态存储在 `~/.claude/hook-terr/state/api-error-recovery/`，key 由 `session_id + WEZTERM_PANE` 或 `transcript_path + WEZTERM_PANE + cwd` 计算，确保多个 Claude Code 会话和多个 WezTerm tab/pane 隔离。
 
-默认 `recoveryMode=continue_then_fallback`：第一次 `StopFailure` 发送 `continueCommand`；`windowSeconds` 内再次失败时发送 `fallbackModelCommand` 加 `continueCommand`。`continue_only` 会始终只继续，不切模型；`fallback_then_continue` 会第一次失败就发送 `fallbackModelCommand` 加 `continueCommand`。fallback active 后遇到正常 `Stop`，或后续相关 hook 懒检测到超过 `restoreAfterSeconds`，发送 `primaryModelCommand`。同一 session/pane 使用 lock 目录串行化，并用 `dedupeSeconds` 避免重复输入。`match` 检查 `error`、`error_details`、`last_assistant_message` 和 `reason` 合并后的文本；默认只匹配 cyber risk 相关 API error。`modelSwitchConfirmMode=auto` 会在发送 `/model ...` 前后读取当前 pane 文本，只在新出现 `Switch model?` / `Yes, switch to` 时发送确认命令，避免未弹确认框时误输入 `1`。
+默认 `recoveryMode=continue_then_fallback`：第一次 `StopFailure` 发送 `continueCommand`；`windowSeconds` 内再次失败时发送 `fallbackModelCommand` 加 `continueCommand`。`continue_only` 会始终只继续，不切模型；`fallback_then_continue` 会第一次失败就发送 `fallbackModelCommand` 加 `continueCommand`。fallback active 后遇到主会话 `Stop` 会优先发送 `primaryModelCommand`；如果长回合暂时没有 Stop，后续主会话 `PreToolUse`、`PostToolUse`、`UserPromptSubmit` 或再次 `StopFailure` 在超过 `restoreAfterSeconds` 后也会触发恢复检查。同一 session/pane 使用 lock 目录串行化，并用 `dedupeSeconds` 避免重复输入。`match` 检查 `error`、`error_details`、`last_assistant_message` 和 `reason` 合并后的文本；默认只匹配 cyber risk 相关 API error。`modelSwitchConfirmMode=auto` 会在发送 `/model ...` 前后读取当前 pane 文本，只在新出现 `Switch model?` / `Yes, switch to` 时发送确认命令，避免未弹确认框时误输入 `1`。
 
 ## 新增事件规则
 

@@ -22,6 +22,9 @@ MODEL_SWITCH_CONFIRM_MARKERS = ("switch model?", "yes, switch to")
 
 
 def handle_api_error_recovery(event_name: str, context: HookContext, settings: Dict[str, Any]) -> Tuple[Dict[str, Any], List[str]]:
+    if context.is_subagent:
+        return {}, []
+
     config = recovery_config(settings)
     if not is_recovery_enabled(config, context):
         return {}, []
@@ -36,6 +39,10 @@ def handle_api_error_recovery(event_name: str, context: HookContext, settings: D
         return {}, diagnostics
 
     root = state_root()
+    state_path = os.path.join(root, session_key + ".json")
+    if event_name != "StopFailure" and not os.path.exists(state_path):
+        return {}, diagnostics
+
     os.makedirs(root, exist_ok=True)
     lock_path = os.path.join(root, session_key + ".lock")
     lock_error = acquire_lock(lock_path, int(config.get("lockTimeoutSeconds", 30)))
@@ -45,7 +52,6 @@ def handle_api_error_recovery(event_name: str, context: HookContext, settings: D
         return {}, diagnostics
 
     try:
-        state_path = os.path.join(root, session_key + ".json")
         state = read_state(state_path)
         now = now_seconds()
         action, next_state, delete_state = plan_action(event_name, context, config, state, pane_id, session_key, now)
@@ -151,18 +157,26 @@ def plan_action(event_name: str, context: HookContext, config: Dict[str, Any], s
                 return {"type": "restore_model", "text": text, "steps": restore_steps(config)}, state, True
         return None, state, False
 
-    if not matches_error(context, config):
-        return None, state, False
-
-    error_text = combined_error_text(context)
+    error_matches = matches_error(context, config)
     fallback_active = bool(state.get("fallbackActive", False))
     if fallback_active:
         if should_restore(event_name, config, state, pane_id, now):
+            if not error_matches:
+                text = restore_text(config)
+                if text and not is_duplicate_action(state, text, config, now):
+                    return {"type": "restore_model", "text": text, "steps": restore_steps(config)}, state, True
+                return None, state, False
+            error_text = combined_error_text(context)
             text = restore_text(config) + continue_text(config)
             next_state = first_failure_state(context, pane_id, session_key, now, text, error_text, "restore_model_continue")
             if not is_duplicate_action(state, text, config, now):
                 return {"type": "restore_model_continue", "text": text, "steps": restore_continue_steps(config)}, next_state, False
         return None, state, False
+
+    if not error_matches:
+        return None, state, False
+
+    error_text = combined_error_text(context)
 
     mode = recovery_mode(config)
     if mode == "continue_only":
@@ -421,14 +435,17 @@ def send_text_to_wezterm(pane_id: str, text: str) -> str:
         "stdin": subprocess.DEVNULL,
         "stdout": subprocess.DEVNULL,
         "stderr": subprocess.DEVNULL,
+        "timeout": 2,
     }
     if os.name == "nt":
         kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     try:
-        subprocess.Popen(["wezterm", "cli", "send-text", "--pane-id", pane_id, "--no-paste", text], **kwargs)
-        return ""
+        completed = subprocess.run(["wezterm", "cli", "send-text", "--pane-id", pane_id, "--no-paste", text], **kwargs)
     except Exception as exc:
         return f"apiErrorRecovery: wezterm send-text failed: {exc}"
+    if completed.returncode != 0:
+        return f"apiErrorRecovery: wezterm send-text failed: exit code {completed.returncode}"
+    return ""
 
 
 def pane_has_model_switch_confirm(pane_id: str, config: Dict[str, Any], baseline: str = "") -> bool:
