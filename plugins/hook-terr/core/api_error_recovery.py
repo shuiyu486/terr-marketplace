@@ -7,6 +7,7 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from core.models import HookContext
+from core.paths import hook_terr_dir
 
 
 DEFAULT_MATCH = [
@@ -58,8 +59,30 @@ def handle_api_error_recovery(event_name: str, context: HookContext, settings: D
         if not action:
             return {}, diagnostics
 
-        error = send_recovery_steps(pane_id, action["steps"], int(config.get("sendDelayMs", 800)), config)
+        pending_state = None
+        if action_model_transition(action["steps"]) == "fallback":
+            pending_state = dict(next_state)
+            pending_state["modelTransitionPending"] = "fallback"
+            write_state(state_path, pending_state)
+
+        error, started_model, completed_model = send_recovery_steps(
+            pane_id,
+            action["steps"],
+            int(config.get("sendDelayMs", 800)),
+            config,
+        )
         if error:
+            if completed_model == "fallback":
+                write_state(state_path, next_state)
+            elif started_model == "fallback" and pending_state is not None:
+                write_state(state_path, pending_state)
+            elif pending_state is not None:
+                if state:
+                    write_state(state_path, state)
+                else:
+                    delete_file(state_path)
+            elif completed_model == "primary":
+                delete_file(state_path)
             diagnostics.append(error)
             return {}, diagnostics
 
@@ -158,7 +181,10 @@ def plan_action(event_name: str, context: HookContext, config: Dict[str, Any], s
         return None, state, False
 
     error_matches = matches_error(context, config)
-    fallback_active = bool(state.get("fallbackActive", False))
+    fallback_active = bool(
+        state.get("fallbackActive", False)
+        or state.get("modelTransitionPending") == "fallback"
+    )
     if fallback_active:
         if should_restore(event_name, config, state, pane_id, now):
             if not error_matches:
@@ -248,7 +274,10 @@ def recovery_mode(config: Dict[str, Any]) -> str:
 
 
 def should_restore(event_name: str, config: Dict[str, Any], state: Dict[str, Any], pane_id: str, now: float) -> bool:
-    if not state or not state.get("fallbackActive"):
+    if not state or not (
+        state.get("fallbackActive")
+        or state.get("modelTransitionPending") == "fallback"
+    ):
         return False
     if bool(config.get("requireSamePaneForRestore", True)) and str(state.get("paneId", "")) != pane_id:
         return False
@@ -353,7 +382,7 @@ def model_steps(config: Dict[str, Any], kind: str) -> List[Dict[str, Any]]:
     mode = model_switch_confirm_mode(config)
     confirm_text = command_line(model_switch_confirm_command(config, legacy_confirm)) if mode != "never" else ""
     delay = number_config(config, "modelSwitchConfirmDelayMs", 500) if confirm_text else number_config(config, "postModelSwitchDelayMs", 500)
-    step = {"text": command_text, "delayAfterMs": delay}
+    step = {"text": command_text, "delayAfterMs": delay, "modelTransition": kind}
     if mode == "auto" and confirm_text:
         step["captureConfirmBaseline"] = True
     steps.append(step)
@@ -366,6 +395,14 @@ def model_steps(config: Dict[str, Any], kind: str) -> List[Dict[str, Any]]:
             }
         )
     return steps
+
+
+def action_model_transition(steps: List[Dict[str, Any]]) -> str:
+    for step in steps:
+        transition = str(step.get("modelTransition", "")) if isinstance(step, dict) else ""
+        if transition in ("fallback", "primary"):
+            return transition
+    return ""
 
 
 def text_steps(text: str) -> List[Dict[str, Any]]:
@@ -402,32 +439,58 @@ def number_config(config: Dict[str, Any], key: str, default: float) -> float:
     return float(value)
 
 
-def send_recovery_steps(pane_id: str, steps: List[Dict[str, Any]], delay_ms: int, config: Dict[str, Any]) -> str:
+def send_recovery_steps(
+    pane_id: str,
+    steps: List[Dict[str, Any]],
+    delay_ms: int,
+    config: Dict[str, Any],
+) -> Tuple[str, str, str]:
     if str(config.get("terminal", "wezterm")) != "wezterm":
-        return "apiErrorRecovery: 当前仅支持 terminal=wezterm"
+        return "apiErrorRecovery: 当前仅支持 terminal=wezterm", "", ""
     if not pane_id:
-        return "apiErrorRecovery: WEZTERM_PANE is not set"
+        return "apiErrorRecovery: WEZTERM_PANE is not set", "", ""
     if not steps:
-        return "apiErrorRecovery: recovery steps are empty"
+        return "apiErrorRecovery: recovery steps are empty", "", ""
     if delay_ms > 0:
         time.sleep(delay_ms / 1000)
     confirm_baseline = ""
+    confirm_baseline_available = True
+    started_model = ""
+    completed_model = ""
     for step in steps:
         text = str(step.get("text", "")) if isinstance(step, dict) else ""
         if not text:
             continue
         if bool(step.get("captureConfirmBaseline", False)):
-            confirm_baseline, _ = get_wezterm_pane_text(pane_id, int(config.get("modelSwitchConfirmScanLines", 20)))
+            confirm_baseline, baseline_error = get_wezterm_pane_text(
+                pane_id,
+                int(config.get("modelSwitchConfirmScanLines", 20)),
+            )
+            confirm_baseline_available = not bool(baseline_error)
+            if not confirm_baseline_available:
+                return (
+                    "apiErrorRecovery: model switch confirmation baseline unavailable; skip model switch",
+                    started_model,
+                    completed_model,
+                )
         condition = str(step.get("condition", "always")) if isinstance(step, dict) else "always"
-        if condition == "model_switch_confirm" and not pane_has_model_switch_confirm(pane_id, config, confirm_baseline):
-            continue
+        if condition == "model_switch_confirm":
+            if not confirm_baseline_available:
+                continue
+            if not pane_has_model_switch_confirm(pane_id, config, confirm_baseline):
+                continue
+        transition = str(step.get("modelTransition", "")) if isinstance(step, dict) else ""
+        if transition in ("fallback", "primary"):
+            started_model = transition
         error = send_text_to_wezterm(pane_id, text)
         if error:
-            return error
+            return error, started_model, completed_model
+        if transition in ("fallback", "primary"):
+            completed_model = transition
         delay_after_ms = number_config(step, "delayAfterMs", 0)
         if delay_after_ms > 0:
             time.sleep(delay_after_ms / 1000)
-    return ""
+    return "", started_model, completed_model
 
 
 def send_text_to_wezterm(pane_id: str, text: str) -> str:
@@ -522,7 +585,7 @@ def build_session_key(context: HookContext, pane_id: str) -> str:
 
 
 def state_root() -> str:
-    return os.path.join(os.path.expanduser("~"), ".claude", "hook-terr", "state", "api-error-recovery")
+    return os.path.join(hook_terr_dir(), "state", "api-error-recovery")
 
 
 def read_state(path: str) -> Dict[str, Any]:

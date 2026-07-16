@@ -63,8 +63,7 @@
     "popup": {
       "enabled": true,
       "title": "Claude Code 提醒",
-      "icon": "info",
-      "timeoutMs": 1500
+      "icon": "info"
     },
     "custom_command": {
       "enabled": false,

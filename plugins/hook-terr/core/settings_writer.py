@@ -4,6 +4,8 @@ import os
 from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
+from core.paths import hook_terr_dir
+
 VALID_CHANNELS = {"sound", "windows_toast", "popup", "custom_command"}
 DEFAULT_SOUND_WAV_PATH = r"C:\Windows\Media\tada.wav"
 DEFAULT_PRIMARY_MODEL_COMMAND = "/model opus"
@@ -20,7 +22,7 @@ RECOVERY_MODES = {"continue_only", "continue_then_fallback", "fallback_then_cont
 
 def settings_path(scope: str, cwd: str) -> str:
     if scope == "global":
-        return os.path.join(os.path.expanduser("~"), ".claude", "hook-terr", "settings.json")
+        return os.path.join(hook_terr_dir(), "settings.json")
     if scope == "project":
         return os.path.join(cwd, ".claude", "hook-terr", "settings.json")
     raise ValueError("scope must be global or project")
@@ -41,6 +43,7 @@ def write_stop_channels(scope: str, cwd: str, channels: List[str]) -> str:
     if unknown:
         raise ValueError("unknown channels: " + ", ".join(unknown))
 
+    channels = list(dict.fromkeys(channels))
     path = settings_path(scope, cwd)
     settings = deepcopy(read_settings(path))
     events = settings.setdefault("events", {})
@@ -210,7 +213,7 @@ def replace_stop_channel(settings: Dict[str, Any], old: str, new: str) -> None:
     channels = stop.get("notifications") if isinstance(stop, dict) else None
     if not isinstance(channels, list):
         return
-    stop["notifications"] = [new if channel == old else channel for channel in channels]
+    stop["notifications"] = list(dict.fromkeys(new if channel == old else channel for channel in channels))
 
 
 def write_settings(path: str, settings: Dict[str, Any]) -> None:

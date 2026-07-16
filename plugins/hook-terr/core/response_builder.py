@@ -19,12 +19,19 @@ def build_response(event_name: str, rule: Rule, message: str, diagnostics: Optio
                 "reason": final_message,
                 "systemMessage": final_message,
             }
-        if event_name in ("PreToolUse", "PostToolUse"):
+        if event_name == "PreToolUse":
             return {
                 "hookSpecificOutput": {
                     "hookEventName": event_name,
                     "permissionDecision": "deny",
+                    "permissionDecisionReason": final_message,
                 },
+                "systemMessage": final_message,
+            }
+        if event_name in ("PostToolUse", "UserPromptSubmit"):
+            return {
+                "decision": "block",
+                "reason": final_message,
                 "systemMessage": final_message,
             }
 

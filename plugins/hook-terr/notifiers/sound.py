@@ -3,6 +3,7 @@ import subprocess
 from typing import Any, Dict
 
 from core.models import HookContext
+from notifiers.windows_process import powershell_executable
 
 DEFAULT_WAV_PATH = r"C:\Windows\Media\tada.wav"
 
@@ -14,7 +15,7 @@ def send(title: str, message: str, context: HookContext, config: Dict[str, Any])
     wav_path = str(config.get("wavPath") or DEFAULT_WAV_PATH).strip()
     command = wav_command(wav_path)
     subprocess.run(
-        ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command],
+        [powershell_executable(), "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         timeout=timeout,

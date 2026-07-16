@@ -59,6 +59,18 @@ class SoundConfigTests(unittest.TestCase):
             self.assertTrue(settings["notifications"]["sound"]["enabled"])
             self.assertEqual(settings["notifications"]["sound"]["wavPath"], DEFAULT_SOUND_WAV_PATH)
 
+    def test_write_stop_channels_deduplicates_channels(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home}):
+            cwd = os.path.join(home, "project")
+            os.makedirs(cwd)
+
+            settings_path = write_stop_channels("global", cwd, ["sound", "sound", "popup"])
+
+            with open(settings_path, "r", encoding="utf-8") as handle:
+                settings = json.load(handle)
+
+            self.assertEqual(settings["events"]["Stop"]["notifications"], ["sound", "popup"])
+
     def test_write_stop_channels_preserves_existing_sound_wav_path(self):
         with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home}):
             cwd = os.path.join(home, "project")
@@ -79,16 +91,32 @@ class SoundConfigTests(unittest.TestCase):
 
         self.assertIn("settings.notifications.sound.wavPath must be a string", errors)
 
+    def test_validate_settings_checks_sound_and_toast_fields(self):
+        errors = validate_settings(
+            {
+                "notifications": {
+                    "sound": {"timeoutMs": "fast"},
+                    "windows_toast": {"timeoutMs": 0, "silent": "false"},
+                }
+            }
+        )
+
+        self.assertIn("settings.notifications.sound.timeoutMs must be a positive number", errors)
+        self.assertIn("settings.notifications.windows_toast.timeoutMs must be a positive number", errors)
+        self.assertIn("settings.notifications.windows_toast.silent must be a boolean", errors)
+
     def test_sound_uses_wav_path_when_configured(self):
         calls = []
 
         def fake_run(args, **kwargs):
             calls.append((args, kwargs))
 
-        with patch("platform.system", return_value="Windows"), patch("subprocess.run", side_effect=fake_run):
+        with patch("platform.system", return_value="Windows"), patch("notifiers.sound.powershell_executable", return_value=r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"), patch("subprocess.run", side_effect=fake_run):
             sound.send("title", "message", HookContext("Stop"), {"wavPath": r"C:\Windows\Media\tada.wav", "timeoutMs": 800})
 
-        command = calls[0][0][-1]
+        args = calls[0][0]
+        command = args[-1]
+        self.assertEqual(args[0], r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe")
         self.assertIn("System.Media.SoundPlayer", command)
         self.assertIn(r"C:\Windows\Media\tada.wav", command)
         self.assertNotIn("Console]::", command)
@@ -99,7 +127,7 @@ class SoundConfigTests(unittest.TestCase):
         def fake_run(args, **kwargs):
             calls.append((args, kwargs))
 
-        with patch("platform.system", return_value="Windows"), patch("subprocess.run", side_effect=fake_run):
+        with patch("platform.system", return_value="Windows"), patch("notifiers.sound.powershell_executable", return_value=r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"), patch("subprocess.run", side_effect=fake_run):
             sound.send("title", "message", HookContext("Stop"), {})
 
         command = calls[0][0][-1]

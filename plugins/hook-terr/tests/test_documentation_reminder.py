@@ -106,6 +106,16 @@ class DocumentationReminderTests(unittest.TestCase):
             self.assertNotEqual(other.get("decision"), "block")
             self.assertEqual(edited.get("decision"), "block")
 
+    def test_stop_hook_reentry_skips_second_block(self):
+        with self.project_env() as (home, cwd):
+            run("PostToolUse", self.tool_payload(cwd, "s1", "Write", os.path.join(cwd, "app.py")))
+
+            first = run("Stop", {"cwd": cwd, "session_id": "s1", "stop_hook_active": False})
+            second = run("Stop", {"cwd": cwd, "session_id": "s1", "stop_hook_active": True})
+
+            self.assertEqual(first.get("decision"), "block")
+            self.assertEqual(second, {})
+
     def test_user_prompt_submit_resets_turn(self):
         with self.project_env() as (home, cwd):
             run("PostToolUse", self.tool_payload(cwd, "s1", "Write", os.path.join(cwd, "app.py")))

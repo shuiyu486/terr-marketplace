@@ -41,6 +41,9 @@ def run(event_name: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
     if not event_enabled and not assistance_request:
         return {}
 
+    if event_name == "Stop" and context.stop_hook_active:
+        return {}
+
     feature_response, feature_diagnostics = handle_documentation_reminder(event_name, context, settings)
     for diagnostic in feature_diagnostics:
         warn(f"hook-terr documentation reminder: {diagnostic}")

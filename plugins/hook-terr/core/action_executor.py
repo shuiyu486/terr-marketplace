@@ -21,7 +21,15 @@ def execute(rule: Rule, context: HookContext, settings: Dict[str, Any]) -> Tuple
             if not channel_config.get("enabled", False):
                 diagnostics.append(f"{channel}: 通道已配置但 notifications.{channel}.enabled=false")
                 continue
-            results.append(send_notification(channel, title, notification_text, context, channel_config))
+            results.append(
+                send_notification(
+                    channel,
+                    configured_channel_title(rule, title, channel_config),
+                    notification_text,
+                    context,
+                    channel_config,
+                )
+            )
 
     return response_text, results, diagnostics
 
@@ -52,16 +60,28 @@ def resolve_channels(rule: Rule, context: HookContext, settings: Dict[str, Any])
     notify = rule.notify if isinstance(rule.notify, dict) else {}
     if "channels" in notify:
         channels = notify.get("channels")
-        return channels if isinstance(channels, list) else []
+        return unique_channels(channels) if isinstance(channels, list) else []
     event_config = settings.get("events", {}).get(notification_channel_event(context), {})
     channels = event_config.get("notifications", []) if isinstance(event_config, dict) else []
-    return channels if isinstance(channels, list) else []
+    return unique_channels(channels) if isinstance(channels, list) else []
 
 
 def stop_channels(settings: Dict[str, Any]) -> List[str]:
     event_config = settings.get("events", {}).get("Stop", {})
     channels = event_config.get("notifications", []) if isinstance(event_config, dict) else []
-    return channels if isinstance(channels, list) else []
+    return unique_channels(channels) if isinstance(channels, list) else []
+
+
+def unique_channels(channels: List[str]) -> List[str]:
+    return list(dict.fromkeys(channels))
+
+
+def configured_channel_title(rule: Rule, title: str, channel_config: Dict[str, Any]) -> str:
+    message = rule.message if isinstance(rule.message, dict) else {}
+    notify = rule.notify if isinstance(rule.notify, dict) else {}
+    if notify.get("title") or message.get("title"):
+        return title
+    return str(channel_config.get("title") or title)
 
 
 def render_message(rule: Rule, context: HookContext) -> Tuple[str, str, str]:

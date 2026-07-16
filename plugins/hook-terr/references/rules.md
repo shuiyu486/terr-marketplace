@@ -1,6 +1,6 @@
 # Rules
 
-规则是 JSON 文件，放在 `defaults/rules/`、`~/.claude/hook-terr/rules/` 或项目 `.claude/hook-terr/rules/`。
+规则是 JSON 文件，放在 `defaults/rules/`、`<CLAUDE_CONFIG_DIR-or-~/.claude>/hook-terr/rules/` 或项目 `.claude/hook-terr/rules/`。每个 `when` condition 都必须包含非空字符串 `field`；无效条件会在加载阶段被拒绝，避免 `not_regex` 等操作符意外全局匹配。
 
 ## 字段
 
@@ -49,7 +49,7 @@
 
 通用字段：`event`、`cwd`。
 
-Stop/SubagentStop：`reason`、`transcript_path`、`is_subagent`、`agent_type`。
+Stop/SubagentStop：`reason`、`transcript_path`、`is_subagent`、`agent_type`；Stop 另提供 `stop_hook_active`，runtime 自身会在该值为 true 时跳过再次 block。
 
 StopFailure：`error`、`error_details`、`last_assistant_message`、`session_id`、`transcript_path`、`is_subagent`、`agent_type`。
 

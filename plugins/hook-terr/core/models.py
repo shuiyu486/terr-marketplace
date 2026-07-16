@@ -17,6 +17,7 @@ class HookContext:
     error: str = ""
     error_details: str = ""
     last_assistant_message: str = ""
+    stop_hook_active: bool = False
     raw_input: Dict[str, Any] = field(default_factory=dict)
 
 

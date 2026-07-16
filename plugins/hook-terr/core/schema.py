@@ -35,6 +35,12 @@ def validate_settings(settings: Any) -> List[str]:
                 wav_path = config.get("wavPath")
                 if wav_path is not None and not isinstance(wav_path, str):
                     errors.append("settings.notifications.sound.wavPath must be a string")
+                validate_positive_timeout(config, "sound", errors)
+            if channel == "windows_toast":
+                validate_positive_timeout(config, "windows_toast", errors)
+                silent = config.get("silent")
+                if silent is not None and not isinstance(silent, bool):
+                    errors.append("settings.notifications.windows_toast.silent must be a boolean")
             if channel == "popup":
                 icon = config.get("icon")
                 if icon is not None and icon not in ("info", "warning", "error"):
@@ -53,6 +59,8 @@ def validate_settings(settings: Any) -> List[str]:
                 timeout_ms = config.get("timeoutMs")
                 if timeout_ms is not None and (isinstance(timeout_ms, bool) or not isinstance(timeout_ms, (int, float))):
                     errors.append("settings.notifications.custom_command.timeoutMs must be a number")
+                elif timeout_ms is not None and timeout_ms <= 0:
+                    errors.append("settings.notifications.custom_command.timeoutMs must be positive")
                 detached = config.get("detached")
                 if detached is not None and not isinstance(detached, bool):
                     errors.append("settings.notifications.custom_command.detached must be a boolean")
@@ -136,6 +144,15 @@ def validate_settings(settings: Any) -> List[str]:
                     value = recovery.get(key)
                     if value is not None and not isinstance(value, str):
                         errors.append(f"settings.features.apiErrorRecovery.{key} must be a string")
+                continue_command = recovery.get("continueCommand")
+                if isinstance(continue_command, str) and not continue_command.strip():
+                    errors.append("settings.features.apiErrorRecovery.continueCommand must not be empty")
+                configured_mode = recovery.get("recoveryMode", "continue_then_fallback")
+                if configured_mode in ("continue_then_fallback", "fallback_then_continue"):
+                    for key in ("primaryModelCommand", "fallbackModelCommand"):
+                        value = recovery.get(key)
+                        if isinstance(value, str) and not value.strip():
+                            errors.append(f"settings.features.apiErrorRecovery.{key} must not be empty in fallback modes")
                 confirm_mode = recovery.get("modelSwitchConfirmMode")
                 if confirm_mode is not None and confirm_mode not in ("auto", "always", "never"):
                     errors.append("settings.features.apiErrorRecovery.modelSwitchConfirmMode must be one of auto, always, never")
@@ -210,6 +227,18 @@ def validate_api_error_recovery_scopes(scopes: Any) -> List[str]:
     return errors
 
 
+def validate_positive_timeout(config: Dict[str, Any], channel: str, errors: List[str]) -> None:
+    timeout_ms = config.get("timeoutMs")
+    if timeout_ms is None:
+        return
+    if (
+        isinstance(timeout_ms, bool)
+        or not isinstance(timeout_ms, (int, float))
+        or timeout_ms <= 0
+    ):
+        errors.append(f"settings.notifications.{channel}.timeoutMs must be a positive number")
+
+
 def legacy_custom_command_tokens(command: Any) -> List[str]:
     if not isinstance(command, str):
         return []
@@ -281,6 +310,9 @@ def validate_rule(data: Any, source: str) -> List[str]:
         if not isinstance(condition, dict):
             errors.append(f"{source}: condition {index} must be an object")
             continue
+        field = condition.get("field")
+        if not isinstance(field, str) or not field.strip():
+            errors.append(f"{source}: condition {index} field must be a non-empty string")
         op = condition.get("op")
         if not isinstance(op, str):
             errors.append(f"{source}: condition {index} operator must be a string")

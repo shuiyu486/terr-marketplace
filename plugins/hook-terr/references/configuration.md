@@ -6,9 +6,11 @@
 
 ```text
 defaults/settings.json
-~/.claude/hook-terr/settings.json
+<CLAUDE_CONFIG_DIR-or-~/.claude>/hook-terr/settings.json
 <project>/.claude/hook-terr/settings.json
 ```
+
+设置 `CLAUDE_CONFIG_DIR` 时，用户全局 settings、rules 和 runtime state 都存放在该目录下；未设置时回退到 `~/.claude`。
 
 后加载的配置会深度覆盖前面的配置。数组会整体替换，不做按元素合并。
 
@@ -16,7 +18,7 @@ defaults/settings.json
 
 ```text
 defaults/rules/*.json
-~/.claude/hook-terr/rules/*.json
+<CLAUDE_CONFIG_DIR-or-~/.claude>/hook-terr/rules/*.json
 <project>/.claude/hook-terr/rules/*.json
 ```
 
@@ -38,21 +40,21 @@ settings 中的 Stop channels 是主会话 Stop 和主会话 `AskUserQuestion` �
 `/hook-terr:configure` settings 写入位置：
 
 ```text
-~/.claude/hook-terr/settings.json
+<CLAUDE_CONFIG_DIR-or-~/.claude>/hook-terr/settings.json
 <project>/.claude/hook-terr/settings.json
 ```
 
 `/hook-terr:configure` 选择 `立即生效` 时的 explicit rule 写入位置：
 
 ```text
-~/.claude/hook-terr/rules/stop.notify.explicit.json
+<CLAUDE_CONFIG_DIR-or-~/.claude>/hook-terr/rules/stop.notify.explicit.json
 <project>/.claude/hook-terr/rules/stop.notify.explicit.json
 ```
 
 `/hook-terr:sound` 始终写入：
 
 ```text
-~/.claude/hook-terr/settings.json
+<CLAUDE_CONFIG_DIR-or-~/.claude>/hook-terr/settings.json
 ```
 
 ## 文档收尾提醒
@@ -80,7 +82,7 @@ settings 中的 Stop channels 是主会话 Stop 和主会话 `AskUserQuestion` �
 - `stateTtlHours`: 状态文件保留小时数。
 - `message`: Stop block 返回给 Claude 的提醒文案。
 
-运行时状态存储在 `~/.claude/hook-terr/state/documentation-reminder/`。
+运行时状态存储在 `<CLAUDE_CONFIG_DIR-or-~/.claude>/hook-terr/state/documentation-reminder/`。
 
 ## API error recovery
 
@@ -115,7 +117,7 @@ settings 中的 Stop channels 是主会话 Stop 和主会话 `AskUserQuestion` �
 }
 ```
 
-`recoveryMode` 控制遇到匹配 API error 时的恢复方式：`continue_only` 每次只发送 `continueCommand`；`continue_then_fallback` 第一次只继续，`windowSeconds` 默认 600 秒内再次失败才先换到备用模型再继续；`fallback_then_continue` 第一次失败就先换到备用模型再继续。换到备用模型后，正常 Stop 或超过 `restoreAfterSeconds` 默认 600 秒后有新动作时会发送 `primaryModelCommand` 切回原模型。`match` 会检查 `error`、`error_details`、`last_assistant_message` 和 `reason` 合并后的文本；默认只匹配 cyber risk 相关 API error，不会拦截所有 StopFailure。状态存储在 `~/.claude/hook-terr/state/api-error-recovery/`，按 `session_id + WEZTERM_PANE` 隔离，多会话、多标签页不会共享恢复状态。
+`recoveryMode` 控制遇到匹配 API error 时的恢复方式：`continue_only` 每次只发送 `continueCommand`；`continue_then_fallback` 第一次只继续，`windowSeconds` 默认 600 秒内再次失败才先换到备用模型再继续；`fallback_then_continue` 第一次失败就先换到备用模型再继续。换到备用模型后，正常 Stop 或超过 `restoreAfterSeconds` 默认 600 秒后有新动作时会发送 `primaryModelCommand` 切回原模型。`match` 会检查 `error`、`error_details`、`last_assistant_message` 和 `reason` 合并后的文本；默认只匹配 cyber risk 相关 API error，不会拦截所有 StopFailure。状态存储在 `<CLAUDE_CONFIG_DIR-or-~/.claude>/hook-terr/state/api-error-recovery/`，按 `session_id + WEZTERM_PANE` 隔离，多会话、多标签页不会共享恢复状态。
 
 推荐运行 `/hook-terr:api-error-recovery` 给当前目录写入 `<current directory>/.claude/hook-terr/settings.json`；在不同目录分别运行，就能给每个目录保存不同恢复方式、模型和匹配文本，互不影响。关闭某个目录时，该命令也只改这个目录的 settings。底层仍保留 `scopes` 字段供手工高级配置使用；普通交互流程不会展示或要求配置这些高级字段。临时禁用当前启动环境可设置 `HOOK_TERR_API_ERROR_RECOVERY=0`。
 
@@ -129,7 +131,7 @@ settings 中的 Stop channels 是主会话 Stop 和主会话 `AskUserQuestion` �
 
 ## Presets 和 examples
 
-`presets/` 随 marketplace 插件分发，保存开源可复用配置方案。`examples/` 保存可复制的配置片段，例如 `examples/config.api-error-recovery.wezterm.example.json`。它们不会自动加载，用户可以复制其中内容到全局或项目 settings 中。
+`presets/` 随 marketplace 插件分发，保存带元数据 wrapper 的可复用配置方案；使用时只能复制每个 preset 顶层 `settings` 对象内部的字段，不要把 `version`、`description` 和外层 `settings` wrapper 整份写入配置。`examples/` 保存可复制的配置片段，例如 `examples/config.api-error-recovery.wezterm.example.json`。它们都不会自动加载。
 
 ## 禁用上层规则
 

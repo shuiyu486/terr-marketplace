@@ -8,8 +8,7 @@
       "popup": {
         "enabled": true,
         "title": "Claude Code 提醒",
-        "icon": "warning",
-        "timeoutMs": 1500
+        "icon": "warning"
       }
     },
     "events": {

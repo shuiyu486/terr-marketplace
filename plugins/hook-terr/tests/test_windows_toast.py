@@ -36,6 +36,21 @@ class WindowsToastTests(unittest.TestCase):
         self.assertIn("$silent = $false", script)
         self.assertLess(script.index("if ($winrtShown -or $silent)"), script.index("$notify.ShowBalloonTip"))
 
+    def test_launcher_uses_absolute_powershell_without_cmd(self):
+        process = None
+        with patch("notifiers.windows_toast.write_temp_script", return_value=r"C:\Temp&cache\toast.ps1"), patch(
+            "notifiers.windows_toast.powershell_executable",
+            return_value=r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
+        ), patch("notifiers.windows_toast.subprocess.Popen") as popen:
+            windows_toast.popen_hidden("script")
+            process = popen.call_args
+
+        args, kwargs = process.args[0], process.kwargs
+        self.assertEqual(args[0], r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe")
+        self.assertNotIn("cmd.exe", args)
+        self.assertEqual(args[-1], r"C:\Temp&cache\toast.ps1")
+        self.assertTrue(kwargs["close_fds"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -6,6 +6,7 @@ from copy import deepcopy
 from typing import Any, Dict, List, Tuple
 
 from core.models import Rule
+from core.paths import hook_terr_dir
 from core.schema import validate_rule, validate_settings
 
 
@@ -60,7 +61,7 @@ def load_configuration(cwd: str) -> Tuple[Dict[str, Any], List[Rule], List[str]]
 def settings_paths(root: str, cwd: str) -> List[str]:
     return [
         os.path.join(root, "defaults", "settings.json"),
-        os.path.join(os.path.expanduser("~"), ".claude", "hook-terr", "settings.json"),
+        os.path.join(hook_terr_dir(), "settings.json"),
         os.path.join(cwd, ".claude", "hook-terr", "settings.json"),
     ]
 
@@ -68,7 +69,7 @@ def settings_paths(root: str, cwd: str) -> List[str]:
 def rule_paths(root: str, cwd: str) -> List[str]:
     patterns = [
         os.path.join(root, "defaults", "rules", "*.json"),
-        os.path.join(os.path.expanduser("~"), ".claude", "hook-terr", "rules", "*.json"),
+        os.path.join(hook_terr_dir(), "rules", "*.json"),
         os.path.join(cwd, ".claude", "hook-terr", "rules", "*.json"),
     ]
     files: List[str] = []

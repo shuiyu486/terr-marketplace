@@ -186,6 +186,74 @@ class ApiErrorRecoveryTests(unittest.TestCase):
             self.assertEqual(send_text.call_args_list[3].args, ("101", "/model opus\r"))
             self.assertEqual(send_text.call_args_list[4].args, ("101", "/model opus\r"))
 
+    def test_failed_continue_after_fallback_keeps_restore_state(self):
+        with self.project_env(
+            {"features": {"apiErrorRecovery": {"enabled": True, "sendDelayMs": 0, "recoveryMode": "fallback_then_continue"}}}
+        ) as (home, cwd):
+            with patch.dict(os.environ, {"WEZTERM_PANE": "101"}, clear=False), patch(
+                "core.api_error_recovery.send_text_to_wezterm",
+                side_effect=["", "apiErrorRecovery: continue failed", ""],
+            ) as send_text, patch(
+                "core.api_error_recovery.get_wezterm_pane_text",
+                return_value=("", ""),
+            ), patch(
+                "core.api_error_recovery.now_seconds",
+                side_effect=[1000, 1100],
+            ):
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("Stop", {"cwd": cwd, "session_id": "s1"})
+
+            self.assertEqual(send_text.call_args_list[0].args, ("101", "/model sonnet\r"))
+            self.assertEqual(send_text.call_args_list[1].args, ("101", "continue\r"))
+            self.assertEqual(send_text.call_args_list[2].args, ("101", "/model opus\r"))
+
+    def test_failed_fallback_send_keeps_pending_state_for_safe_restore(self):
+        with self.project_env(
+            {"features": {"apiErrorRecovery": {"enabled": True, "sendDelayMs": 0, "recoveryMode": "fallback_then_continue"}}}
+        ) as (home, cwd):
+            with patch.dict(os.environ, {"WEZTERM_PANE": "101"}, clear=False), patch(
+                "core.api_error_recovery.send_text_to_wezterm",
+                side_effect=["apiErrorRecovery: switch uncertain", ""],
+            ) as send_text, patch(
+                "core.api_error_recovery.get_wezterm_pane_text",
+                return_value=("", ""),
+            ), patch(
+                "core.api_error_recovery.now_seconds",
+                side_effect=[1000, 1100],
+            ):
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("Stop", {"cwd": cwd, "session_id": "s1"})
+
+            self.assertEqual(send_text.call_args_list[0].args, ("101", "/model sonnet\r"))
+            self.assertEqual(send_text.call_args_list[1].args, ("101", "/model opus\r"))
+
+    def test_auto_confirm_skips_confirmation_when_baseline_capture_fails(self):
+        old_prompt = "Switch model?\n1. Yes, switch to old-model"
+        with self.project_env(
+            {
+                "features": {
+                    "apiErrorRecovery": {
+                        "enabled": True,
+                        "sendDelayMs": 0,
+                        "modelSwitchConfirmMode": "auto",
+                        "modelSwitchConfirmCommand": "1",
+                        "modelSwitchConfirmDelayMs": 0,
+                        "postModelSwitchDelayMs": 0,
+                    }
+                }
+            }
+        ) as (home, cwd):
+            with self.recovery_patches(
+                "101",
+                [1000, 1100],
+                [("", "apiErrorRecovery: get-text failed"), (old_prompt, "")],
+            ) as send_text:
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+                run("StopFailure", self.stop_failure_payload(cwd, "s1"))
+
+            self.assertEqual(send_text.call_args_list[0].args, ("101", "continue\r"))
+            self.assertEqual(send_text.call_count, 1)
+
     def test_model_switch_auto_sends_confirmation_when_prompt_visible(self):
         with self.project_env(
             {
@@ -328,8 +396,8 @@ class ApiErrorRecoveryTests(unittest.TestCase):
     def test_multiple_sessions_and_panes_are_isolated(self):
         with self.project_env() as (home, cwd):
             with patch("core.api_error_recovery.send_text_to_wezterm", return_value="") as send_text, patch(
-                "core.api_error_recovery.now_seconds", side_effect=[1000, 1000, 1100]
-            ):
+                "core.api_error_recovery.get_wezterm_pane_text", return_value=("", "")
+            ), patch("core.api_error_recovery.now_seconds", side_effect=[1000, 1000, 1100]):
                 with patch.dict(os.environ, {"WEZTERM_PANE": "101"}, clear=False):
                     run("StopFailure", self.stop_failure_payload(cwd, "session-a"))
                 with patch.dict(os.environ, {"WEZTERM_PANE": "202"}, clear=False):

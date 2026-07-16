@@ -6,6 +6,7 @@ import uuid
 from typing import Any, Dict
 
 from core.models import HookContext
+from notifiers.windows_process import powershell_executable
 
 
 def send(title: str, message: str, context: HookContext, config: Dict[str, Any]):
@@ -90,13 +91,7 @@ def popen_hidden(script: str):
     log_handle = open(log_path, "a", encoding="utf-8") if log_path else subprocess.DEVNULL
     subprocess.Popen(
         [
-            "cmd.exe",
-            "/d",
-            "/c",
-            "start",
-            "",
-            "/min",
-            "powershell.exe",
+            powershell_executable(),
             "-NoProfile",
             "-STA",
             "-ExecutionPolicy",
@@ -107,7 +102,11 @@ def popen_hidden(script: str):
         stdin=subprocess.DEVNULL,
         stdout=log_handle,
         stderr=log_handle,
-        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        creationflags=(
+            getattr(subprocess, "CREATE_NO_WINDOW", 0)
+            | getattr(subprocess, "DETACHED_PROCESS", 0)
+        ),
+        close_fds=True,
     )
 
 

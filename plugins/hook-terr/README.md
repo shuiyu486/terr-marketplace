@@ -28,7 +28,7 @@
 
 ```text
 defaults/settings.json
-~/.claude/hook-terr/settings.json
+<CLAUDE_CONFIG_DIR-or-~/.claude>/hook-terr/settings.json
 <project>/.claude/hook-terr/settings.json
 ```
 
@@ -36,15 +36,15 @@ defaults/settings.json
 
 ```text
 defaults/rules/*.json
-~/.claude/hook-terr/rules/*.json
+<CLAUDE_CONFIG_DIR-or-~/.claude>/hook-terr/rules/*.json
 <project>/.claude/hook-terr/rules/*.json
 ```
 
-用户全局覆盖：
+用户全局覆盖（设置了 `CLAUDE_CONFIG_DIR` 时，以该目录替代 `~/.claude`）：
 
 ```text
-~/.claude/hook-terr/settings.json
-~/.claude/hook-terr/rules/*.json
+<CLAUDE_CONFIG_DIR-or-~/.claude>/hook-terr/settings.json
+<CLAUDE_CONFIG_DIR-or-~/.claude>/hook-terr/rules/*.json
 ```
 
 项目覆盖：
@@ -54,7 +54,7 @@ defaults/rules/*.json
 <project>/.claude/hook-terr/rules/*.json
 ```
 
-`presets/` 和 `examples/` 随插件分发，但不会自动加载；需要复制到全局或项目 settings 后才会生效。`examples/config.api-error-recovery.wezterm.example.json` 提供 WezTerm API error recovery 示例，建议先放到项目 `.claude/hook-terr/settings.json` 小范围启用。
+`presets/` 和 `examples/` 随插件分发，但不会自动加载。preset 文件带有 `version`、`description` 和外层 `settings` 元数据；使用时只能把顶层 `settings` 对象内部的字段合并到全局或项目 `settings.json`，不要整份复制 wrapper。`examples/config.api-error-recovery.wezterm.example.json` 是可直接参考的配置片段，建议先放到项目 `.claude/hook-terr/settings.json` 小范围启用。
 
 ## 默认行为
 
@@ -75,7 +75,7 @@ Windows notification 仍然可用，但不再由默认 Stop 自检规则触发�
 
 ## API error recovery
 
-`features.apiErrorRecovery` 默认关闭，只处理主会话。启用后，主会话 `StopFailure` 命中配置的 `match` 文本时，会使用 `WEZTERM_PANE` 和 `wezterm cli send-text --pane-id ... --no-paste` 将恢复命令发回触发错误的 WezTerm pane；子 agent 不会创建、推进或恢复该状态。默认 `match` 只覆盖 `This content was flagged for possible cybersecurity risk` / `cybersecurity risk`，匹配范围是 `error`、`error_details`、`last_assistant_message` 和 `reason` 合并后的文本。状态按 `session_id + pane_id` 隔离，并使用 per-session lock 与短时间去重，避免多个 Claude Code 会话或多个 WezTerm 标签页互相串线。
+`features.apiErrorRecovery` 默认关闭，只处理主会话。启用后，主会话 `StopFailure` 命中配置的 `match` 文本时，会使用 `WEZTERM_PANE` 和 `wezterm cli send-text --pane-id ... --no-paste` 将恢复命令发回触发错误的 WezTerm pane；子 agent 不会创建、推进或恢复该状态。默认 `match` 只覆盖 `This content was flagged for possible cybersecurity risk` / `cybersecurity risk`，匹配范围是 `error`、`error_details`、`last_assistant_message` 和 `reason` 合并后的文本。状态按 `session_id + pane_id` 隔离，并使用 per-session lock 与短时间去重，避免多个 Claude Code 会话或多个 WezTerm 标签页互相串线；模型切换开始前会先保存 pending 状态，因此即使后续 `continue` 发送失败，Stop 仍能安全尝试恢复 primary。
 
 默认恢复方式是 `continue_then_fallback`：第一次命中只发送 `continue`；如果 `windowSeconds` 默认 600 秒内再次命中，先发送 `fallbackModelCommand` 换到备用模型，再发送 `continueCommand`。也可配置 `continue_only` 让每次只继续，或 `fallback_then_continue` 让第一次失败就换到备用模型并继续。换到备用模型后，主会话 `Stop` 会优先发送 `primaryModelCommand` 切回原模型；如果长回合暂时没有 Stop，后续主会话 `PreToolUse`、`PostToolUse`、`UserPromptSubmit` 或再次 `StopFailure` 在超过 `restoreAfterSeconds` 默认 600 秒后也会触发恢复检查。
 
@@ -106,7 +106,7 @@ Windows notification 仍然可用，但不再由默认 Stop 自检规则触发�
 新增规则放在：
 
 ```text
-~/.claude/hook-terr/rules/*.json
+<CLAUDE_CONFIG_DIR-or-~/.claude>/hook-terr/rules/*.json
 <project>/.claude/hook-terr/rules/*.json
 ```
 

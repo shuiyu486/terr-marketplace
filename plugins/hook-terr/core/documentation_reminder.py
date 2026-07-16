@@ -5,6 +5,7 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from core.models import HookContext
+from core.paths import hook_terr_dir
 
 
 FEATURE_KEY = "documentationReminder"
@@ -344,7 +345,7 @@ def state_path(key: str) -> str:
 
 
 def state_dir() -> str:
-    return os.path.join(os.path.expanduser("~"), ".claude", "hook-terr", "state", "documentation-reminder")
+    return os.path.join(hook_terr_dir(), "state", "documentation-reminder")
 
 
 def is_within(path: str, root: str) -> bool:

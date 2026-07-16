@@ -19,11 +19,11 @@ Windows 下播放 `.wav` 提示音。默认使用 `C:\\Windows\\Media\\tada.wav`
 
 Windows 下优先显示 WinRT toast；仅在非静音模式且 WinRT 投递失败时，回退到 `System.Windows.Forms.NotifyIcon` tray balloon。默认可用，但不会由内置默认 stop-notify 规则触发。启用 notify 的规则可通过 `/hook-terr:configure` 或 settings 覆盖选择该通道。
 
-实现要求：hook 将通知脚本写入临时 `.ps1`，再通过 `cmd.exe /c start powershell.exe -STA -File ...` 启动独立通知进程并立即返回，避免 Claude Code 清理 Stop hook 子进程时中断通知。`silent=true` 会给 WinRT toast 写入静音 audio 配置；由于 NotifyIcon 不能保证静音，静音模式下 WinRT 失败时不再回退。非静音模式的 NotifyIcon fallback 使用 `ApplicationContext` message loop 保活。`timeoutMs` 会限制在 5–30 秒之间。设置 `HOOK_TERR_WINDOWS_TOAST_LOG` 时会把投递或失败路径写入该日志。
+实现要求：hook 将通知脚本写入临时 `.ps1`，再通过系统目录中的绝对 `powershell.exe` 路径直接启动 detached 进程并立即返回，不经过 `cmd.exe` 二次解析临时路径，也不从项目 cwd 搜索同名可执行文件。`silent=true` 会给 WinRT toast 写入静音 audio 配置；由于 NotifyIcon 不能保证静音，静音模式下 WinRT 失败时不再回退。非静音模式的 NotifyIcon fallback 使用 `ApplicationContext` message loop 保活。`timeoutMs` 会限制在 5–30 秒之间。设置 `HOOK_TERR_WINDOWS_TOAST_LOG` 时会把投递或失败路径写入该日志。
 
 ## popup
 
-结构化弹窗，支持标题、正文和图标。默认通道配置中可用，但不会由内置默认 stop-notify 规则触发。实现必须非阻塞：hook 只启动弹窗进程，不等待用户关闭。
+结构化弹窗，支持标题、正文和图标。默认通道配置中可用，但不会由内置默认 stop-notify 规则触发。实现必须非阻塞：hook 只启动弹窗进程，不等待用户关闭；MessageBox 由用户手动关闭，不支持 `timeoutMs`。
 
 ## custom_command
 
@@ -62,4 +62,5 @@ notify-send "$HOOK_TERR_TITLE" "$HOOK_TERR_MESSAGE"
 - 只配置可信命令。
 - 必须使用 `HOOK_TERR_*` 环境变量传递动态值；不要把动态内容拼入 shell 字符串或 PowerShell 字符串。
 - 命令 stdout/stderr 必须与 hook stdout 隔离。
-- 优先使用 detached 模式，避免阻塞 hook。
+- 优先使用 detached 模式，避免阻塞 hook；POSIX detached 会创建独立 session。
+- attached 模式会检查退出码，并在 `timeoutMs` 到期时终止并回收进程树；Windows 使用系统目录中的 `taskkill.exe /T /F` 清理后代进程，系统 PowerShell 也始终从可信系统目录启动。

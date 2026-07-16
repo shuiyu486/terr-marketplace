@@ -80,6 +80,19 @@ class RuleSchemaTests(unittest.TestCase):
 
         self.assertEqual(validate_rule(rule, "rule.json"), [])
 
+    def test_condition_field_must_be_non_empty_string(self):
+        for field in (None, "", [], 123):
+            with self.subTest(field=field):
+                rule = self.base_rule()
+                condition = {"op": "not_regex", "value": "subagent"}
+                if field is not None:
+                    condition["field"] = field
+                rule["when"] = [condition]
+
+                errors = validate_rule(rule, "rule.json")
+
+                self.assertIn("rule.json: condition 0 field must be a non-empty string", errors)
+
     def test_condition_operator_must_be_string(self):
         rule = self.base_rule()
         rule["when"] = [{"field": "cwd", "op": [], "value": "x"}]
@@ -162,6 +175,38 @@ class RuleSchemaTests(unittest.TestCase):
         self.assertIn("settings.features.apiErrorRecovery.primaryConfirmCommand must be a string", errors)
         self.assertIn("settings.features.apiErrorRecovery.match must contain only strings", errors)
         self.assertIn("settings.features.apiErrorRecovery.requireSamePaneForRestore must be a boolean", errors)
+
+    def test_api_error_recovery_rejects_empty_required_commands(self):
+        settings = {
+            "features": {
+                "apiErrorRecovery": {
+                    "enabled": True,
+                    "recoveryMode": "fallback_then_continue",
+                    "primaryModelCommand": " ",
+                    "fallbackModelCommand": "",
+                    "continueCommand": "",
+                }
+            }
+        }
+
+        errors = validate_settings(settings)
+
+        self.assertIn("settings.features.apiErrorRecovery.primaryModelCommand must not be empty in fallback modes", errors)
+        self.assertIn("settings.features.apiErrorRecovery.fallbackModelCommand must not be empty in fallback modes", errors)
+        self.assertIn("settings.features.apiErrorRecovery.continueCommand must not be empty", errors)
+
+    def test_continue_only_allows_omitted_model_commands(self):
+        settings = {
+            "features": {
+                "apiErrorRecovery": {
+                    "enabled": True,
+                    "recoveryMode": "continue_only",
+                    "continueCommand": "continue",
+                }
+            }
+        }
+
+        self.assertEqual(validate_settings(settings), [])
 
 
 if __name__ == "__main__":

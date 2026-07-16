@@ -33,7 +33,7 @@ Use `AskUserQuestion`:
 - Question: `这次 Stop 通知配置写到哪里？`
 - Header: `写入范围`
 - Options:
-  1. `Global` — write `~/.claude/hook-terr/settings.json`; personal default across projects.
+  1. `Global` — write `<CLAUDE_CONFIG_DIR>/hook-terr/settings.json` when `CLAUDE_CONFIG_DIR` is set, otherwise `~/.claude/hook-terr/settings.json`; personal default across projects.
   2. `Project` — write `<current project>/.claude/hook-terr/settings.json`; only this workspace.
 
 ### 3. Ask channels
@@ -87,11 +87,12 @@ Keep the path printed by `settings_writer.py`; report it in the final confirmati
 
 Only do this when the user chose `立即生效`.
 
-Use the same scope selected in Step 2. First resolve the rule path to an absolute path and ensure its parent directory exists:
+Use the same scope selected in Step 2. First resolve the rule path to an absolute path and ensure its parent directory exists. Recompute `$claudeDir` so global rules follow `CLAUDE_CONFIG_DIR`:
 
 ```powershell
+$claudeDir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }
 $rulePath = if ($scope -eq 'global') {
-    Join-Path $HOME '.claude\hook-terr\rules\stop.notify.explicit.json'
+    Join-Path $claudeDir 'hook-terr\rules\stop.notify.explicit.json'
 } else {
     Join-Path $cwd '.claude\hook-terr\rules\stop.notify.explicit.json'
 }

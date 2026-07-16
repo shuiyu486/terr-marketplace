@@ -27,6 +27,7 @@ def build_context(event_name: str, input_data: Dict[str, Any]) -> HookContext:
         error=str(input_data.get("error", "")),
         error_details=stringify(input_data.get("error_details", "")),
         last_assistant_message=str(input_data.get("last_assistant_message", "")),
+        stop_hook_active=coerce_bool(input_data.get("stop_hook_active")) is True,
         raw_input=input_data,
     )
 
@@ -115,6 +116,8 @@ def get_field(context: HookContext, field: str) -> str:
         return context.error_details
     if field == "last_assistant_message":
         return context.last_assistant_message
+    if field == "stop_hook_active":
+        return "true" if context.stop_hook_active else "false"
     if field in context.tool_input:
         value = context.tool_input[field]
         return value if isinstance(value, str) else str(value)

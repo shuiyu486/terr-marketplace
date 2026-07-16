@@ -3,6 +3,7 @@ import subprocess
 from typing import Any, Dict
 
 from core.models import HookContext
+from notifiers.windows_process import powershell_executable
 
 
 def send(title: str, message: str, context: HookContext, config: Dict[str, Any]):
@@ -20,7 +21,7 @@ Add-Type -AssemblyName System.Windows.Forms
 [System.Windows.Forms.MessageBox]::Show({ps_quote(message)}, {ps_quote(popup_title)}, 'OK', [System.Windows.Forms.MessageBoxIcon]::{icon_name}) | Out-Null
 """
     subprocess.Popen(
-        ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", script],
+        [powershell_executable(), "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", script],
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,

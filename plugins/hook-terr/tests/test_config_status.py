@@ -16,7 +16,7 @@ class ConfigStatusTests(unittest.TestCase):
         with self.env() as cwd:
             status = build_status(cwd)
 
-            self.assertEqual(status["pluginVersion"], "1.4.4")
+            self.assertEqual(status["pluginVersion"], "1.4.5")
             self.assertEqual(os.path.normcase(status["pluginRoot"]), os.path.normcase(PLUGIN_ROOT))
 
     def test_api_error_recovery_status_reports_recovery_mode_label(self):

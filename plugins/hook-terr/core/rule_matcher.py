@@ -22,7 +22,10 @@ def matches_rule(rule: Rule, context: HookContext) -> bool:
 
 
 def matches_condition(condition: dict, context: HookContext) -> bool:
-    field_value = get_field(context, str(condition.get("field", "")))
+    field = condition.get("field")
+    if not isinstance(field, str) or not field.strip():
+        return False
+    field_value = get_field(context, field)
     op = condition.get("op")
     value = condition.get("value", "")
 
