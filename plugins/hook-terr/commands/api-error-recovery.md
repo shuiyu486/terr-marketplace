@@ -85,7 +85,7 @@ If custom input is needed, ask only for full commands, e.g. `/model gpt-5.5[1m]`
 Explain:
 
 ```text
-apiErrorRecovery 只处理匹配 StopFailure 错误文本的 API error。匹配会检查 error、error_details、last_assistant_message 和 reason 合并后的文本。默认只匹配 cyber risk 相关报错，不会拦截所有 StopFailure。
+apiErrorRecovery 只处理匹配 StopFailure 错误文本的 API error。匹配只检查 error 和 error_details，避免 last_assistant_message 或 reason 中引用类似文字时误触发模型切换。默认只匹配 cyber risk 相关报错，不会拦截所有 StopFailure。
 ```
 
 Use `AskUserQuestion`:

@@ -117,7 +117,7 @@ settings 中的 Stop channels 是主会话 Stop 和主会话 `AskUserQuestion` �
 }
 ```
 
-`recoveryMode` 控制遇到匹配 API error 时的恢复方式：`continue_only` 每次只发送 `continueCommand`；`continue_then_fallback` 第一次只继续，`windowSeconds` 默认 600 秒内再次失败才先换到备用模型再继续；`fallback_then_continue` 第一次失败就先换到备用模型再继续。换到备用模型后，正常 Stop 或超过 `restoreAfterSeconds` 默认 600 秒后有新动作时会发送 `primaryModelCommand` 切回原模型。`match` 会检查 `error`、`error_details`、`last_assistant_message` 和 `reason` 合并后的文本；默认只匹配 cyber risk 相关 API error，不会拦截所有 StopFailure。状态存储在 `<CLAUDE_CONFIG_DIR-or-~/.claude>/hook-terr/state/api-error-recovery/`，按 `session_id + WEZTERM_PANE` 隔离，多会话、多标签页不会共享恢复状态。
+`recoveryMode` 控制遇到匹配 API error 时的恢复方式：`continue_only` 每次只发送 `continueCommand`；`continue_then_fallback` 第一次只继续，`windowSeconds` 默认 600 秒内再次失败才先换到备用模型再继续；`fallback_then_continue` 第一次失败就先换到备用模型再继续。换到备用模型后，正常 Stop 或超过 `restoreAfterSeconds` 默认 600 秒后有新动作时会发送 `primaryModelCommand` 切回原模型。`match` 只检查 `StopFailure` 的 `error` 和 `error_details`；默认只匹配 cyber risk 相关 API error，不会拦截所有 StopFailure，也不会因为 `last_assistant_message` 或 `reason` 中引用类似文字而误触发模型切换。状态存储在 `<CLAUDE_CONFIG_DIR-or-~/.claude>/hook-terr/state/api-error-recovery/`，按 `session_id + WEZTERM_PANE` 隔离，多会话、多标签页不会共享恢复状态。
 
 推荐运行 `/hook-terr:api-error-recovery` 给当前目录写入 `<current directory>/.claude/hook-terr/settings.json`；在不同目录分别运行，就能给每个目录保存不同恢复方式、模型和匹配文本，互不影响。关闭某个目录时，该命令也只改这个目录的 settings。底层仍保留 `scopes` 字段供手工高级配置使用；普通交互流程不会展示或要求配置这些高级字段。临时禁用当前启动环境可设置 `HOOK_TERR_API_ERROR_RECOVERY=0`。
 

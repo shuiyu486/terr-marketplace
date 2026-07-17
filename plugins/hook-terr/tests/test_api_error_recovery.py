@@ -434,6 +434,38 @@ class ApiErrorRecoveryTests(unittest.TestCase):
 
             send_text.assert_not_called()
 
+    def test_last_assistant_message_match_does_not_trigger_recovery(self):
+        with self.project_env() as (home, cwd):
+            with self.recovery_patches("101", [1000]) as send_text:
+                run(
+                    "StopFailure",
+                    {
+                        "cwd": cwd,
+                        "session_id": "s1",
+                        "error": "server_error",
+                        "error_details": "temporary upstream failure",
+                        "last_assistant_message": "Earlier we discussed cybersecurity risk wording.",
+                    },
+                )
+
+            send_text.assert_not_called()
+
+    def test_reason_match_does_not_trigger_recovery(self):
+        with self.project_env() as (home, cwd):
+            with self.recovery_patches("101", [1000]) as send_text:
+                run(
+                    "StopFailure",
+                    {
+                        "cwd": cwd,
+                        "session_id": "s1",
+                        "error": "server_error",
+                        "error_details": "temporary upstream failure",
+                        "reason": "This content was flagged for possible cybersecurity risk appears only in context.",
+                    },
+                )
+
+            send_text.assert_not_called()
+
     def test_session_scope_can_disable_recovery(self):
         with self.project_env(
             {

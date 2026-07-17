@@ -75,7 +75,7 @@ Windows notification 仍然可用，但不再由默认 Stop 自检规则触发�
 
 ## API error recovery
 
-`features.apiErrorRecovery` 默认关闭，只处理主会话。启用后，主会话 `StopFailure` 命中配置的 `match` 文本时，会使用 `WEZTERM_PANE` 和 `wezterm cli send-text --pane-id ... --no-paste` 将恢复命令发回触发错误的 WezTerm pane；子 agent 不会创建、推进或恢复该状态。默认 `match` 只覆盖 `This content was flagged for possible cybersecurity risk` / `cybersecurity risk`，匹配范围是 `error`、`error_details`、`last_assistant_message` 和 `reason` 合并后的文本。状态按 `session_id + pane_id` 隔离，并使用 per-session lock 与短时间去重，避免多个 Claude Code 会话或多个 WezTerm 标签页互相串线；模型切换开始前会先保存 pending 状态，因此即使后续 `continue` 发送失败，Stop 仍能安全尝试恢复 primary。
+`features.apiErrorRecovery` 默认关闭，只处理主会话。启用后，主会话 `StopFailure` 命中配置的 `match` 文本时，会使用 `WEZTERM_PANE` 和 `wezterm cli send-text --pane-id ... --no-paste` 将恢复命令发回触发错误的 WezTerm pane；子 agent 不会创建、推进或恢复该状态。默认 `match` 只覆盖 `This content was flagged for possible cybersecurity risk` / `cybersecurity risk`，匹配范围是 `StopFailure` 的 `error` 和 `error_details`，不会因为 `last_assistant_message` 或 `reason` 中引用类似文字而触发模型切换。状态按 `session_id + pane_id` 隔离，并使用 per-session lock 与短时间去重，避免多个 Claude Code 会话或多个 WezTerm 标签页互相串线；模型切换开始前会先保存 pending 状态，因此即使后续 `continue` 发送失败，Stop 仍能安全尝试恢复 primary。
 
 默认恢复方式是 `continue_then_fallback`：第一次命中只发送 `continue`；如果 `windowSeconds` 默认 600 秒内再次命中，先发送 `fallbackModelCommand` 换到备用模型，再发送 `continueCommand`。也可配置 `continue_only` 让每次只继续，或 `fallback_then_continue` 让第一次失败就换到备用模型并继续。换到备用模型后，主会话 `Stop` 会优先发送 `primaryModelCommand` 切回原模型；如果长回合暂时没有 Stop，后续主会话 `PreToolUse`、`PostToolUse`、`UserPromptSubmit` 或再次 `StopFailure` 在超过 `restoreAfterSeconds` 默认 600 秒后也会触发恢复检查。
 

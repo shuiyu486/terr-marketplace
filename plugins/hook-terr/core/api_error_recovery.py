@@ -334,7 +334,7 @@ def matches_error(context: HookContext, config: Dict[str, Any]) -> bool:
 
 
 def combined_error_text(context: HookContext) -> str:
-    parts = [context.error, context.error_details, context.last_assistant_message, context.reason]
+    parts = [context.error, context.error_details]
     return "\n".join(str(part) for part in parts if part)
 
 
