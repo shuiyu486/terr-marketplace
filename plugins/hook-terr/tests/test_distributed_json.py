@@ -28,6 +28,24 @@ class DistributedJsonTests(unittest.TestCase):
 
                 self.assertEqual(validate_rule(data, path), [])
 
+    def test_python_hooks_use_exec_form(self):
+        path = os.path.join(PLUGIN_ROOT, "hooks", "hooks.json")
+
+        with open(path, "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+
+        for event_name, matchers in data.get("hooks", {}).items():
+            for matcher in matchers:
+                for hook in matcher.get("hooks", []):
+                    if hook.get("type") != "command":
+                        continue
+                    with self.subTest(event=event_name, hook=hook.get("args")):
+                        self.assertEqual(hook.get("command"), "python3")
+                        self.assertIn("args", hook)
+                        self.assertEqual(len(hook["args"]), 1)
+                        self.assertTrue(hook["args"][0].startswith("${CLAUDE_PLUGIN_ROOT}/hooks/"))
+                        self.assertTrue(hook["args"][0].endswith(".py"))
+
     def test_presets_json_is_valid(self):
         for path in glob.glob(os.path.join(PLUGIN_ROOT, "presets", "*.json")):
             with self.subTest(path=path):

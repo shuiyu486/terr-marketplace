@@ -4,7 +4,7 @@
 
 ## 控制流
 
-1. `hooks/hooks.json` 注册 Claude Code hook 事件。
+1. `hooks/hooks.json` 注册 Claude Code hook 事件。Python hooks 使用 exec form（`command: "python3"` + `args`），避免 Windows/Git Bash shell profile 输出污染 stdout，导致 Claude Code 报 `JSON validation failed`。
 2. `hooks/*.py` 读取 stdin JSON，并调用 `core.event_runner.run(event, input_data)`。
 3. `context_builder` 将原始 payload 规范化为 `HookContext`，并推导 `is_subagent` 与 `agent_type` 规则字段。
 4. `config_loader` 加载 settings 和 rules。
