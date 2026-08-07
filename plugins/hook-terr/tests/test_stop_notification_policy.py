@@ -180,6 +180,473 @@ class StopNotificationPolicyTests(unittest.TestCase):
             send_notification.assert_called_once()
             self.assertEqual(send_notification.call_args.args[0], "sound")
 
+    def test_stop_notification_is_suppressed_by_runtime_background_tasks(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            rules_dir = os.path.join(home, ".claude", "hook-terr", "rules")
+            os.makedirs(rules_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(rules_dir, "always-notify.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "version": 1,
+                        "id": "always-notify",
+                        "enabled": True,
+                        "event": "Stop",
+                        "priority": 200,
+                        "decision": "warn",
+                        "when": [],
+                        "message": {"text": "explicit notify"},
+                        "notify": {"enabled": True, "channels": ["sound"]},
+                    },
+                    handle,
+                )
+
+            with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
+                response = run(
+                    "Stop",
+                    {
+                        "cwd": cwd,
+                        "background_tasks": [
+                            {
+                                "id": "agent-one",
+                                "type": "subagent",
+                                "status": "running",
+                                "description": "review",
+                            }
+                        ],
+                        "session_crons": [],
+                    },
+                )
+
+            self.assertEqual(response, {})
+            send_notification.assert_not_called()
+
+    def test_stop_notification_is_suppressed_by_runtime_session_crons(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            rules_dir = os.path.join(home, ".claude", "hook-terr", "rules")
+            os.makedirs(rules_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(rules_dir, "always-notify.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "version": 1,
+                        "id": "always-notify",
+                        "enabled": True,
+                        "event": "Stop",
+                        "priority": 200,
+                        "decision": "warn",
+                        "when": [],
+                        "message": {"text": "explicit notify"},
+                        "notify": {"enabled": True, "channels": ["sound"]},
+                    },
+                    handle,
+                )
+
+            with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
+                response = run(
+                    "Stop",
+                    {
+                        "cwd": cwd,
+                        "background_tasks": [],
+                        "session_crons": [
+                            {
+                                "id": "wakeup-one",
+                                "schedule": "0 9 * * *",
+                                "recurring": False,
+                                "prompt": "continue",
+                            }
+                        ],
+                    },
+                )
+
+            self.assertEqual(response, {})
+            send_notification.assert_not_called()
+
+    def test_empty_runtime_background_tasks_override_stale_transcript(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            rules_dir = os.path.join(home, ".claude", "hook-terr", "rules")
+            os.makedirs(rules_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(rules_dir, "always-notify.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "version": 1,
+                        "id": "always-notify",
+                        "enabled": True,
+                        "event": "Stop",
+                        "priority": 200,
+                        "decision": "warn",
+                        "when": [],
+                        "message": {"text": "explicit notify"},
+                        "notify": {"enabled": True, "channels": ["sound"]},
+                    },
+                    handle,
+                )
+            transcript_path = os.path.join(home, "transcript.jsonl")
+            with open(transcript_path, "w", encoding="utf-8") as handle:
+                handle.write(
+                    json.dumps(
+                        {
+                            "type": "user",
+                            "message": {"content": [{"type": "tool_result", "tool_use_id": "call-agent"}]},
+                            "toolUseResult": {"status": "async_launched", "agentId": "agent-one"},
+                        }
+                    )
+                    + "\n"
+                )
+
+            with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
+                response = run(
+                    "Stop",
+                    {
+                        "cwd": cwd,
+                        "transcript_path": transcript_path,
+                        "background_tasks": [],
+                        "session_crons": [],
+                    },
+                )
+
+            self.assertEqual(response, {})
+            send_notification.assert_called_once()
+
+    def test_task_reminder_does_not_suppress_stop_notification(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            rules_dir = os.path.join(home, ".claude", "hook-terr", "rules")
+            os.makedirs(rules_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(rules_dir, "always-notify.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "version": 1,
+                        "id": "always-notify",
+                        "enabled": True,
+                        "event": "Stop",
+                        "priority": 200,
+                        "decision": "warn",
+                        "when": [],
+                        "message": {"text": "explicit notify"},
+                        "notify": {"enabled": True, "channels": ["sound"]},
+                    },
+                    handle,
+                )
+            transcript_path = os.path.join(home, "transcript.jsonl")
+            with open(transcript_path, "w", encoding="utf-8") as handle:
+                handle.write(
+                    json.dumps(
+                        {
+                            "type": "attachment",
+                            "attachment": {
+                                "type": "task_reminder",
+                                "content": [{"id": "1", "status": "pending", "subject": "future work"}],
+                            },
+                        }
+                    )
+                    + "\n"
+                )
+
+            with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
+                response = run("Stop", {"cwd": cwd, "transcript_path": transcript_path})
+
+            self.assertEqual(response, {})
+            send_notification.assert_called_once()
+
+    def test_stop_notification_is_suppressed_while_background_agent_is_running(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            rules_dir = os.path.join(home, ".claude", "hook-terr", "rules")
+            os.makedirs(rules_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(rules_dir, "always-notify.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "version": 1,
+                        "id": "always-notify",
+                        "enabled": True,
+                        "event": "Stop",
+                        "priority": 200,
+                        "decision": "warn",
+                        "when": [],
+                        "message": {"text": "explicit notify"},
+                        "notify": {"enabled": True, "channels": ["sound"], "title": "title", "text": "text"},
+                    },
+                    handle,
+                )
+            transcript_path = os.path.join(home, "transcript.jsonl")
+            records = [
+                {
+                    "type": "assistant",
+                    "timestamp": "2026-08-07T10:00:00Z",
+                    "message": {
+                        "content": [
+                            {
+                                "type": "tool_use",
+                                "id": "call-agent",
+                                "name": "Agent",
+                                "input": {"run_in_background": True},
+                            }
+                        ]
+                    },
+                },
+                {
+                    "type": "user",
+                    "timestamp": "2026-08-07T10:00:01Z",
+                    "message": {"content": [{"type": "tool_result", "tool_use_id": "call-agent"}]},
+                    "toolUseResult": {"status": "async_launched", "agentId": "agent-one"},
+                },
+            ]
+            with open(transcript_path, "w", encoding="utf-8") as handle:
+                for record in records:
+                    handle.write(json.dumps(record) + "\n")
+
+            with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
+                response = run("Stop", {"cwd": cwd, "transcript_path": transcript_path})
+
+            self.assertEqual(response, {})
+            send_notification.assert_not_called()
+
+    def test_stop_notification_is_suppressed_after_one_agent_finishes_when_another_is_running(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            rules_dir = os.path.join(home, ".claude", "hook-terr", "rules")
+            os.makedirs(rules_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(rules_dir, "always-notify.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "version": 1,
+                        "id": "always-notify",
+                        "enabled": True,
+                        "event": "Stop",
+                        "priority": 200,
+                        "decision": "warn",
+                        "when": [],
+                        "message": {"text": "explicit notify"},
+                        "notify": {"enabled": True, "channels": ["sound"]},
+                    },
+                    handle,
+                )
+            transcript_path = os.path.join(home, "transcript.jsonl")
+            records = [
+                {
+                    "type": "assistant",
+                    "timestamp": "2026-08-07T10:00:00Z",
+                    "message": {
+                        "content": [
+                            {"type": "tool_use", "id": "call-one", "name": "Agent", "input": {"run_in_background": True}},
+                            {"type": "tool_use", "id": "call-two", "name": "Agent", "input": {"run_in_background": True}},
+                        ]
+                    },
+                },
+                {
+                    "type": "user",
+                    "timestamp": "2026-08-07T10:00:01Z",
+                    "message": {"content": [{"type": "tool_result", "tool_use_id": "call-one"}]},
+                    "toolUseResult": {"status": "async_launched", "agentId": "agent-one"},
+                },
+                {
+                    "type": "user",
+                    "timestamp": "2026-08-07T10:00:02Z",
+                    "message": {"content": [{"type": "tool_result", "tool_use_id": "call-two"}]},
+                    "toolUseResult": {"status": "async_launched", "agentId": "agent-two"},
+                },
+                {
+                    "type": "queue-operation",
+                    "operation": "enqueue",
+                    "timestamp": "2026-08-07T10:01:00Z",
+                    "content": "<task-notification><tool-use-id>call-one</tool-use-id><status>completed</status></task-notification>",
+                },
+            ]
+            with open(transcript_path, "w", encoding="utf-8") as handle:
+                for record in records:
+                    handle.write(json.dumps(record) + "\n")
+
+            with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
+                response = run("Stop", {"cwd": cwd, "transcript_path": transcript_path})
+
+            self.assertEqual(response, {})
+            send_notification.assert_not_called()
+
+    def test_quoted_task_notification_does_not_mark_background_task_finished(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            rules_dir = os.path.join(home, ".claude", "hook-terr", "rules")
+            os.makedirs(rules_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(rules_dir, "always-notify.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "version": 1,
+                        "id": "always-notify",
+                        "enabled": True,
+                        "event": "Stop",
+                        "priority": 200,
+                        "decision": "warn",
+                        "when": [],
+                        "message": {"text": "explicit notify"},
+                        "notify": {"enabled": True, "channels": ["sound"]},
+                    },
+                    handle,
+                )
+            transcript_path = os.path.join(home, "transcript.jsonl")
+            records = [
+                {
+                    "type": "assistant",
+                    "timestamp": "2026-08-07T10:00:00Z",
+                    "message": {"content": [{"type": "tool_use", "id": "call-agent", "name": "Agent", "input": {"run_in_background": True}}]},
+                },
+                {
+                    "type": "user",
+                    "timestamp": "2026-08-07T10:00:01Z",
+                    "message": {"content": [{"type": "tool_result", "tool_use_id": "call-agent"}]},
+                    "toolUseResult": {"status": "async_launched", "agentId": "agent-one"},
+                },
+                {
+                    "type": "user",
+                    "timestamp": "2026-08-07T10:01:00Z",
+                    "message": {"content": "quoted <task-notification><tool-use-id>call-agent</tool-use-id><status>completed</status></task-notification>"},
+                },
+            ]
+            with open(transcript_path, "w", encoding="utf-8") as handle:
+                for record in records:
+                    handle.write(json.dumps(record) + "\n")
+
+            with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
+                response = run("Stop", {"cwd": cwd, "transcript_path": transcript_path})
+
+            self.assertEqual(response, {})
+            send_notification.assert_not_called()
+
+    def test_stop_notification_sends_after_all_background_tasks_finish(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            rules_dir = os.path.join(home, ".claude", "hook-terr", "rules")
+            os.makedirs(rules_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(rules_dir, "always-notify.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "version": 1,
+                        "id": "always-notify",
+                        "enabled": True,
+                        "event": "Stop",
+                        "priority": 200,
+                        "decision": "warn",
+                        "when": [],
+                        "message": {"text": "explicit notify"},
+                        "notify": {"enabled": True, "channels": ["sound"]},
+                    },
+                    handle,
+                )
+            transcript_path = os.path.join(home, "transcript.jsonl")
+            records = [
+                {
+                    "type": "assistant",
+                    "timestamp": "2026-08-07T10:00:00Z",
+                    "message": {
+                        "content": [
+                            {"type": "tool_use", "id": "call-agent", "name": "Agent", "input": {"run_in_background": True}},
+                            {"type": "tool_use", "id": "call-command", "name": "Bash", "input": {"run_in_background": True}},
+                        ]
+                    },
+                },
+                {
+                    "type": "user",
+                    "timestamp": "2026-08-07T10:00:01Z",
+                    "message": {"content": [{"type": "tool_result", "tool_use_id": "call-agent"}]},
+                    "toolUseResult": {"status": "async_launched", "agentId": "agent-one"},
+                },
+                {
+                    "type": "user",
+                    "timestamp": "2026-08-07T10:00:02Z",
+                    "message": {"content": [{"type": "tool_result", "tool_use_id": "call-command"}]},
+                    "toolUseResult": {"backgroundTaskId": "command-one"},
+                },
+                {
+                    "type": "queue-operation",
+                    "timestamp": "2026-08-07T10:01:00Z",
+                    "content": "<task-notification><tool-use-id>call-agent</tool-use-id><status>completed</status></task-notification>",
+                },
+                {
+                    "type": "queue-operation",
+                    "timestamp": "2026-08-07T10:02:00Z",
+                    "content": "<task-notification><tool-use-id>call-command</tool-use-id><status>completed</status></task-notification>",
+                },
+            ]
+            with open(transcript_path, "w", encoding="utf-8") as handle:
+                for record in records:
+                    handle.write(json.dumps(record) + "\n")
+
+            with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
+                response = run("Stop", {"cwd": cwd, "transcript_path": transcript_path})
+
+            self.assertEqual(response, {})
+            send_notification.assert_called_once()
+
+    def test_stop_notification_stays_suppressed_after_completed_agent_is_resumed(self):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
+            cwd = os.path.join(home, "project")
+            rules_dir = os.path.join(home, ".claude", "hook-terr", "rules")
+            os.makedirs(rules_dir)
+            os.makedirs(cwd)
+            with open(os.path.join(rules_dir, "always-notify.json"), "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "version": 1,
+                        "id": "always-notify",
+                        "enabled": True,
+                        "event": "Stop",
+                        "priority": 200,
+                        "decision": "warn",
+                        "when": [],
+                        "message": {"text": "explicit notify"},
+                        "notify": {"enabled": True, "channels": ["sound"]},
+                    },
+                    handle,
+                )
+            transcript_path = os.path.join(home, "transcript.jsonl")
+            records = [
+                {
+                    "type": "assistant",
+                    "timestamp": "2026-08-07T10:00:00Z",
+                    "message": {"content": [{"type": "tool_use", "id": "call-agent", "name": "Agent", "input": {"run_in_background": True}}]},
+                },
+                {
+                    "type": "user",
+                    "timestamp": "2026-08-07T10:00:01Z",
+                    "message": {"content": [{"type": "tool_result", "tool_use_id": "call-agent"}]},
+                    "toolUseResult": {"status": "async_launched", "agentId": "agent-one"},
+                },
+                {
+                    "type": "queue-operation",
+                    "timestamp": "2026-08-07T10:01:00Z",
+                    "content": "<task-notification><tool-use-id>call-agent</tool-use-id><status>completed</status></task-notification>",
+                },
+                {
+                    "type": "assistant",
+                    "timestamp": "2026-08-07T10:02:00Z",
+                    "message": {"content": [{"type": "tool_use", "id": "call-message", "name": "SendMessage", "input": {"to": "agent-one"}}]},
+                },
+                {
+                    "type": "user",
+                    "timestamp": "2026-08-07T10:02:01Z",
+                    "message": {"content": [{"type": "tool_result", "tool_use_id": "call-message"}]},
+                    "toolUseResult": {"success": True, "resumedAgentId": "agent-one"},
+                },
+            ]
+            with open(transcript_path, "w", encoding="utf-8") as handle:
+                for record in records:
+                    handle.write(json.dumps(record) + "\n")
+
+            with patch("core.action_executor.send_notification", return_value=NotificationResult("sound", True)) as send_notification:
+                response = run("Stop", {"cwd": cwd, "transcript_path": transcript_path})
+
+            self.assertEqual(response, {})
+            send_notification.assert_not_called()
+
     def test_explicit_stop_notify_rule_still_sends_notification(self):
         with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {"USERPROFILE": home, "HOME": home, "CLAUDE_PLUGIN_ROOT": PLUGIN_ROOT}):
             cwd = os.path.join(home, "project")

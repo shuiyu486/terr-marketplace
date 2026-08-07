@@ -66,6 +66,24 @@ class AgentContextFieldsTests(unittest.TestCase):
         self.assertEqual(context.session_id, "")
         self.assertEqual(context.transcript_path, "")
 
+    def test_stop_runtime_work_lists_preserve_missing_vs_empty(self):
+        missing = build_context("Stop", {})
+        empty = build_context("Stop", {"background_tasks": [], "session_crons": []})
+        populated = build_context(
+            "Stop",
+            {
+                "background_tasks": [{"id": "task-one"}, "ignored"],
+                "session_crons": [{"id": "cron-one"}],
+            },
+        )
+
+        self.assertIsNone(missing.background_tasks)
+        self.assertIsNone(missing.session_crons)
+        self.assertEqual(empty.background_tasks, [])
+        self.assertEqual(empty.session_crons, [])
+        self.assertEqual(populated.background_tasks, [{"id": "task-one"}])
+        self.assertEqual(populated.session_crons, [{"id": "cron-one"}])
+
     def test_windows_transcript_path_subagents_segment_fallback(self):
         context = build_context("Stop", {"transcript_path": r"C:\Users\u\.claude\projects\p\subagents\agent.jsonl"})
 

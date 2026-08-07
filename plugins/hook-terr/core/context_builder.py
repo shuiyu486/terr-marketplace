@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from core.models import HookContext
 
@@ -29,6 +29,8 @@ def build_context(event_name: str, input_data: Dict[str, Any]) -> HookContext:
         last_assistant_message=str(input_data.get("last_assistant_message", "")),
         stop_hook_active=coerce_bool(input_data.get("stop_hook_active")) is True,
         raw_input=input_data,
+        background_tasks=optional_dict_list(input_data.get("background_tasks")),
+        session_crons=optional_dict_list(input_data.get("session_crons")),
     )
 
 
@@ -78,6 +80,12 @@ def optional_string(value: Any) -> str:
     if value is None:
         return ""
     return str(value).strip()
+
+
+def optional_dict_list(value: Any) -> Optional[List[Dict[str, Any]]]:
+    if not isinstance(value, list):
+        return None
+    return [item for item in value if isinstance(item, dict)]
 
 
 def stringify(value: Any) -> str:

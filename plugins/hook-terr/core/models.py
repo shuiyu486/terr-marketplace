@@ -19,6 +19,8 @@ class HookContext:
     last_assistant_message: str = ""
     stop_hook_active: bool = False
     raw_input: Dict[str, Any] = field(default_factory=dict)
+    background_tasks: Optional[List[Dict[str, Any]]] = None
+    session_crons: Optional[List[Dict[str, Any]]] = None
 
 
 @dataclass

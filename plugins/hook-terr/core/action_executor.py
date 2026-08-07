@@ -53,7 +53,7 @@ def should_suppress_response(rule: Rule, context: HookContext, settings: Dict[st
     notify = rule.notify if isinstance(rule.notify, dict) else {}
     if notify.get("channels") == []:
         return False
-    return is_pure_stop_notification(rule, context.hook_event_name) and can_send_external_notification(rule, context) and bool(resolve_channels(rule, context, settings))
+    return is_pure_stop_notification(rule, context.hook_event_name) and not context.is_subagent and bool(resolve_channels(rule, context, settings))
 
 
 def resolve_channels(rule: Rule, context: HookContext, settings: Dict[str, Any]) -> List[str]:

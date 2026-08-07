@@ -2,7 +2,7 @@
 
 `hook-terr` 支持四类通知器：`sound`、`windows_toast`、`popup`、`custom_command`。
 
-默认普通 Stop 不返回自检 `systemMessage`，也不执行外部通知；Stop 外部通知需要启用 `notify` 的规则，且 runtime 护栏只允许主会话 Stop 触发。主会话 `AskUserQuestion` 求助场景由 runtime guard 复用 Stop 通道触发外部通知。通知失败 fail open，不会阻断 Claude Code 主流程；普通规则通知诊断会追加到 hook `systemMessage`，求助通知诊断只写入 stderr。
+默认普通 Stop 不返回自检 `systemMessage`，也不执行外部通知；Stop 外部通知需要启用 `notify` 的规则，且 runtime 护栏只允许主会话 Stop 触发。由于 Claude Code 的 Stop 表示一次响应结束而非所有工作完成，runtime 优先读取 Stop payload 的实时 `background_tasks` 和 `session_crons`；任一非空时都会抑制外部通知，覆盖运行中 Agent/命令/Workflow，以及 `ScheduleWakeup`、`CronCreate`、`/loop` 等已安排自动续跑。旧版 payload 缺少 `background_tasks` 时，runtime 才从主会话 `transcript_path` 兼容追踪实际异步结果、恢复后的 Agent、成功 `TaskStop` 和 `<task-notification>` 终态；transcript 无法读取时 fail open。Claude task todo 的 `pending` / `in_progress` 只表示工作清单，可能跨会话保留，不参与完成音护栏，避免陈旧 backlog 导致永久静音。持续运行的后台开发服务器仍属于 `background_tasks`，会继续抑制完成音，直到任务自然终止或被成功 `TaskStop`；runtime 无法可靠区分“任务依赖的后台工作”和“用户有意常驻的服务”。主会话 `AskUserQuestion` 求助场景会有意复用 Stop 通道，因此仍会播放同一提示音，但语义是“等待用户输入”而非“任务完成”。通知失败 fail open，不会阻断 Claude Code 主流程；普通规则通知诊断会追加到 hook `systemMessage`，求助通知诊断只写入 stderr。
 
 ## sound
 

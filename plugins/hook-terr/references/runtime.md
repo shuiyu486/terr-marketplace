@@ -11,7 +11,7 @@
 5. `api_error_recovery` 在启用时处理 `StopFailure` API error 恢复，并在正常 `Stop` 或超时后的主会话检查点恢复模型；它只做 WezTerm pane 定向输入副作用，不依赖 hook 输出控制 Claude。
 6. `documentation_reminder` 在启用时处理项目修改后的文档收尾提醒：`PostToolUse` 记录项目文件修改，`Stop` 首次返回 block，`UserPromptSubmit` 重置本轮状态。
 7. `rule_matcher` 找到当前事件最高优先级命中规则。
-8. `action_executor` 解析有效通知通道并执行通知器；runtime 通知护栏只允许主会话 Stop 和主会话 `PreToolUse`/`AskUserQuestion` 求助场景发出外部通知。
+8. `action_executor` 解析有效通知通道并执行通知器；runtime 通知护栏只允许主会话 Stop 和主会话 `PreToolUse`/`AskUserQuestion` 求助场景发出外部通知。主会话 Stop 优先使用 Claude Code payload 的 `background_tasks` 和 `session_crons`：任一非空都表示会话仍有运行中或已安排自动续跑的工作，只抑制外部通知，不改变 Stop 响应。旧版 payload 缺少 `background_tasks` 时，runtime 才从 `transcript_path` 兼容追踪 Agent、Bash/PowerShell、Workflow、经 `SendMessage` 恢复的 Agent、成功 `TaskStop` 和 `<task-notification>` 终态。
 9. `response_builder` 输出 Claude Code hook JSON；Stop 外部通知规则是 pure external notification，不再返回可能促使 Claude 继续工作的 Stop `systemMessage`。
 
 ## Agent 上下文字段

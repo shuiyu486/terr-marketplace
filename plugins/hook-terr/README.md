@@ -11,7 +11,7 @@
 - 默认启用文档收尾提醒：项目内使用 `Write`、`Edit`、`MultiEdit` 或 `NotebookEdit` 修改文件后，首次 Stop 会提醒 Claude 更新相关文档并完成必要验证。
 - 可选 `apiErrorRecovery` 会在 WezTerm 中按 pane 精确恢复匹配的 StopFailure API error：可按目录选择只自动输入 `continue`、二次失败再换到备用模型，或首次失败就换到备用模型；自动兼容 `/model` 的 `Switch model?` 确认框，本轮正常结束或超时后的主会话检查点会切回原模型。
 - 支持插件内默认配置、用户全局覆盖和项目覆盖。
-- Stop 外部通知需要通过用户或项目规则显式启用，避免每次 Stop 都误触发；外部通知在 runtime 层只允许主会话 Stop 和主会话 `AskUserQuestion` 求助场景。
+- Stop 外部通知需要通过用户或项目规则显式启用，避免每次 Stop 都误触发；外部通知在 runtime 层只允许主会话 Stop 和主会话 `AskUserQuestion` 求助场景。主会话 Stop payload 的 `background_tasks` 或 `session_crons` 非空时会抑制通知；旧版 Claude Code 缺少这些字段时，runtime 才从 transcript 兼容追踪 Agent、Bash/PowerShell、Workflow、恢复后的 Agent 及其终态。
 - 支持 Windows tray 通知、提示音、结构化弹窗和高级自定义命令。
 - hook 异常 fail open，通知失败不会阻断 Claude Code 主流程，并会把简要诊断追加到 `systemMessage`。
 
